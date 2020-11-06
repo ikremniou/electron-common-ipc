@@ -18,7 +18,7 @@ class Deferred<T> {
 
     private _executor: Function;
 
-    constructor(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void)  => void, immediat: boolean = true) {
+    constructor(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void, immediat: boolean = true) {
         this.id = ++Deferred._globalCounter;
         this.promise = new Promise<T>((resolve, reject) => {
             this.reject = reject;
@@ -56,6 +56,9 @@ class CallWrapperEventEmitter extends EventEmitter {
 // Implementation of IPC service
 /** @internal */
 export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcBusServiceProxy {
+    private readonly _onServiceReceivedCallback = (event: Client.IpcBusEvent,
+        msg: ServiceUtils.IpcBusServiceEvent) => this._onServiceReceived(event, msg);
+
     private _isStarted: boolean;
     private _wrapper: CallWrapperEventEmitter;
     private _ipcBusClient: Client.IpcBusClient;
@@ -81,20 +84,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         // Check service availability
         this._isStarted = false;
 
-        // Callback
-        this._onServiceReceived = this._onServiceReceived.bind(this);
-
-        // Register service start/stop/event events
-        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceived);
-
-        this.getStatus()
-          .then((serviceStatus: Service.ServiceStatus) => {
-                this._onServiceStart(serviceStatus);
-            })
-            // DeprecationWarning: Unhandled promise rejections are deprecated
-            .catch((err) => {
-                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - err: ${err}`);
-            });
+        this._updateServiceChannelListener();
     }
 
     connect<T>(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<T> {
@@ -102,6 +92,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         if (options.timeoutDelay == null) {
             options.timeoutDelay = this._options.timeoutDelay;
         }
+        this._updateServiceChannelListener();
         return new Promise<T>((resolve, reject) => {
             if (this._isStarted) {
                 return resolve(this.getWrapper<T>());
@@ -121,6 +112,13 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             }
             this.addListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
         });
+    }
+
+    close(): void {
+        const eventChannel = ServiceUtils.getServiceEventChannel(this._serviceName);
+        this._ipcBusClient.removeListener(eventChannel, this._onServiceReceivedCallback);
+        this._onServiceStop();
+        this.removeAllListeners();
     }
 
     get isStarted(): boolean {
@@ -244,7 +242,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
                 case Service.IPCBUS_SERVICE_EVENT_STOP:
                     this._onServiceStop();
                     break;
-                default :
+                default:
                     this.emit(msg.eventName, ...msg.args);
                     break;
             }
@@ -267,11 +265,25 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     private _onServiceStop() {
         if (this._isStarted) {
             this._isStarted = false;
-            IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
             this.emit(Service.IPCBUS_SERVICE_EVENT_STOP);
 
             this._pendingCalls.forEach((deferred) => {
                 deferred.reject(`Service '${this._serviceName}' stopped`);
+            });
+            this._pendingCalls.clear();
+            IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
+        }
+    }
+
+    private _updateServiceChannelListener() {
+        const eventChannel = ServiceUtils.getServiceEventChannel(this._serviceName)
+        if (!this._ipcBusClient.listeners(eventChannel).includes(this._onServiceReceivedCallback)) {
+            // Register service start/stop/event events
+            this._ipcBusClient.addListener(eventChannel, this._onServiceReceivedCallback);
+            this.getStatus().then((serviceStatus: Service.ServiceStatus) => {
+                this._onServiceStart(serviceStatus);
+            }).catch((err) => {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - err: ${err}`);
             });
         }
     }

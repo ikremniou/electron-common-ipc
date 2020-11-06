@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "9.0.2",
+  "version": "9.0.3",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -54,6 +54,7 @@
     "@types/node": "12.7.12",
     "@types/semver": "^7.2.0",
     "@types/shortid": "0.0.29",
+    "@types/sinon": "^9.0.8",
     "@types/uuid": "8.0.0",
     "browserify": "^16.5.1",
     "chai": "^4.2.0",
@@ -89,7 +90,7 @@
     "browserify-test:js2": "browserify -o ./test/electron-tests/page-frame.bundle.js -x electron ./test/electron-tests/page.js",
     "browserify-test:performance-preload": "browserify -o ./test/performance/renderer-preload.bundle.js -x electron ./test/performance/renderer-preload.js",
     "browserify-test:performance-renderer": "browserify -o ./test/performance/renderer.bundle.js -x electron ./test/performance/renderer.js",
-    "test": "electron-mocha --no-timeouts --reporter spec test/*.test.js",
+    "test": "electron-mocha --no-timeouts --reporter spec test/**/*.test.js",
     "test:performance": "electron-mocha --no-timeouts --reporter spec test/performance.test.js",
     "tsc": "tsc",
     "tslint": "tslint",

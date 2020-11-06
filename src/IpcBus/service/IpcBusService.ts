@@ -52,6 +52,7 @@ export interface IpcBusServiceProxy extends EventEmitter {
     connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
     getStatus(): Promise<ServiceStatus>;
     getWrapper<T>(): T;
+    close(): void;
 
     // Kept for backward
     call<T>(name: string, ...args: any[]): Promise<T>;
