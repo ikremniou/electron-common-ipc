@@ -91,23 +91,31 @@ function doSort(event) {
 function doAutomaticTests(event) {
     doClear(null);
     let tests = [];
-    [1000000, 3000000, 5000000, 7000000, 10000000].forEach((size) => {
+    let baseline = 0;
+    let step = 1000;
+    [1000000, 3000000, 5000000, 7000000, 10000000].forEach((size, index) => {
         for (let occ = 0; occ < 3; ++occ) {
-            tests.push({ size: size, type: 'string' });
-            tests.push({ size: size, type: 'object' });
-            tests.push({ size: size, type: 'buffer' });
-            tests.push({ size: size, type: 'args' });
+            tests.push({ size: size, type: 'string', baseline });
+            baseline += step;
+            tests.push({ size: size, type: 'object', baseline });
+            baseline += step;
+            tests.push({ size: size, type: 'buffer', baseline });
+            baseline += step;
+            tests.push({ size: size, type: 'args', baseline });
+            baseline += step;
         }
+        step += 1000;
     });
-    let i = 0;
-    let intV = setInterval(() => {
-        startPerformance(tests[i].type, tests[i].size);
-        if (++i >= tests.length) {
-            clearInterval(intV);
-            save
-        }
-    }, 2000);
-    generateReport = true;
+    var testStepElt = document.querySelector(".test-step");
+    for (let i = 0; i < tests.length; ++i) {
+        setTimeout(() => {
+            testStepElt.value = `${i + 1} / ${tests.length}`;
+            startPerformance(tests[i].type, tests[i].size);
+            if (i == tests.length -1) {
+                generateReport = true;
+            }
+        }, tests[i].baseline);
+    }
 }
 
 function onIPCBus_TestPerformanceStart(ipcBusEvent, msgTestStart) {

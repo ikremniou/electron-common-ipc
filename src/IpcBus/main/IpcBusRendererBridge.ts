@@ -13,9 +13,7 @@ import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import {
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE,
     IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA,
-    IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS,
-    IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA,
-    IPCBUS_TRANSPORT_RENDERER_EVENT_ARGS
+    IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS
 } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
@@ -94,8 +92,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._rendererRawDataCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._rendererRawDataCallback);
+
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
+
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
 
@@ -103,8 +103,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onRendererHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
         return Promise.resolve();
     }
@@ -136,7 +136,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.noSerialization = this._bridge.noSerialization;
+        handshake.useIPCNativeSerialization = this._bridge.noSerialization;
         return handshake;
     }
 
@@ -217,12 +217,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     broadcastRawData(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData, webContentsTarget?: WebContentsTarget) {
-        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, ipcBusCommand, rawContent, webContentsTarget);
+        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget);
     }
 
     // From renderer transport
     broadcastArgs(ipcBusCommand: IpcBusCommand, args: any, webContentsTarget?: WebContentsTarget) {
-        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_EVENT_ARGS, ipcBusCommand, args, webContentsTarget);
+        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget);
     }
 
     private _onRendererAdminReceived(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand): boolean {
@@ -256,7 +256,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, ipcBusCommand, rawContent, webContentsTarget)
+            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget)
 
             IpcBusRendererContent.FixRawContent(rawContent);
             this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
@@ -266,7 +266,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_EVENT_ARGS, ipcBusCommand, args, webContentsTarget);
+            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget);
             this._bridge._onRendererArgsReceived(ipcBusCommand, args);
         }
     }

@@ -36,10 +36,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _rendererConnector: IpcBusBridgeClient;
     protected _peer: Client.IpcBusPeer;
 
-    private _noSerialization: boolean;
+    private _useElectronSerialization: boolean;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._noSerialization = true;
+        this._useElectronSerialization = false;
         
         this._peer = { 
             id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
@@ -55,7 +55,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     get noSerialization(): boolean {
-        return this._noSerialization;
+        return this._useElectronSerialization;
     }
 
     get mainTransport(): IpcBusTransport {
@@ -150,7 +150,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._noSerialization) {
+        if (this._useElectronSerialization) {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
             const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
@@ -187,7 +187,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
-        if (this._noSerialization) {
+        if (this._useElectronSerialization) {
             // Unserialize only once
             const args = ipcPacketBufferCore.parseArrayAt(1);
             this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
