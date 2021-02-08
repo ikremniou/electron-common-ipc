@@ -44,7 +44,10 @@ var PerfTests = function _PerfTests(type, busPath) {
         else if (testParams.typeArgs === 'object') {
             msgContent = { 
                 uuid: uuid, 
-                payload: allocateString(uuid, testParams.bufferSize)
+                payload: allocateString(uuid, testParams.bufferSize),
+                str: 'string',
+                num: 2.22,
+                bool: true
             };
         }
         else if (testParams.typeArgs === 'buffer') {

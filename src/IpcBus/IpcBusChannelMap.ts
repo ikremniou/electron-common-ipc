@@ -284,7 +284,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
     // }
 
     getPeers(): IpcBusPeer[] {
-        const peers: any = {};
+        const peers: Record<string, IpcBusPeer> = {};
         this._channelsMap.forEach((connsMap) => {
             connsMap.forEach((connData) => {
                 connData.peerRefCounts.forEach((peerRefCount) => {
@@ -297,7 +297,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
 
     getConns(): ChannelConnectionRef<T, K>[] {
         // @ts-ignore really an edge case for the compiler that has not been implemented
-        const conns: { [key: K]: T } = {};
+        const conns: Record<K, M> = {};
         this._channelsMap.forEach((connsMap) => {
             connsMap.forEach((connData) => {
                 // @ts-ignore really an edge case for the compiler that has not been implemented
