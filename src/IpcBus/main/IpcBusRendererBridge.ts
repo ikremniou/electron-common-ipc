@@ -45,7 +45,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
 
     private _ipcMain: Electron.IpcMain;
-    private _subscriptions: ChannelConnectionMap<Electron.WebContents, number>;
+    private _subscriptions: ChannelConnectionMap<WebContentsTarget, number>;
 
     private _rendererRawDataCallback: (...args: any[]) => void;
     private _rendererArgsCallback: (...args: any[]) => void;
@@ -54,7 +54,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._bridge = bridge;
 
         this._ipcMain = require('electron').ipcMain;
-        this._subscriptions = new ChannelConnectionMap<Electron.WebContents, number>('IPCBus:RendererBridge');
+        this._subscriptions = new ChannelConnectionMap<WebContentsTarget, number>('IPCBus:RendererBridge');
 
         this._subscriptions.client = {
             channelAdded: (channel) => {
@@ -188,14 +188,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     // From renderer transport
-    private _broadcastData(ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any, webContentsTarget?: WebContentsTarget) {
+    private _broadcastData(ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any, webContentsTarget?: WebContentsTarget): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
-                        connData.conn.sendToFrame((connData as any).frameid, ipcchannel, ipcBusCommand, data);
+                        connData.conn.sender.sendToFrame(connData.conn.frameId, ipcchannel, ipcBusCommand, data);
                     }
                 });
                 break;
@@ -207,13 +207,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     if (webContents) {
                         webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
                     }
+                    return true;
                 }
                 break;
             }
 
-            case IpcBusCommand.Kind.RequestClose:
-                break;
+            // case IpcBusCommand.Kind.RequestClose:
+            //     break;
         }
+        return false;
     }
 
     broadcastRawData(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData, webContentsTarget?: WebContentsTarget) {
@@ -226,17 +228,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onRendererAdminReceived(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand): boolean {
-        const webContents = webContentsTarget.sender;
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener: {
-                const channnelConnectionRef = {
-                    key: getKeyForTarget(webContentsTarget),
-                    frameid: webContentsTarget.frameId,
-                    conn: webContents
-                };
-                this._subscriptions.addRef(ipcBusCommand.channel, channnelConnectionRef, ipcBusCommand.peer);
+            case IpcBusCommand.Kind.AddChannelListener:
+                this._subscriptions.addRef(ipcBusCommand.channel, getKeyForTarget(webContentsTarget), webContentsTarget, ipcBusCommand.peer);
                 return true;
-            }
 
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, getKeyForTarget(webContentsTarget), ipcBusCommand.peer);
@@ -256,18 +251,19 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget)
-
-            IpcBusRendererContent.FixRawContent(rawContent);
-            this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
+            if (this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget) === false) {
+                IpcBusRendererContent.FixRawContent(rawContent);
+                this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
+            }
         }
     }
 
     private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget);
-            this._bridge._onRendererArgsReceived(ipcBusCommand, args);
+            if (this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget) === false) {
+                this._bridge._onRendererArgsReceived(ipcBusCommand, args);
+            }
         }
     }
 }

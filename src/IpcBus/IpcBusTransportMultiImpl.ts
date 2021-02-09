@@ -87,7 +87,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions == null) {
             return;
         }
-        this._subscriptions.addRefCount(channel, { key: client.peer.id, conn: client }, client.peer, count);
+        this._subscriptions.addRefCount(channel, client.peer.id, client, client.peer, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {

@@ -279,7 +279,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, { key: (socket as any)[this._socketIdProperty], conn: socket }, ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
@@ -298,7 +298,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel included bridge if bridge is a socket
                 if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, { key: (socket as any)[this._socketIdProperty], conn: socket }, ipcBusCommand.peer);
+                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
