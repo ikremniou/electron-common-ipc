@@ -4,6 +4,7 @@ var processId;
 var peerName;
 var processToMaster = null;
 var ipcBus = CreateIpcBusClient();
+
 // var bigpayload = null;
 
 function doNewNodeProcess(event) {
@@ -353,6 +354,7 @@ if (getParameterByName('type') === 'renderer') {
     //     bigpayload = JSON.stringify(txt);
     // });
 
+    perfTests = new PerfTests('renderer');
     ipcBus.connect()
         .then(() => {
             console.log('renderer : connected to ipcBus');

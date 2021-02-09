@@ -1,31 +1,94 @@
+function pairwise(list) {
+    if (list.length < 2) { return []; }
+    var first = list[0],
+        rest  = list.slice(1),
+        pairs = rest.map(function (x) { return [first, x]; });
+    return pairs.concat(pairwise(rest));
+  }
+
 var PerfTests = function _PerfTests(type, busPath) {
     const _ipcBusModule = require('electron-common-ipc');
+    const _uuidFactory = require('uuid');
     var _ipcBus = _ipcBusModule.IpcBusClient.Create();
     var _type = type;
-
-    this.doPerformanceTests = function _doPerformanceTests(testParams) {
-        _ipcBus.send('test-performance-run', testParams);
-    }
+    var _uuid = createUuid();
+    var _testsPending = [];
 
     this.connect = function(peerName) {
         _ipcBus.connect(busPath, { peerName })
             .then(() => {
+                _ipcBus.on('test-performance-ping', (ipcBusEvent) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
                 _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
-                _ipcBus.on('test-performance-run', (ipcBusEvent, testParams) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams));
-                _ipcBus.on('test-performance-'+ _type, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
+                _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, testParams, masterPeer) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams, channel));
+                _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
+                // _ipcBus.on('test-performance', (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
             });
     }
 
-    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, testParams) {
-        const tests = ['test-performance-renderer', 'test-performance-node', 'test-performance-browser'];
-        for (let i = 0; i < tests.length; ++i) {
-        //     setTimeout(() => {
-                this.testPerformance(tests[i], testParams);
-        //     }, 30000 * i);
-        }
+    this.onIPCBus_TestPerformancePing = function _onIPCBus_TestPerformancePing(ipcBusEvent) {
+        _ipcBus.send('test-performance-pong', _uuid);
     }
 
-    this.testPerformance = function _testPerformance(type, testParams) {
+    this.doPerformanceTests = function _doPerformanceTests(testParams) {
+        // _ipcBus.send('test-performance-run', testParams, masterPeers);
+        let targets = [];
+        _ipcBus.on('test-performance-pong', (event, channel) => {
+            targets.push({ peer: event.sender, channel });
+        });
+        _ipcBus.send('test-performance-ping');
+        setTimeout(() => {
+            _ipcBus.removeAllListeners('test-performance-pong');
+            targets = targets.filter(target => ['node', 'renderer', 'main'].includes(target.peer.process.type));
+            let masterTargets = [];
+            ['node', 'renderer', 'main'].forEach(type => {
+                const index = targets.findIndex((target) => target.peer.process.type === type);
+                masterTargets.push(targets[index]);
+                targets.splice(index, 1);
+            });
+            masterTargets = masterTargets.filter(value => value);
+
+            const combinations = pairwise(masterTargets);
+            combinations.push(...pairwise(masterTargets.reverse()));
+            masterTargets.forEach(target => {
+                const similarTarget = targets.find((curr) => curr.peer.process.type === target.peer.process.type);
+                if (similarTarget) {
+                    combinations.push([target, similarTarget]);
+                }
+            });
+            combinations.forEach(combination => {
+                _testsPending.push({ testParams, uuid: createUuid(), combination });
+            });
+
+            if (_ipcBus.listenerCount('test-performance-start') === 0) {
+                _ipcBus.on('test-performance-start', (ipcBusEvent) => this.onIPCBus_CollectStart(ipcBusEvent, msgTestStart));
+                _ipcBus.on('test-performance-stop', (ipcBusEvent) => this.onIPCBus_CollectStop(ipcBusEvent, msgTestStop));
+                this.loopTest();
+            }
+
+        }, 2000);
+    }
+
+    this.loopTest = function() {
+        const test = _testsPending.shift();
+        if (test) {
+            _ipcBus.send('test-performance-from-' + test.combination[0].channel, test.uuid, test.testParams, test.combination[1].channel);
+            return true;
+        }
+        return false;
+    }
+
+    this.onIPCBus_CollectStart = function(ipcBusEvent, msgTestStart) {
+
+    }
+
+    this.onIPCBus_CollectStop = function(ipcBusEvent, msgTestStop) {
+        if (!this.loopTest()) {
+            _ipcBus.removeAllListeners('test-performance-start');
+            _ipcBus.removeAllListeners('test-performance-stop');
+    }
+    }
+
+    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, testParams, channel) {
         var uuid = createUuid();
         var uuidPattern = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
         uuid = uuid + uuidPattern.substring(0, 30 - uuid.length)
@@ -39,20 +102,20 @@ var PerfTests = function _PerfTests(type, busPath) {
 
         var msgContent;
         if (testParams.typeArgs === 'string') {
-            msgContent = allocateString(uuid, testParams.bufferSize);
+            msgContent = [allocateString(uuid, testParams.bufferSize)];
         }
         else if (testParams.typeArgs === 'object') {
-            msgContent = { 
+            msgContent = [{ 
                 uuid: uuid, 
                 payload: allocateString(uuid, testParams.bufferSize),
                 str: 'string',
                 num: 2.22,
                 bool: true
-            };
+            }];
         }
         else if (testParams.typeArgs === 'buffer') {
-            msgContent = Buffer.alloc(Number(testParams.bufferSize));
-            msgContent.write(uuid, 0, uuid.length, 'utf8');
+            msgContent = [Buffer.alloc(Number(testParams.bufferSize))];
+            msgContent[0].write(uuid, 0, uuid.length, 'utf8');
         }
         else if (testParams.typeArgs === 'args') {
             msgContent = [];
@@ -68,25 +131,13 @@ var PerfTests = function _PerfTests(type, busPath) {
 
         msgTestStart.timeStamp = Date.now();
         _ipcBus.send('test-performance-start', msgTestStart);
-        if (testParams.typeArgs === 'args') {
-            if (testParams.typeCommand == 'Request') {
-                _ipcBus.request.apply(_ipcBus, [2000, type, ...msgContent])
-                .then((ipcRequestResponse) => this.onIPCBus_TestPerformance(ipcRequestResponse.event, ipcRequestResponse.payload[0])) 
-                .catch();
-            }
-            else {
-                _ipcBus.send(type, ...msgContent);
-            }
+        if (testParams.typeCommand == 'Request') {
+            _ipcBus.request.apply(_ipcBus, [2000, channel, ...msgContent])
+            .then((ipcRequestResponse) => this.onIPCBus_TestPerformance(ipcRequestResponse.event, ipcRequestResponse.payload[0])) 
+            .catch();
         }
         else {
-            if (testParams.typeCommand == 'Request') {
-                _ipcBus.request(type, 2000, msgContent)
-                .then((ipcRequestResponse) => this.onIPCBus_TestPerformance(ipcRequestResponse.event, ipcRequestResponse.payload[0])) 
-                .catch();
-            }
-            else {
-                _ipcBus.send(type, msgContent);
-            }
+            _ipcBus.send(channel, ...msgContent);
         }
     }
 
@@ -95,7 +146,10 @@ var PerfTests = function _PerfTests(type, busPath) {
         var uuid;
         switch (typeof msgContent) {
             case 'object':
-                if (Buffer.isBuffer(msgContent)) {
+                if (Array.isArray(msgContent)) {
+                    uuid = msgContent[0].uuid;
+                }
+                else if (Buffer.isBuffer(msgContent)) {
                     uuid = msgContent.toString('utf8', 0, 30);
                 }
                 // in renderer process, Buffer = Uint8Array
@@ -119,7 +173,7 @@ var PerfTests = function _PerfTests(type, busPath) {
         if (ipcBusEvent.request) {
             ipcBusEvent.request.resolve([msgContent]);
         }
-        else {
+        else if (uuid) {
             var msgTestStop = { 
                 uuid: uuid,
                 type: _type, 
@@ -150,7 +204,8 @@ var PerfTests = function _PerfTests(type, busPath) {
     }
 
     function createUuid() {
-        return Math.random().toString(36).substring(2, 14) + Math.random().toString(36).substring(2, 14);
+        // return Math.random().toString(36).substring(2, 14) + Math.random().toString(36).substring(2, 14);
+        return _uuidFactory.v1();
     }
 }
 

@@ -20,7 +20,7 @@
                 // "--inspect-brk=50000",
                 "Main.js",
                 "--remote-debugging-port=8315",
-                // "--disable-sandbox"
+                "--disable-sandbox"
 
             ],
             "env": {

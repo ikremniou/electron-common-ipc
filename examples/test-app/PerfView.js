@@ -1,5 +1,7 @@
 'use strict';
 
+const perfTests = new PerfTests('view');
+
 var processToMaster;
 var transaction = 1;
 var generateReportTimer;
@@ -21,11 +23,14 @@ function startPerformance(type, bufferSize) {
     var typeCommandElt = document.querySelector('.typeCommand');
     var testParams =
         {
-            transaction: transaction,
+            transaction,
             typeCommand: typeCommandElt.options[typeCommandElt.selectedIndex].text,
             typeArgs: type,
             bufferSize: bufferSize
         };
+
+    perfTests.doPerformanceTests(testParams);
+
     processToMaster.send('start-performance-tests', testParams);
     return transaction;
 }
@@ -52,12 +57,12 @@ function doSave() {
         cvsRow.push('Time');
         cvsLike.push(cvsRow);
     }
-    results.forEach((result) => {
+    delays.forEach((result) => {
         if (result.start && result.stop) {
             let cvsRow = [];
             cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
             cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
-            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.type} => ${result.stop.type}`);
+            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
             cvsRow.push(result.delay);
             cvsLike.push(cvsRow);
         }
@@ -92,8 +97,9 @@ function doAutomaticTests(event) {
     doClear(null);
     let tests = [];
     let baseline = 0;
-    let step = 1000;
-    [1000000, 3000000, 5000000, 7000000, 10000000].forEach((size, index) => {
+    let step = 500;
+    // [1000000, 2500000, 5000000, 7500000, 10000000].forEach((size, index) => {
+    [1000000, 5000000, 10000000].forEach((size, index) => {
         for (let occ = 0; occ < 3; ++occ) {
             tests.push({ size: size, type: 'string', baseline });
             baseline += step;
@@ -104,7 +110,7 @@ function doAutomaticTests(event) {
             tests.push({ size: size, type: 'args', baseline });
             baseline += step;
         }
-        step += 1000;
+        step += 250;
     });
     var testStepElt = document.querySelector(".test-step");
     for (let i = 0; i < tests.length; ++i) {
@@ -122,11 +128,13 @@ function onIPCBus_TestPerformanceStart(ipcBusEvent, msgTestStart) {
     var uuid = msgTestStart.uuid;
     let result = results.get(uuid);
     if (!result) {
-        result = {};
+        result = [msgTestStart];
         results.set(uuid, result);
     }
-    result.start = msgTestStart;
-    if (result.stop) {
+    else {
+        result[0] = msgTestStart;
+    }
+    if (result.length > 1) {
         onIPCBus_AddTestPerformanceResult(result);
     }
 }
@@ -135,24 +143,33 @@ function onIPCBus_TestPerformanceStop(ipcBusEvent, msgTestStop) {
     var uuid = msgTestStop.uuid;
     let result = results.get(uuid);
     if (!result) {
-        result = {};
+        result = [undefined, msgTestStop];
         results.set(uuid, result);
     }
-    result.stop = msgTestStop;
-    if (result.start) {
+    else {
+        result.push(msgTestStop);
+    }
+    if (result[0]) {
         onIPCBus_AddTestPerformanceResult(result);
     }
 }
 
-function onIPCBus_AddTestPerformanceResult(result) {
-    var msgTestStart = result.start;
-    var msgTestStop = result.stop;
-    if (msgTestStart && msgTestStop) {
-        result.delay = msgTestStop.timeStamp - msgTestStart.timeStamp;
-        delays.push(result);
-        delays.sort((l, r) => l.delay - r.delay);
+function onIPCBus_AddTestPerformanceResult(results) {
+    var msgTestStart = results[0];
+    var msgTestStops = results.splice(1);
+    for (let i = 0; i < msgTestStops.length; ++i) {
+        var msgTestStop = msgTestStops[i];
+        if (msgTestStart && msgTestStop) {
+            const result = {
+                start: msgTestStart,
+                stop: msgTestStop,
+                delay: msgTestStop.timeStamp - msgTestStart.timeStamp
+            };
+            delays.push(result);
+            delays.sort((l, r) => l.delay - r.delay);
+            onIPCBus_TestPerformanceResult(result);
+        }
     }
-    onIPCBus_TestPerformanceResult(result);
 }
 
 function onIPCBus_TestPerformanceResult(result) {
@@ -226,5 +243,6 @@ ipcBus.connect()
         console.log('renderer : connected to ipcBus');
         ipcBus.on('test-performance-start', onIPCBus_TestPerformanceStart);
         ipcBus.on('test-performance-stop', onIPCBus_TestPerformanceStop);
+        perfTests.connect('view');
     });
 

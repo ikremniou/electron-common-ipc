@@ -36,7 +36,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     protected onConnectorShutdown() {
         this._connectCloseState.shutdown();
-        this._client.onConnectorShutdown();
+        this._client && this._client.onConnectorShutdown();
         this.removeClient();
     }
 

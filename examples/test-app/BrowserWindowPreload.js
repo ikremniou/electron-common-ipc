@@ -11,7 +11,7 @@ if (electronCommonIpc.PreloadElectronCommonIpc()) {
 window.ipcRenderer = require('electron').ipcRenderer;
 
 const PerfTests = require('./PerfTests.js');
-window.perfTests = new PerfTests('renderer');
+window.PerfTests = PerfTests;
 
 const ProcessConnector = require('./ProcessConnector.js');
 window.ProcessConnector = ProcessConnector;
