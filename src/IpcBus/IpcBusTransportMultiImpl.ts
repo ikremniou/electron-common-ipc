@@ -73,6 +73,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
+            this.cancelRequest(client);
             this.removeChannel(client);
             if (this._subscriptions.getChannelsCount() === 0) {
                 this._subscriptions.client = null;

@@ -191,7 +191,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any, webContentsTarget?: WebContentsTarget): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
+                const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : -1;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {

@@ -1,13 +1,13 @@
 import type * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, SocketWriter } from 'socket-serializer';
+import { IpcPacketWriter, IpcPacketBufferList, SocketWriter, WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { CreateUniqId } from '../IpcBusUtils';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
 
-import { IpcBusBrokerImpl, WriteBuffersToSocket } from './IpcBusBrokerImpl';
+import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */

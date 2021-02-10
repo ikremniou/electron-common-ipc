@@ -36,11 +36,14 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     }
 
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return super.connect(client, options)
-        .then((peer) => {
-            this._client = client;
-            return peer;
-        });
+        if (this._client == null) {
+            return super.connect(client, options)
+            .then((peer) => {
+                this._client = client;
+                return peer;
+            });
+        }
+        return Promise.resolve(this._client.peer);
     }
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {

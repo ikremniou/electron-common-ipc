@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -9,7 +9,6 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { WriteBuffersToSocket } from './IpcBusBrokerImpl';
 
 // Implementation for Node process
 /** @internal */

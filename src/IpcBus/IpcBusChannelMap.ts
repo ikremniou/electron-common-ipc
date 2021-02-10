@@ -299,10 +299,9 @@ export class ChannelConnectionMap<T, K extends string | number> {
 
     getConns(): ChannelConnectionRef<T, K>[] {
         // @ts-ignore really an edge case for the compiler that has not been implemented
-        const conns: Record<K, M> = {};
+        const conns: Record<K, ChannelConnectionRef<T, K>> = {};
         this._channelsMap.forEach((connsMap) => {
             connsMap.forEach((connData) => {
-                // @ts-ignore really an edge case for the compiler that has not been implemented
                 conns[connData.key] = connData;
             });
         });

@@ -1,10 +1,11 @@
 import type * as net from 'net';
 
 import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBrokerImpl, WriteBuffersToSocket } from '../node/IpcBusBrokerImpl';
+import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 

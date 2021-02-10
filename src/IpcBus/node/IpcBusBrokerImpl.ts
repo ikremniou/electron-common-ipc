@@ -1,6 +1,7 @@
 import * as net from 'net';
 
 import type { IpcPacketBufferList } from 'socket-serializer';
+import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import type * as Broker from './IpcBusBroker';
@@ -10,32 +11,6 @@ import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
-
-export function WriteBuffersToSocket(socket: net.Socket, buffers: Buffer[]) {
-    // Taking idea from Node.js - EventEmitter.emit
-    const len = buffers.length;
-    switch (len) {
-        case 0:
-            break;
-        case 1:
-            socket.write(buffers[0]);
-            break;
-        case 2:
-            socket.write(buffers[0]);
-            socket.write(buffers[1]);
-            break;
-        case 3:
-            socket.write(buffers[0]);
-            socket.write(buffers[1]);
-            socket.write(buffers[2]);
-            break;
-        default:
-            for (let i = 0; i < len; ++i) {
-                socket.write(buffers[i]);
-            }
-            break;
-    }
-}
 
 /** @internal */
 export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {

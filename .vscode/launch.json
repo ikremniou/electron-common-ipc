@@ -278,7 +278,17 @@
                 "${workspaceRoot}/lib/**/*.js"
             ],
             "trace": false
-        }
-
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "update-dev",
+            "cwd": "${workspaceFolder}/tools", 
+            "program": "${workspaceFolder}/tools/update-dev.js",
+            "runtimeArgs": [
+            ],
+            "skipFiles": [
+            ]
+        },
     ]
 }
