@@ -26,7 +26,9 @@ interface WebContentsTarget {
 }
 
 function getKeyForTarget(webContentsTarget: WebContentsTarget) {
-    return (webContentsTarget.sender.id << 8) + webContentsTarget.frameId;
+    const key = (webContentsTarget.sender.id << 8) + webContentsTarget.frameId;
+    // if (key == 0) throw 'getKeyForTarget';
+    return key;
 }
 
 // Even if electron is not use in a Node process
@@ -184,11 +186,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
         const rawContent = ipcPacketBufferCore.getRawData() as IpcBusRendererContent;
         // IpcBusRendererContent.PackRawContent(rawContent);
-        this.broadcastRawData(ipcBusCommand, rawContent);
+        this._broadcastData(undefined, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
     }
 
     // From renderer transport
-    private _broadcastData(ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any, webContentsTarget?: WebContentsTarget): boolean {
+    private _broadcastData(webContentsTarget: WebContentsTarget, ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : -1;
@@ -218,13 +220,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    broadcastRawData(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData, webContentsTarget?: WebContentsTarget) {
-        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget);
+    broadcastRawData(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
+        this._broadcastData(undefined, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
     }
 
     // From renderer transport
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any, webContentsTarget?: WebContentsTarget) {
-        this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget);
+    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any) {
+        this._broadcastData(undefined, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
     }
 
     private _onRendererAdminReceived(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand): boolean {
@@ -251,7 +253,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            if (this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent, webContentsTarget) === false) {
+            if (this._broadcastData(webContentsTarget, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent) === false) {
                 IpcBusRendererContent.FixRawContent(rawContent);
                 this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
             }
@@ -261,7 +263,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContentsTarget = event as WebContentsTarget;
         if (this._onRendererAdminReceived(webContentsTarget, ipcBusCommand) === false) {
-            if (this._broadcastData(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args, webContentsTarget) === false) {
+            if (this._broadcastData(webContentsTarget, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args) === false) {
                 this._bridge._onRendererArgsReceived(ipcBusCommand, args);
             }
         }
