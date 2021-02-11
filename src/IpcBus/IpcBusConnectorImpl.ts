@@ -34,6 +34,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return this._process;
     }
 
+    protected onConnectorBeforeShutdown() {
+        this._client && this._client.onConnectorBeforeShutdown();
+    }
+
     protected onConnectorShutdown() {
         this._connectCloseState.shutdown();
         this._client && this._client.onConnectorShutdown();

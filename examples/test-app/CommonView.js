@@ -354,7 +354,7 @@ if (getParameterByName('type') === 'renderer') {
     //     bigpayload = JSON.stringify(txt);
     // });
 
-    perfTests = new PerfTests('renderer');
+    var perfTests = new PerfTests('renderer');
     ipcBus.connect()
         .then(() => {
             console.log('renderer : connected to ipcBus');

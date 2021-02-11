@@ -202,7 +202,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        this.removeClient();
+                        this.onConnectorShutdown();
                         resolve();
                     };
                     // Below zero = infinite
@@ -213,6 +213,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                             }
                             const msg = `[IPCBusTransport:Net ${this._messageId}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                            this.onConnectorShutdown();
                             reject(msg);
                         }, options.timeoutDelay);
                     }
@@ -220,6 +221,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     for (let key in socketLocalBinds) {
                         socket.addListener(key, socketLocalBinds[key]);
                     }
+                    this.onConnectorBeforeShutdown();
                     this._reset(true);
                 }
                 else {

@@ -99,7 +99,8 @@ function doAutomaticTests(event) {
     let baseline = 0;
     let step = 500;
     // [1000000, 2500000, 5000000, 7500000, 10000000].forEach((size, index) => {
-    [1000000, 5000000, 10000000].forEach((size, index) => {
+    // [1000000, 5000000, 10000000].forEach((size, index) => {
+    [1000000].forEach((size, index) => {
         for (let occ = 0; occ < 3; ++occ) {
             tests.push({ size: size, type: 'string', baseline });
             baseline += step;
@@ -124,35 +125,35 @@ function doAutomaticTests(event) {
     }
 }
 
-function onIPCBus_TestPerformanceStart(ipcBusEvent, msgTestStart) {
-    var uuid = msgTestStart.uuid;
-    let result = results.get(uuid);
-    if (!result) {
-        result = [msgTestStart];
-        results.set(uuid, result);
-    }
-    else {
-        result[0] = msgTestStart;
-    }
-    if (result.length > 1) {
-        onIPCBus_AddTestPerformanceResult(result);
-    }
-}
+// function onIPCBus_TestPerformanceStart(ipcBusEvent, msgTestStart) {
+//     var uuid = msgTestStart.uuid;
+//     let result = results.get(uuid);
+//     if (!result) {
+//         result = [msgTestStart];
+//         results.set(uuid, result);
+//     }
+//     else {
+//         result[0] = msgTestStart;
+//     }
+//     if (result.length > 1) {
+//         onIPCBus_AddTestPerformanceResult(result);
+//     }
+// }
 
-function onIPCBus_TestPerformanceStop(ipcBusEvent, msgTestStop) {
-    var uuid = msgTestStop.uuid;
-    let result = results.get(uuid);
-    if (!result) {
-        result = [undefined, msgTestStop];
-        results.set(uuid, result);
-    }
-    else {
-        result.push(msgTestStop);
-    }
-    if (result[0]) {
-        onIPCBus_AddTestPerformanceResult(result);
-    }
-}
+// function onIPCBus_TestPerformanceStop(ipcBusEvent, msgTestStop) {
+//     var uuid = msgTestStop.uuid;
+//     let result = results.get(uuid);
+//     if (!result) {
+//         result = [undefined, msgTestStop];
+//         results.set(uuid, result);
+//     }
+//     else {
+//         result.push(msgTestStop);
+//     }
+//     if (result[0]) {
+//         onIPCBus_AddTestPerformanceResult(result);
+//     }
+// }
 
 function onIPCBus_AddTestPerformanceResult(results) {
     var msgTestStart = results[0];
@@ -241,8 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
 ipcBus.connect()
     .then(() => {
         console.log('renderer : connected to ipcBus');
-        ipcBus.on('test-performance-start', onIPCBus_TestPerformanceStart);
-        ipcBus.on('test-performance-stop', onIPCBus_TestPerformanceStop);
-        perfTests.connect('view');
+        // ipcBus.on('test-performance-start', onIPCBus_TestPerformanceStart);
+        // ipcBus.on('test-performance-stop', onIPCBus_TestPerformanceStop);
+        perfTests.connect('view', true);
     });
 

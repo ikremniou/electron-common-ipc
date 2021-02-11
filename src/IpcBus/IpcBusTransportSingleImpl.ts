@@ -27,10 +27,19 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 
+    onConnectorShutdown() {
+        super.onConnectorShutdown();
+        this._client = null;
+    }
+
     onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._client) {
-            this.removeChannel(this._client);
+            this._postCommand({
+                peer: this._client.peer,
+                kind: IpcBusCommand.Kind.RemoveListeners,
+                channel: ''
+            });
             this._client = null;
         }
     }

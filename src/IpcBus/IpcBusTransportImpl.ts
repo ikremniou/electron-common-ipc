@@ -84,7 +84,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _peer: Client.IpcBusPeer;
     protected _logActivate: boolean;
 
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
+    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _postCommand: Function;
@@ -98,9 +98,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name: 'IPCTransport',
             process: connector.process
         };
-        this._requestFunctions = new Map<string, DeferredRequestPromise>();
+        this._requestFunctions = new Map();
         this._postDirectMessage = this._postCommand = () => { };
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
+        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
     }
 
     get peer(): Client.IpcBusPeer {
@@ -340,13 +340,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connectCloseState.connect(() => {
             return this._connector.handshake(this, options)
                 .then((handshake) => {
-                    const peer = this.createPeer(handshake.process, options.peerName);
                     this._logActivate = handshake.logLevel > 0;
                     // Connect to ... connector
                     this._postCommand = this._connector.postCommand.bind(this._connector);
                     this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);
-                    return peer;
+                    return handshake;
                 });
+        })
+        .then((handshake) => {
+            const peer = this.createPeer(handshake.process, options.peerName);
+            return peer;
         });
     }
 

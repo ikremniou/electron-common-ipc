@@ -1,35 +1,32 @@
 const path = require('path');
-const copydir = require('copy-dir');
+// https://github.com/pillys/copy-dir
+const fse = require('fs-extra');
 
 function LongestCommonPrefix(arr) {
     // sort() method arranges array elements alphabetically
-    var sortArr = arr.sort();
+    const sortArr = arr.sort();
     
     // Get first array element
-    var arrFirstElem = arr[0];
+    const arrFirstElem = arr[0];
   
     // Get the last array element length minus one
-    var arrLastElem = sortArr[sortArr.length - 1];
+    const arrLastElem = sortArr[sortArr.length - 1];
     
     // Get first array element length
-    var arrFirstElemLength = arrFirstElem.length;
-    
-    // Set "i" incrementer to 0
-    var i= 0;
+    const arrFirstElemLength = arrFirstElem.length;
     
     // while "i" is less than the length of the first array element AND
     // the first array element character position matches the last array character position
     // increment "i" by one
+    let i = 0;
     while(i < arrFirstElemLength && arrFirstElem.charAt(i) === arrLastElem.charAt(i)) {
-      i++;
+      ++i;
     }
     
     // Console log the substring of the first element of the array starting with
     // index zero and going all the way to just below index "i"
     return arrFirstElem.substring(0, i);
 }
-
-
 
 function CreateToDirs(libraryName, libraryOutdir) {
     const WorkspaceDir = 'C:\\kobra-local\\UniversalContainer\\dev';
@@ -50,8 +47,16 @@ function CopyDir(fromDir, toDirs) {
     toDirs.forEach((topDir) => {
         console.log(`copying to \"${topDir.substr(commonDir.length)}\"`);
         try {
-            copydir.sync(fromDir, topDir)
-            console.log(`done`);
+            if (fse.existsSync(topDir)) {
+                fse.copySync(fromDir, topDir, {
+                    overwrite : true,
+                    preserveTimestamps : true
+                });
+                console.log(`done`);
+            }
+            else {
+                console.warn(`targeted dir does not exist`);
+            }
         }
         catch (err) {
             console.error(err.message);

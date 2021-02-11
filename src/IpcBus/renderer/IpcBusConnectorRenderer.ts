@@ -53,8 +53,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     protected onConnectorBeforeShutdown() {
+        super.onConnectorBeforeShutdown();
         if (this._onIpcEventRawDataReceived) {
-            this._client.onConnectorBeforeShutdown();
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onIpcEventRawDataReceived);
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._onIpcEventArgsReceived);
             this._onIpcEventRawDataReceived = null;
@@ -130,7 +130,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     shutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             this.onConnectorBeforeShutdown();
-            this.removeClient();
+            this.onConnectorShutdown();
             return Promise.resolve();
         });
     }

@@ -4,7 +4,13 @@ function pairwise(list) {
         rest  = list.slice(1),
         pairs = rest.map(function (x) { return [first, x]; });
     return pairs.concat(pairwise(rest));
-  }
+}
+
+function onlyUnique(value, index, self) {
+    return self.findIndex((target) => target.peer.id === value.peer.id) === index;
+}
+
+const uuidPattern = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
 var PerfTests = function _PerfTests(type, busPath) {
     const _ipcBusModule = require('electron-common-ipc');
@@ -13,15 +19,22 @@ var PerfTests = function _PerfTests(type, busPath) {
     var _type = type;
     var _uuid = createUuid();
     var _testsPending = [];
+    var _testsInProgress = new Map();
+    var _testsResults = new Map();
 
-    this.connect = function(peerName) {
+    this.connect = function(peerName, view) {
         _ipcBus.connect(busPath, { peerName })
             .then(() => {
-                _ipcBus.on('test-performance-ping', (ipcBusEvent) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
-                _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
-                _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, testParams, masterPeer) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams, channel));
-                _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
-                // _ipcBus.on('test-performance', (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
+                if (!view) {
+                    _ipcBus.on('test-performance-ping', (ipcBusEvent) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
+                    _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
+                    _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, uuid, testParams, channel) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, uuid, testParams, channel));
+                    _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
+                }
+                else {
+                    _ipcBus.on('test-performance-start', (ipcBusEvent, msgTestStart) => this.onIPCBus_CollectStart(ipcBusEvent, msgTestStart));
+                    _ipcBus.on('test-performance-stop', (ipcBusEvent, msgTestStop) => this.onIPCBus_CollectStop(ipcBusEvent, msgTestStop));
+                }
             });
     }
 
@@ -32,18 +45,21 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.doPerformanceTests = function _doPerformanceTests(testParams) {
         // _ipcBus.send('test-performance-run', testParams, masterPeers);
         let targets = [];
-        _ipcBus.on('test-performance-pong', (event, channel) => {
+        function collectTarget(event, channel) {
             targets.push({ peer: event.sender, channel });
-        });
+        }
+        _ipcBus.on('test-performance-pong', collectTarget);
         _ipcBus.send('test-performance-ping');
         setTimeout(() => {
-            _ipcBus.removeAllListeners('test-performance-pong');
-            targets = targets.filter(target => ['node', 'renderer', 'main'].includes(target.peer.process.type));
+            _ipcBus.removeListener('test-performance-pong', collectTarget);
+            targets = targets.filter(target => ['node', 'renderer', 'main'].includes(target.peer.process.type)).filter(onlyUnique);
             let masterTargets = [];
             ['node', 'renderer', 'main'].forEach(type => {
                 const index = targets.findIndex((target) => target.peer.process.type === type);
-                masterTargets.push(targets[index]);
-                targets.splice(index, 1);
+                if (index >= 0) {
+                    masterTargets.push(targets[index]);
+                    targets.splice(index, 1);
+                }
             });
             masterTargets = masterTargets.filter(value => value);
 
@@ -56,12 +72,12 @@ var PerfTests = function _PerfTests(type, busPath) {
                 }
             });
             combinations.forEach(combination => {
-                _testsPending.push({ testParams, uuid: createUuid(), combination });
+                let uuid = createUuid();
+                uuid = uuid + uuidPattern.substring(0, uuidPattern.length - uuid.length);
+                _testsPending.push({ uuid, testParams, combination });
             });
 
-            if (_ipcBus.listenerCount('test-performance-start') === 0) {
-                _ipcBus.on('test-performance-start', (ipcBusEvent) => this.onIPCBus_CollectStart(ipcBusEvent, msgTestStart));
-                _ipcBus.on('test-performance-stop', (ipcBusEvent) => this.onIPCBus_CollectStop(ipcBusEvent, msgTestStop));
+            if (_testsInProgress.size === 0) {
                 this.loopTest();
             }
 
@@ -71,32 +87,56 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.loopTest = function() {
         const test = _testsPending.shift();
         if (test) {
-            _ipcBus.send('test-performance-from-' + test.combination[0].channel, test.uuid, test.testParams, test.combination[1].channel);
+            _testsInProgress.set(test.uuid, test);
+            _ipcBus.send(
+                'test-performance-from-' + test.combination[0].channel,
+                test.uuid, test.testParams,
+                'test-performance-to-' + test.combination[1].channel
+            );
             return true;
         }
         return false;
     }
 
-    this.onIPCBus_CollectStart = function(ipcBusEvent, msgTestStart) {
+    this.onTestProgress = function(testResult) {
+        if (testResult.start && testResult.stop) {
+            testResult.delay = testResult.stop.timeStamp - testResult.start.timeStamp;
+            console.log(`testDone:${JSON.stringify(testResult, null, 4)}`);
+            if (!this.loopTest()) {
+                // _ipcBus.removeAllListeners('test-performance-start');
+                // _ipcBus.removeAllListeners('test-performance-stop');
+            }
+        }
+    }
 
+    this.onIPCBus_CollectStart = function(ipcBusEvent, msgTestStart) {
+        console.log(`testStart:${JSON.stringify(msgTestStart, null, 4)}`);
+        const test = _testsResults.get(msgTestStart.uuid);
+        if (test) {
+            test.start = msgTestStart;
+            this.onTestProgress(test);
+        }
+        else {
+            _testsResults.set(msgTestStart.uuid, { start: msgTestStart });
+        }
     }
 
     this.onIPCBus_CollectStop = function(ipcBusEvent, msgTestStop) {
-        if (!this.loopTest()) {
-            _ipcBus.removeAllListeners('test-performance-start');
-            _ipcBus.removeAllListeners('test-performance-stop');
-    }
+        console.log(`testStop:${JSON.stringify(msgTestStop, null, 4)}`);
+        const test = _testsResults.get(msgTestStop.uuid);
+        if (test) {
+            test.stop = msgTestStop;
+            this.onTestProgress(test);
+        }
+        else {
+            _testsResults.set(msgTestStop.uuid, { stop: msgTestStop });
+        }
     }
 
-    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, testParams, channel) {
-        var uuid = createUuid();
-        var uuidPattern = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-        uuid = uuid + uuidPattern.substring(0, 30 - uuid.length)
-
+    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, uuid, testParams, channel) {
         var msgTestStart = { 
             uuid: uuid,
             test: testParams,
-            type: _type, 
             peer: _ipcBus.peer
         };
 
@@ -150,19 +190,21 @@ var PerfTests = function _PerfTests(type, busPath) {
                     uuid = msgContent[0].uuid;
                 }
                 else if (Buffer.isBuffer(msgContent)) {
-                    uuid = msgContent.toString('utf8', 0, 30);
+                    uuid = msgContent.toString('utf8', 0, uuidPattern.length * 3);
+                    uuid = uuid.substr(0, uuidPattern.length);
                 }
                 // in renderer process, Buffer = Uint8Array
                 else if (msgContent instanceof Uint8Array) {
                     var buf = Buffer.from(msgContent.buffer)
-                    uuid = buf.toString('utf8', 0, 30);
+                    uuid = buf.toString('utf8', 0, uuidPattern.length * 3);
+                    uuid = uuid.substr(0, uuidPattern.length);
                 }
                 else {
                     uuid = msgContent.uuid;
                 }
                 break;
             case 'string':
-                uuid = msgContent.substring(0, 30);
+                uuid = msgContent.substring(0, uuidPattern.length);
                 break;
             case 'number':
                 break;
@@ -176,7 +218,6 @@ var PerfTests = function _PerfTests(type, busPath) {
         else if (uuid) {
             var msgTestStop = { 
                 uuid: uuid,
-                type: _type, 
                 timeStamp: dateNow,
                 peer: _ipcBus.peer
             };
