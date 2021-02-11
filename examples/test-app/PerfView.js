@@ -106,7 +106,7 @@ function doSave() {
         if (result.start && result.stop) {
             let cvsRow = [];
             cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
-            if (msgTestStart.peer.id === msgTestStop.peer.id) {
+            if (result.start.peer.id === result.stop.peer.id) {
                 cvsRow.push(`${result.start.peer.process.type}`);
             }
             else {
@@ -122,7 +122,7 @@ function doSave() {
 
 function onTestProgress(testResult, testResults, size) {
     var testStepElt = document.querySelector(".test-step");
-    testStepElt.value = `${size} => ${testResults.size}`;
+    testStepElt.value = `${size} => ${testResults.length}`;
     delays.push(testResult);
     delays.sort((l, r) => l.delay - r.delay);
     onIPCBus_TestPerformanceResult(testResult);
@@ -190,12 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
     var memSlide = document.querySelector(".memory-slide");
     var memVal = document.querySelector(".memory-value");
     if (memSlide && memVal) {
+        var memVal = document.querySelector(".memory-value");
         memSlide.addEventListener("change", () => {
             memVal.value = memSlide.value;
         });
         memVal.addEventListener("change", () => {
             memSlide.value = memVal.value;
         });
+        memVal.value = 1024 * 1024;
     }
 });
 

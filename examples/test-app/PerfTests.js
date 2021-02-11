@@ -10,17 +10,28 @@ function onlyUnique(value, index, self) {
     return self.findIndex((target) => target.peer.id === value.peer.id) === index;
 }
 
+function Uint8ArrayToBuffer(rawBuffer) {
+    // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
+    // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
+    const arr = rawBuffer;
+    rawBuffer = Buffer.from(arr.buffer);
+    if (arr.byteLength !== arr.buffer.byteLength) {
+        // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
+        rawBuffer = rawBuffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
+    }
+    return rawBuffer;
+}
+
 const uuidPattern = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
 var PerfTests = function _PerfTests(type, busPath) {
     const _ipcBusModule = require('electron-common-ipc');
     const _uuidFactory = require('uuid');
     var _ipcBus = _ipcBusModule.IpcBusClient.Create();
-    var _type = type;
     var _uuid = createUuid();
     var _testsPending = [];
     var _testsInProgress = new Map();
-    var _testsResults = new Map();
+    var _testsResults = [];
     var _testProgressCB;
 
     this.connect = function(peerName, view) {
@@ -89,6 +100,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.loopTest = function() {
         const test = _testsPending.shift();
         if (test) {
+            console.log(`testRun:${JSON.stringify(test, null, 4)}`);
             _testsInProgress.set(test.uuid, test);
             _ipcBus.send(
                 'test-performance-from-' + test.combination[0].channel,
@@ -103,7 +115,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.clear = function() {
         _testsPending = [];
         _testsInProgress.clear();
-        _testsResults.clear();
+        _testsResults = [];
     }
 
     this.onTestProgressCB = function(cb) {
@@ -113,10 +125,10 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.onTestProgress = function(testResult) {
         if (testResult.start && testResult.stop) {
             if (_testsInProgress.delete(testResult.uuid)) {
-                _testsResults.set(testResult.uuid, testResult);
+                _testsResults.push(testResult);
                 testResult.delay = testResult.stop.timeStamp - testResult.start.timeStamp;
                 console.log(`testDone:${JSON.stringify(testResult, null, 4)}`);
-                _testProgressCB && _testProgressCB(testResult, Array.from(_testsResults.values()), _testsPending.length);
+                _testProgressCB && _testProgressCB(testResult, _testsResults, _testsPending.length);
                 if (!this.loopTest()) {
                     // _ipcBus.removeAllListeners('test-performance-start');
                     // _ipcBus.removeAllListeners('test-performance-stop');
@@ -211,7 +223,7 @@ var PerfTests = function _PerfTests(type, busPath) {
                 }
                 // in renderer process, Buffer = Uint8Array
                 else if (msgContent instanceof Uint8Array) {
-                    var buf = Buffer.from(msgContent.buffer)
+                    var buf = Uint8ArrayToBuffer(msgContent);
                     uuid = buf.toString('utf8', 0, uuidPattern.length * 3);
                     uuid = uuid.substr(0, uuidPattern.length);
                 }
