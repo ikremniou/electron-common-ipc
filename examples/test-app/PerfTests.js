@@ -21,6 +21,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     var _testsPending = [];
     var _testsInProgress = new Map();
     var _testsResults = new Map();
+    var _testProgressCB;
 
     this.connect = function(peerName, view) {
         _ipcBus.connect(busPath, { peerName })
@@ -65,6 +66,7 @@ var PerfTests = function _PerfTests(type, busPath) {
 
             const combinations = pairwise(masterTargets);
             combinations.push(...pairwise(masterTargets.reverse()));
+            combinations.push(...masterTargets.map(target => [target, target]));
             masterTargets.forEach(target => {
                 const similarTarget = targets.find((curr) => curr.peer.process.type === target.peer.process.type);
                 if (similarTarget) {
@@ -98,38 +100,52 @@ var PerfTests = function _PerfTests(type, busPath) {
         return false;
     }
 
+    this.clear = function() {
+        _testsPending = [];
+        _testsInProgress.clear();
+        _testsResults.clear();
+    }
+
+    this.onTestProgressCB = function(cb) {
+        _testProgressCB = cb;
+    }
+
     this.onTestProgress = function(testResult) {
         if (testResult.start && testResult.stop) {
-            testResult.delay = testResult.stop.timeStamp - testResult.start.timeStamp;
-            console.log(`testDone:${JSON.stringify(testResult, null, 4)}`);
-            if (!this.loopTest()) {
-                // _ipcBus.removeAllListeners('test-performance-start');
-                // _ipcBus.removeAllListeners('test-performance-stop');
+            if (_testsInProgress.delete(testResult.uuid)) {
+                _testsResults.set(testResult.uuid, testResult);
+                testResult.delay = testResult.stop.timeStamp - testResult.start.timeStamp;
+                console.log(`testDone:${JSON.stringify(testResult, null, 4)}`);
+                _testProgressCB && _testProgressCB(testResult, Array.from(_testsResults.values()), _testsPending.length);
+                if (!this.loopTest()) {
+                    // _ipcBus.removeAllListeners('test-performance-start');
+                    // _ipcBus.removeAllListeners('test-performance-stop');
+                }
             }
         }
     }
 
     this.onIPCBus_CollectStart = function(ipcBusEvent, msgTestStart) {
         console.log(`testStart:${JSON.stringify(msgTestStart, null, 4)}`);
-        const test = _testsResults.get(msgTestStart.uuid);
+        const test = _testsInProgress.get(msgTestStart.uuid);
         if (test) {
             test.start = msgTestStart;
             this.onTestProgress(test);
         }
         else {
-            _testsResults.set(msgTestStart.uuid, { start: msgTestStart });
+            _testsInProgress.set(msgTestStart.uuid, { start: msgTestStart });
         }
     }
 
     this.onIPCBus_CollectStop = function(ipcBusEvent, msgTestStop) {
         console.log(`testStop:${JSON.stringify(msgTestStop, null, 4)}`);
-        const test = _testsResults.get(msgTestStop.uuid);
+        const test = _testsInProgress.get(msgTestStop.uuid);
         if (test) {
             test.stop = msgTestStop;
             this.onTestProgress(test);
         }
         else {
-            _testsResults.set(msgTestStop.uuid, { stop: msgTestStop });
+            _testsInProgress.set(msgTestStop.uuid, { stop: msgTestStop });
         }
     }
 
