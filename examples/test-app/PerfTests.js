@@ -1,3 +1,9 @@
+const testTimeout = 2000;
+
+function isArrayBuffer(value) {
+    return (value instanceof ArrayBuffer || toString.call(value) === '[object ArrayBuffer]');
+  }
+
 function pairwise(list) {
     if (list.length < 2) { return []; }
     var first = list[0],
@@ -38,14 +44,14 @@ var PerfTests = function _PerfTests(type, busPath) {
         _ipcBus.connect(busPath, { peerName })
             .then(() => {
                 if (!view) {
-                    _ipcBus.on('test-performance-ping', (ipcBusEvent) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
-                    _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
-                    _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, uuid, testParams, channel) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, uuid, testParams, channel));
-                    _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));
+                    _ipcBus.on('test-performance-ping', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
+                    _ipcBus.on('test-performance-trace', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, ...args));
+                    _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, ...args));
+                    _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformance(ipcBusEvent, ...args));
                 }
                 else {
-                    _ipcBus.on('test-performance-start', (ipcBusEvent, msgTestStart) => this.onIPCBus_CollectStart(ipcBusEvent, msgTestStart));
-                    _ipcBus.on('test-performance-stop', (ipcBusEvent, msgTestStop) => this.onIPCBus_CollectStop(ipcBusEvent, msgTestStop));
+                    _ipcBus.on('test-performance-start', (ipcBusEvent, ...args) => this.onIPCBus_CollectStart(ipcBusEvent, ...args));
+                    _ipcBus.on('test-performance-stop', (ipcBusEvent, ...args) => this.onIPCBus_CollectStop(ipcBusEvent, ...args));
                 }
             });
     }
@@ -102,11 +108,24 @@ var PerfTests = function _PerfTests(type, busPath) {
         if (test) {
             console.log(`testRun:${JSON.stringify(test, null, 4)}`);
             _testsInProgress.set(test.uuid, test);
-            _ipcBus.send(
-                'test-performance-from-' + test.combination[0].channel,
-                test.uuid, test.testParams,
-                'test-performance-to-' + test.combination[1].channel
-            );
+            const testChannel = 'test-performance-' + test.uuid;
+            _ipcBus.request(
+                'test-performance-to-' + test.combination[1].channel,
+                testTimeout,
+                test.uuid,
+                testChannel
+            )
+            .then(() => {
+                _ipcBus.send(
+                    'test-performance-from-' + test.combination[0].channel,
+                    test.uuid,
+                    testChannel,
+                    test.testParams,
+                );
+            })
+            .catch(() => {
+                this.loopTest();
+            });
             return true;
         }
         return false;
@@ -161,11 +180,11 @@ var PerfTests = function _PerfTests(type, busPath) {
         }
     }
 
-    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, uuid, testParams, channel) {
-        var msgTestStart = { 
+    this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, uuid, channel, testParams) {
+        var msgTestStart = {
             uuid: uuid,
-            test: testParams,
-            peer: _ipcBus.peer
+            peer: _ipcBus.peer,
+            test: testParams
         };
 
         var msgContent;
@@ -209,47 +228,21 @@ var PerfTests = function _PerfTests(type, busPath) {
         }
     }
 
-    this.onIPCBus_TestPerformance = function _onIPCBus_TestPerformance(ipcBusEvent, msgContent) {
-        var dateNow = Date.now();
-        var uuid;
-        switch (typeof msgContent) {
-            case 'object':
-                if (Array.isArray(msgContent)) {
-                    uuid = msgContent[0].uuid;
-                }
-                else if (Buffer.isBuffer(msgContent)) {
-                    uuid = msgContent.toString('utf8', 0, uuidPattern.length * 3);
-                    uuid = uuid.substr(0, uuidPattern.length);
-                }
-                // in renderer process, Buffer = Uint8Array
-                else if (msgContent instanceof Uint8Array) {
-                    var buf = Uint8ArrayToBuffer(msgContent);
-                    uuid = buf.toString('utf8', 0, uuidPattern.length * 3);
-                    uuid = uuid.substr(0, uuidPattern.length);
-                }
-                else {
-                    uuid = msgContent.uuid;
-                }
-                break;
-            case 'string':
-                uuid = msgContent.substring(0, uuidPattern.length);
-                break;
-            case 'number':
-                break;
-            case 'boolean':
-                break;
-        }
-            
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve([msgContent]);
-        }
-        else if (uuid) {
+    this.onIPCBus_TestPerformance = function _onIPCBus_TestPerformance(ipcBusEvent, uuid, channel) {
+        const catchTest = function(ipcBusEvent, ...args) {
             var msgTestStop = { 
                 uuid: uuid,
-                timeStamp: dateNow,
+                timeStamp: Date.now(),
                 peer: _ipcBus.peer
             };
             _ipcBus.send('test-performance-stop', msgTestStop);
+        };
+        _ipcBus.once(channel, catchTest);
+        setTimeout(() => {
+            _ipcBus.removeListener(channel, catchTest);
+        }, testTimeout);
+        if (ipcBusEvent.request) {
+            ipcBusEvent.request.resolve();
         }
     }
 

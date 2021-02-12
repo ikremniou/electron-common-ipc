@@ -108,11 +108,12 @@ function doSave() {
             cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
             if (result.start.peer.id === result.stop.peer.id) {
                 cvsRow.push(`${result.start.peer.process.type}`);
+                cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type}`);
             }
             else {
                 cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
+                cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
             }
-            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
             cvsRow.push(result.delay);
             cvsLike.push(cvsRow);
         }
