@@ -58,6 +58,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onIpcEventRawDataReceived);
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._onIpcEventArgsReceived);
             this._onIpcEventRawDataReceived = null;
+            this._onIpcEventArgsReceived = null;
         }
     }
 
@@ -88,6 +89,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
             };
         }
+        console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
         // Keep the this._process ref intact as shared with client peers
         this._process = Object.assign(this._process, handshake.process);
@@ -138,7 +140,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._useElectronSerialization) {
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
+            if (webContentsTargetIds) {//  && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
             }
             else {
@@ -147,10 +149,15 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const packetOut = new IpcPacketBuffer();
-            packetOut.serialize([ipcBusCommand, args]);
+            if (args) {
+                packetOut.serialize([ipcBusCommand, args]);
+            }
+            else {
+                packetOut.serialize([ipcBusCommand]);
+            }
             const rawContent = packetOut.getRawData();
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
+            if (webContentsTargetIds && (webContentsTargetIds.frameid <= IpcBusUtils.TopFrameId)) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
             }
             else {
@@ -167,7 +174,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const packetOut = new IpcPacketBuffer();
-            packetOut.serialize([ipcBusCommand, args]);
+            if (args) {
+                packetOut.serialize([ipcBusCommand, args]);
+            }
+            else {
+                packetOut.serialize([ipcBusCommand]);
+            }
             const rawContent = packetOut.getRawData();
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
         }

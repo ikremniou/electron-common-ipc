@@ -49,25 +49,35 @@ export function PreloadElectronCommonIpc(iframeSupport: boolean = false): boolea
 
 function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = false): boolean {
     const windowLocal = window as any;
-    try {
-        // Will work in a preload or with nodeIntegration=true
-        const electron = require('electron');
-        if (electron && electron.ipcRenderer) {
-            // console.log(electron.webFrame);
-            // console.log(electron.webFrame.routingId);
-            windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                    trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
-                    const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
-                    return ipcBusClient;
-                };
+    if (windowLocal.self === windowLocal.top) {
+        try {
+            // Will work in a preload or with nodeIntegration=true
+            const electron = require('electron');
+            if (electron && electron.ipcRenderer) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                windowLocal.ElectronCommonIpc.Process = process || {};
+                if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
+                        // try {
+                        //     console.warn(`electron-common-ipc:process:${JSON.stringify(windowLocal.ElectronCommonIpc.Process)}`);
+                        //     console.warn(`electron-common-ipc:process.isMainFrame:${JSON.stringify(windowLocal.ElectronCommonIpc.Process.isMainFrame)}`);
+                        // }
+                        // catch(err){};
+                        // try {
+                        //     console.warn(`electron-common-ipc:electron.webFrame:${JSON.stringify(electron.webFrame)}`);
+                        // }
+                        // catch(err){};
+                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                        // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
+                        const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
+                        return ipcBusClient;
+                    };
+                }
             }
         }
-    }
-    catch (_) {
+        catch (_) {
+        }
     }
     return IsElectronCommonIpcAvailable();
 }
