@@ -105,14 +105,14 @@ function doSave() {
     delays.forEach((result) => {
         if (result.start && result.stop) {
             let cvsRow = [];
-            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
+            cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`);
             if (result.start.peer.id === result.stop.peer.id) {
                 cvsRow.push(`${result.start.peer.process.type}`);
-                cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type}`);
             }
             else {
                 cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
-                cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
             }
             cvsRow.push(result.delay);
             cvsLike.push(cvsRow);
@@ -140,7 +140,7 @@ function onIPCBus_TestPerformanceResult(result) {
         var cell1 = row.insertCell(-1);
         var cell2 = row.insertCell(-1);
         var cell3 = row.insertCell(-1);
-        cellType.innerHTML = `${msgTestStart.test.typeCommand} ${msgTestStart.test.typeArgs} (${msgTestStart.test.bufferSize})`;
+        cellType.innerHTML = `${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`;
         if (msgTestStart.peer.id === msgTestStop.peer.id) {
             cellLink.innerHTML = `${msgTestStart.peer.process.type}`;
         }
