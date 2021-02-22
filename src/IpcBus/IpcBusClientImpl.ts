@@ -49,11 +49,11 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     createDirectChannel(): string {
-        return IpcBusUtils.CreateDirectChannel(this._peer);
+        return this._transport.createDirectChannel(this);
     }
 
     createResponseChannel(): string {
-        return IpcBusUtils.CreateResponseChannel(this._peer);
+        return this._transport.createDirectChannel(this);
     }
 
     send(channel: string, ...args: any[]): boolean {

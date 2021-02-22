@@ -152,7 +152,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     }
 
                     const handshake: IpcBusConnector.Handshake = {
-                        process: this.process,
+                        process: this._process,
                         logLevel: this._log.level
                     }
                     resolve(handshake);

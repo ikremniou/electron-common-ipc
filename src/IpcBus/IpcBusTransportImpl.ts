@@ -80,6 +80,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
+    protected _directChannel: string;
 
     protected _peer: Client.IpcBusPeer;
     protected _logActivate: boolean;
@@ -104,7 +105,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._peer;
     }
 
-    protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
+    protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
         ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
             id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
@@ -135,6 +136,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
+    }
+
+    createDirectChannel(client: IpcBusTransport.Client): string {
+        return `${this._directChannel}_p${client.peer}_${IpcBusUtils.CreateUniqId()}`;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -238,6 +243,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorShutdown() {
+        this._directChannel = '';
         // Cut connection
         this._postDirectMessage = this._postCommand = () => {};
         // no messages to send, it is too late
@@ -285,7 +291,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer);
+        const replyChannel = this.createDirectChannel(client);
         const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
@@ -336,6 +342,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connector.handshake(this, options)
         .then((handshake) => {
             this._logActivate = handshake.logLevel > 0;
+            this._directChannel = IpcBusUtils.CreateDirectProcessChannel(handshake.process);
             // Connect to ... connector
             this._postCommand = this._connector.postCommand.bind(this._connector);
             this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);

@@ -97,6 +97,7 @@ export interface IpcBusClient extends EventEmitter {
     close: IpcBusClient.CloseFunction;
 
     createDirectChannel(): string;
+    // legacy
     createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;
