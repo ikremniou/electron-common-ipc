@@ -139,7 +139,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     createDirectChannel(client: IpcBusTransport.Client): string {
-        return `${this._directChannel}_p${client.peer}_${IpcBusUtils.CreateUniqId()}`;
+        return `${this._directChannel}_p${client.peer.id}_${IpcBusUtils.CreateUniqId()}`;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -291,8 +291,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        const replyChannel = this.createDirectChannel(client);
-        const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
+        const ipcBusCommandRequest: IpcBusCommand.Request = {
+            channel,
+            replyChannel: this.createDirectChannel(client)
+        };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);

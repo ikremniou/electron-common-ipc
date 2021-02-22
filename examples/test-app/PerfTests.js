@@ -140,22 +140,18 @@ var PerfTests = function _PerfTests(type, busPath) {
 
     this.onTestFailed = function(testResult) {
         _testsFailed.push(testResult);
-        if (testResult.start == null) {
-            var msgTestStart = {
-                uuid: testResult.uuid,
-                peer: testResult.combination[1].peer,
-                timeStamp: 0
-            };
-            testResult.start = msgTestStart;
-        }
-        if (testResult.stop == null) {
-            var msgTestStop = { 
-                uuid: testResult.uuid,
-                timeStamp: -1000,
-                peer: testResult.combination[0].peer,
-            };
-            testResult.stop = msgTestStop;
-        }
+        var msgTestStart = testResult.start || {
+            uuid: testResult.uuid,
+            peer: testResult.combination[1].peer,
+            timeStamp: 0
+        };
+        testResult.start = msgTestStart;
+        var msgTestStop = testResult.stop || {
+            uuid: testResult.uuid,
+            timeStamp: msgTestStart.timeStamp - 1000,
+            peer: testResult.combination[0].peer,
+        };
+        testResult.stop = msgTestStop;
         this.onTestProgress(testResult);
     }
 
@@ -246,10 +242,6 @@ var PerfTests = function _PerfTests(type, busPath) {
     }
 
     this.onIPCBus_TestPerformance = function _onIPCBus_TestPerformance(ipcBusEvent, uuid, channel) {
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve();
-            return;
-        }
         const catchTest = function(ipcBusEvent, ...args) {
             var msgTestStop = { 
                 uuid: uuid,
@@ -262,6 +254,9 @@ var PerfTests = function _PerfTests(type, busPath) {
         setTimeout(() => {
             _ipcBus.removeListener(channel, catchTest);
         }, testTimeout);
+        if (ipcBusEvent.request) {
+            ipcBusEvent.request.resolve();
+        }
     }
 
     this.onIPCBus_TestPerformanceTrace = function _onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace) {

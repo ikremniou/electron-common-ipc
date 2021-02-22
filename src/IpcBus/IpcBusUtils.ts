@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusProcess } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -27,58 +27,52 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const ResponseChannelPrefix = `response-wc:`;
-const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
+const DirectWCChannelPrefix = `direct-wc:`;
+const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
 
-const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
+// const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
+const RegExpWebContents = /(\d+)_(\d+)_(\d)/;
 
 export interface WebContentsIdentifier {
     wcid: number;
     frameid: number;
     isMainFrame: boolean;
-    peerid: string;
 }
 
-function SerializeWebContentsIdentifier(peer: IpcBusPeer): string {
-    return `${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}_p${peer.id}`;
+function SerializeProcessTarget(process: IpcBusProcess): string {
+    return `${process.wcid}_${process.frameid}_${process.isMainFrame ? '1' : '0'}`;
 }
 
 export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
     const tags = str.match(RegExpWebContents);
-    if (tags && tags.length === 5) {
+    if (tags && tags.length > 3) {
         return {
             wcid: Number(tags[1]),
             frameid: Number(tags[2]),
-            isMainFrame: tags[3] === '1',
-            peerid: tags[4]
+            isMainFrame: tags[3] === '1'
         }
     }
     return null;
 }
 
 export function IsWebContentsChannel(channel: string): boolean {
-    return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
+    return (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0);
 }
 
 export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
-    if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(channel.substr(ResponseChannelPrefixLength));
+    if (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0) {
+        return UnserializeWebContentsIdentifier(channel.substr(DirectWCChannelPrefixLength));
     }
     return null;
 }
 
-export function CreateDirectChannel(peer: IpcBusPeer): string {
-    if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${SerializeWebContentsIdentifier(peer)}`;
+export function CreateDirectProcessChannel(process: IpcBusProcess): string {
+    if (process.wcid) {
+        return `${DirectWCChannelPrefix}${SerializeProcessTarget(process)}`;
     }
     else {
-        return `response:${peer.id}`;
+        return `nodirect:`;
     }
-}
-
-export function CreateResponseChannel(peer: IpcBusPeer): string {
-    const uniqId = CreateUniqId();
-    return `${CreateDirectChannel(peer)}_${uniqId}`;
 }
 
 export function CheckChannel(channel: any): string {
@@ -200,6 +194,7 @@ export class ConnectCloseState<T> {
     protected _waitForConnected: Promise<T>;
     protected _waitForClosed: Promise<void>;
     protected _connected: boolean;
+    // protected _t: T | null;
 
     constructor() {
         this.shutdown();
@@ -209,6 +204,10 @@ export class ConnectCloseState<T> {
         return this._connected;
     }
 
+    // get value(): T {
+    //     return this._t;
+    // }
+
     connect(cb: () => Promise<T>): Promise<T> {
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
@@ -216,6 +215,7 @@ export class ConnectCloseState<T> {
                 return cb();
             })
             .then((t) => {
+                // this._t = t;
                 this._connected = true;
                 return t;
             })
@@ -233,6 +233,7 @@ export class ConnectCloseState<T> {
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
+                // this._t = null;
                 this._connected = false;
                 return cb();
             });
@@ -242,6 +243,7 @@ export class ConnectCloseState<T> {
 
     shutdown() {
         this._waitForConnected = null;
+        // this._t = null;
         this._waitForClosed = Promise.resolve();
         this._connected = false;
     }
