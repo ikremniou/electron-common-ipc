@@ -31,27 +31,18 @@ function Uint8ArrayToBuffer(rawBuffer) {
 const uuidPattern = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
 var PerfTests = function _PerfTests(type, busPath) {
-    const _ipcBusModule = require('electron-common-ipc');
-    const _uuidFactory = require('uuid');
-    var _ipcBus = _ipcBusModule.IpcBusClient.Create();
-    var _uuid = createUuid();
-    var _testsPending = [];
-    var _testsInProgress = new Map();
-    var _testsResults = [];
-    var _testProgressCB;
-
     this.connect = function(peerName, view) {
         _ipcBus.connect(busPath, { peerName })
             .then(() => {
-                if (!view) {
+                if (view) {
+                    _ipcBus.on('test-performance-start', (ipcBusEvent, ...args) => this.onIPCBus_CollectStart(ipcBusEvent, ...args));
+                    _ipcBus.on('test-performance-stop', (ipcBusEvent, ...args) => this.onIPCBus_CollectStop(ipcBusEvent, ...args));
+                }
+                else {
                     _ipcBus.on('test-performance-ping', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
                     _ipcBus.on('test-performance-trace', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, ...args));
                     _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, ...args));
                     _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformance(ipcBusEvent, ...args));
-                }
-                else {
-                    _ipcBus.on('test-performance-start', (ipcBusEvent, ...args) => this.onIPCBus_CollectStart(ipcBusEvent, ...args));
-                    _ipcBus.on('test-performance-stop', (ipcBusEvent, ...args) => this.onIPCBus_CollectStop(ipcBusEvent, ...args));
                 }
             });
     }
@@ -122,8 +113,17 @@ var PerfTests = function _PerfTests(type, busPath) {
                     testChannel,
                     test.testParams,
                 );
+                setTimeout(() => {
+                    if (_testsInProgress.delete(test.uuid)) {
+                        _testsFailed.push(test);
+                        this.loopTest();
+                    }
+                },
+                testTimeout);
             })
             .catch(() => {
+                _testsFailed.push(test);
+                _testsInProgress.delete(test.uuid);
                 this.loopTest();
             });
             return true;
@@ -133,8 +133,9 @@ var PerfTests = function _PerfTests(type, busPath) {
 
     this.clear = function() {
         _testsPending = [];
-        _testsInProgress.clear();
-        _testsResults = [];
+        _testsInProgress = new Map();
+        _testsSucceeded = [];
+        _testsFailed = [];
     }
 
     this.onTestProgressCB = function(cb) {
@@ -144,10 +145,10 @@ var PerfTests = function _PerfTests(type, busPath) {
     this.onTestProgress = function(testResult) {
         if (testResult.start && testResult.stop) {
             if (_testsInProgress.delete(testResult.uuid)) {
-                _testsResults.push(testResult);
+                _testsSucceeded.push(testResult);
                 testResult.delay = testResult.stop.timeStamp - testResult.start.timeStamp;
                 console.log(`testDone:${JSON.stringify(testResult, null, 4)}`);
-                _testProgressCB && _testProgressCB(testResult, _testsResults, _testsPending.length);
+                _testProgressCB && _testProgressCB(testResult, _testsSucceeded, _testsPending.length);
                 if (!this.loopTest()) {
                     // _ipcBus.removeAllListeners('test-performance-start');
                     // _ipcBus.removeAllListeners('test-performance-stop');
@@ -269,6 +270,13 @@ var PerfTests = function _PerfTests(type, busPath) {
         // return Math.random().toString(36).substring(2, 14) + Math.random().toString(36).substring(2, 14);
         return _uuidFactory.v1();
     }
+
+    const _ipcBusModule = require('electron-common-ipc');
+    const _uuidFactory = require('uuid');
+    var _ipcBus = _ipcBusModule.IpcBusClient.Create();
+    var _uuid = createUuid();
+    var _testProgressCB;
+    this.clear();
 }
 
 module.exports = PerfTests;

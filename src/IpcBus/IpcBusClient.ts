@@ -17,6 +17,7 @@ export interface IpcBusProcess {
     rid?: number;   // Renderer Id
     wcid?: number;  // WebContent Id
     frameid?: number; // Frame Id
+    isMainFrame?: boolean;
 }
 
 export interface IpcBusPeer {
@@ -95,6 +96,7 @@ export interface IpcBusClient extends EventEmitter {
     connect: IpcBusClient.ConnectFunction;
     close: IpcBusClient.CloseFunction;
 
+    createDirectChannel(): string;
     createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;

@@ -48,6 +48,10 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         });
     }
 
+    createDirectChannel(): string {
+        return IpcBusUtils.CreateDirectChannel(this._peer);
+    }
+
     createResponseChannel(): string {
         return IpcBusUtils.CreateResponseChannel(this._peer);
     }

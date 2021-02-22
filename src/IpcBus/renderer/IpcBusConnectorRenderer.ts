@@ -28,10 +28,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _onIpcEventArgsReceived: (...args: any[]) => void;
     private _useElectronSerialization: boolean;
 
-    constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
+    constructor(contextType: Client.IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
+        this._process.isMainFrame = isMainFrame;
 
         window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
             this.onConnectorBeforeShutdown();
@@ -140,7 +141,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._useElectronSerialization) {
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds) {//  && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
+            if (webContentsTargetIds && webContentsTargetIds.isMainFrame) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
             }
             else {
@@ -157,7 +158,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             }
             const rawContent = packetOut.getRawData();
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds && (webContentsTargetIds.frameid <= IpcBusUtils.TopFrameId)) {
+            if (webContentsTargetIds && webContentsTargetIds.isMainFrame) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
             }
             else {

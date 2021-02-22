@@ -30,32 +30,30 @@ function CleanPipeName(str: string) {
 const ResponseChannelPrefix = `response-wc:`;
 const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
-export const TopFrameId = 1;
+const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
 
 export interface WebContentsIdentifier {
     wcid: number;
     frameid: number;
+    isMainFrame: boolean;
+    peerid: string;
 }
 
-function SerializeWebContentsIdentifier(wcIds: WebContentsIdentifier): number {
-    return (wcIds.wcid << 8) + wcIds.frameid;
+function SerializeWebContentsIdentifier(peer: IpcBusPeer): string {
+    return `${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}_p${peer.id}`;
 }
 
-export function UnserializeWebContentsIdentifier(strOrNum: string | number): WebContentsIdentifier | null {
-    let wcIds: number;
-    if (typeof strOrNum === 'string') {
-        wcIds = parseInt(strOrNum, 10);
-        if (isNaN(wcIds)) {
-            return null;
+export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
+    const tags = str.match(RegExpWebContents);
+    if (tags && tags.length === 5) {
+        return {
+            wcid: Number(tags[1]),
+            frameid: Number(tags[2]),
+            isMainFrame: tags[3] === '1',
+            peerid: tags[4]
         }
     }
-    else {
-        wcIds = strOrNum;
-    }
-    return {
-        wcid: wcIds >> 8,
-        frameid: wcIds & 0b11111111,
-    }
+    return null;
 }
 
 export function IsWebContentsChannel(channel: string): boolean {
@@ -69,14 +67,18 @@ export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier
     return null;
 }
 
-export function CreateResponseChannel(peer: IpcBusPeer): string {
-    const uniqId = CreateUniqId();
+export function CreateDirectChannel(peer: IpcBusPeer): string {
     if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${SerializeWebContentsIdentifier(peer.process as WebContentsIdentifier)}_${uniqId}`;
+        return `${ResponseChannelPrefix}${SerializeWebContentsIdentifier(peer)}`;
     }
     else {
-        return `response:${peer.id}_${uniqId}`;
+        return `response:${peer.id}`;
     }
+}
+
+export function CreateResponseChannel(peer: IpcBusPeer): string {
+    const uniqId = CreateUniqId();
+    return `${CreateDirectChannel(peer)}_${uniqId}`;
 }
 
 export function CheckChannel(channel: any): string {

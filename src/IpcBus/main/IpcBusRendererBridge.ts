@@ -24,29 +24,35 @@ interface WebContentsTarget {
     frameid: number;
 }
 
+interface WebContentsIdentifier {
+    wcid: number;
+    frameid: number;
+}
+
 function getWebContentsTargetFromEvent(event: Electron.IpcMainEvent): WebContentsTarget {
-    // if (event.frameId === IpcBusUtils.TopFrameId) {
-    //     return { webContents: event.sender, frameid: 0 };
-    // }
-    // else {
-        return { webContents: event.sender, frameid: event.frameId };
-    // }
+    return { webContents: event.sender, frameid: event.frameId };
 }
 
 function getKeyForTargetFromEvent(event: Electron.IpcMainEvent) {
-    // if (event.frameId === IpcBusUtils.TopFrameId) {
-    //     return (event.sender.id << 8);
-    // }
-    // else {
-        return (event.sender.id << 8) + event.frameId;
-    // }
+    return (event.sender.id << 8) + event.frameId;
 }
 
-// function getKeyForTarget(webContentsTarget: WebContentsTarget) {
-//     const key = (webContentsTarget.webContents.id << 8) + webContentsTarget.frameId;
-//     // if (key == 0) throw 'getKeyForTarget';
-//     return key;
-// }
+export function getWebContentsIdentifier(strOrNum: number): WebContentsIdentifier | null {
+    let wcIds: number;
+    // if (typeof strOrNum === 'string') {
+    //     wcIds = parseInt(strOrNum, 10);
+    //     if (isNaN(wcIds)) {
+    //         return null;
+    //     }
+    // }
+    // else {
+        wcIds = strOrNum;
+    // }
+    return {
+        wcid: wcIds >> 8,
+        frameid: wcIds & 0b11111111,
+    }
+}
 
 // Even if electron is not use in a Node process
 // Static import of electron crash the Node process (use require)
@@ -165,7 +171,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         webContents.addListener('destroyed', () => {
             // Have to remove this webContents, included its frames
             const webContentsTargets = this._subscriptions.getConns().filter((item) => {
-                const webContentIdentifiers = IpcBusUtils.UnserializeWebContentsIdentifier(item.key);
+                const webContentIdentifiers = getWebContentsIdentifier(item.key);
                 return (webContentIdentifiers.wcid === webContentsId);
             });
             for (let i = 0, l = webContentsTargets.length; i < l; ++i) {
@@ -218,12 +224,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
-                        // if (connData.conn.frameid > IpcBusUtils.TopFrameId) {
-                        //     connData.conn.webContents.sendToFrame(connData.conn.frameid, ipcchannel, ipcBusCommand, data);
-                        // }
-                        // else {
-                            connData.conn.webContents.send(ipcchannel, ipcBusCommand, data);
-                        // }
+                        connData.conn.webContents.sendToFrame(connData.conn.frameid, ipcchannel, ipcBusCommand, data);
                     }
                 });
                 break;
@@ -233,12 +234,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 if (webContentsTargetIds) {
                     const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
                     if (webContents) {
-                        // if (webContentsTargetIds.frameid > IpcBusUtils.TopFrameId) {
-                        //     webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
-                        // }
-                        // else {
-                            webContents.send(ipcchannel, ipcBusCommand, data);
-                        // }
+                        webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
                     }
                     return true;
                 }
