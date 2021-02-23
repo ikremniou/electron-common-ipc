@@ -142,14 +142,14 @@ var PerfTests = function _PerfTests(type, busPath) {
         _testsFailed.push(testResult);
         var msgTestStart = testResult.start || {
             uuid: testResult.uuid,
-            peer: testResult.combination[1].peer,
+            peer: testResult.combination[0].peer,
             timeStamp: 0
         };
         testResult.start = msgTestStart;
         var msgTestStop = testResult.stop || {
             uuid: testResult.uuid,
             timeStamp: msgTestStart.timeStamp - 1000,
-            peer: testResult.combination[0].peer,
+            peer: testResult.combination[1].peer,
         };
         testResult.stop = msgTestStop;
         this.onTestProgress(testResult);
@@ -249,6 +249,9 @@ var PerfTests = function _PerfTests(type, busPath) {
                 peer: _ipcBus.peer
             };
             _ipcBus.send('test-performance-stop', msgTestStop);
+            if (ipcBusEvent.request) {
+                ipcBusEvent.request.resolve();
+            }
         };
         _ipcBus.once(channel, catchTest);
         setTimeout(() => {

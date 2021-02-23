@@ -139,12 +139,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
             const packet = new IpcPacketBufferList();
-            if (args) {
-                packet.serialize([ipcBusCommand, args]);
-            }
-            else {
-                packet.serialize([ipcBusCommand]);
-            }
+            packet.serialize([ipcBusCommand, args]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
         }
     }
@@ -156,12 +151,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
                 const packet = new IpcPacketBufferList();
-                if (args) {
-                    packet.serialize([ipcBusCommand, args]);
-                }
-                else {
-                    packet.serialize([ipcBusCommand]);
-                }
+                packet.serialize([ipcBusCommand, args]);
                 this._socketTransport.broadcastPacket(ipcBusCommand, packet);
             }
         }
@@ -171,12 +161,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
                 const packet = new IpcPacketBufferList();
-                if (args) {
-                    packet.serialize([ipcBusCommand, args]);
-                }
-                else {
-                    packet.serialize([ipcBusCommand]);
-                }
+                packet.serialize([ipcBusCommand, args]);
                 hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);

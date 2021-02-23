@@ -239,12 +239,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
-            if (args) {
-                this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.write(this._socketWriter, [ipcBusCommand]);
-            }
+            this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
         }
     }
 

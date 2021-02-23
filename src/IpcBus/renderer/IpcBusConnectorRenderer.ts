@@ -47,10 +47,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         //     }
         // });
 
-        // window.addEventListener('unload', (event: BeforeUnloadEvent) => {
-        //     this.onConnectorBeforeShutdown();
-        //     this.onConnectorShutdown();
-        // });
+        window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+            this.onConnectorBeforeShutdown();
+            this.onConnectorShutdown();
+        });
     }
 
     protected onConnectorBeforeShutdown() {
@@ -150,12 +150,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const packetOut = new IpcPacketBuffer();
-            if (args) {
-                packetOut.serialize([ipcBusCommand, args]);
-            }
-            else {
-                packetOut.serialize([ipcBusCommand]);
-            }
+            packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
             if (webContentsTargetIds && webContentsTargetIds.isMainFrame) {
@@ -175,12 +170,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const packetOut = new IpcPacketBuffer();
-            if (args) {
-                packetOut.serialize([ipcBusCommand, args]);
-            }
-            else {
-                packetOut.serialize([ipcBusCommand]);
-            }
+            packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
         }
