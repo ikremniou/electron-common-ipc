@@ -176,7 +176,20 @@ var MainProcess = (function () {
         }
 
         function doPerformanceTests(testParams) {
-            perfTests.doPerformanceTests(testParams);
+            // const peers = [];
+            // ipcBusClient.on('test-performance-pong', (event) => {
+            //     peers.push(event.sender);
+            // });
+            // ipcBusClient.send('test-performance-ping');
+            // setTimeout(() => {
+            //     ipcBusClient.removeAllListeners('test-performance-pong');
+            //     let masterPeers = [];
+            //     ['node', 'renderer', 'main'].forEach(type => {
+            //         masterPeers.push(peers.find((peer) => peer.process.type === type));
+            //     });
+            //     masterPeers = masterPeers.filter(value => value);
+            //     perfTests.doPerformanceTests(testParams, masterPeers);
+            // }, 1000);
         }
 
         function savePerformanceTests(cvsLike) {

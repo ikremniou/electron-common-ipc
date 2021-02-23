@@ -73,6 +73,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
+            this.cancelRequest(client);
             this.removeChannel(client);
             if (this._subscriptions.getChannelsCount() === 0) {
                 this._subscriptions.client = null;
@@ -87,7 +88,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions == null) {
             return;
         }
-        this._subscriptions.addRefCount(channel, { key: client.peer.id, conn: client }, client.peer, count);
+        this._subscriptions.addRefCount(channel, client.peer.id, client, client.peer, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {

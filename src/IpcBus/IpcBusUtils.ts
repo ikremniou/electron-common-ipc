@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusProcess } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -27,55 +27,51 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const ResponseChannelPrefix = `response-wc:`;
-const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
+const DirectWCChannelPrefix = `direct-wc:`;
+const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
 
-export const TopFrameId = 1;
+// const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
+const RegExpWebContents = /(\d+)_(\d+)_(\d)/;
 
 export interface WebContentsIdentifier {
     wcid: number;
     frameid: number;
+    isMainFrame: boolean;
 }
 
-function SerializeWebContentsIdentifier(wcIds: WebContentsIdentifier): number {
-    return (wcIds.wcid << 8) + wcIds.frameid;
+function SerializeProcessTarget(process: IpcBusProcess): string {
+    return `${process.wcid}_${process.frameid}_${process.isMainFrame ? '1' : '0'}`;
 }
 
-export function UnserializeWebContentsIdentifier(strOrNum: string | number): WebContentsIdentifier | null {
-    let wcIds: number;
-    if (typeof strOrNum === 'string') {
-        wcIds = parseInt(strOrNum, 10);
-        if (isNaN(wcIds)) {
-            return null;
+export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
+    const tags = str.match(RegExpWebContents);
+    if (tags && tags.length > 3) {
+        return {
+            wcid: Number(tags[1]),
+            frameid: Number(tags[2]),
+            isMainFrame: tags[3] === '1'
         }
-    }
-    else {
-        wcIds = strOrNum;
-    }
-    return {
-        wcid: wcIds >> 8,
-        frameid: wcIds & 0b11111111,
-    }
-}
-
-export function IsWebContentsChannel(channel: string): boolean {
-    return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
-}
-
-export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
-    if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(channel.substr(ResponseChannelPrefixLength));
     }
     return null;
 }
 
-export function CreateResponseChannel(peer: IpcBusPeer): string {
-    const uniqId = CreateUniqId();
-    if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${SerializeWebContentsIdentifier(peer.process as WebContentsIdentifier)}_${uniqId}`;
+export function IsWebContentsChannel(channel: string): boolean {
+    return (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0);
+}
+
+export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
+    if (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0) {
+        return UnserializeWebContentsIdentifier(channel.substr(DirectWCChannelPrefixLength));
+    }
+    return null;
+}
+
+export function CreateDirectProcessChannel(process: IpcBusProcess): string {
+    if (process.wcid) {
+        return `${DirectWCChannelPrefix}${SerializeProcessTarget(process)}`;
     }
     else {
-        return `response:${peer.id}_${uniqId}`;
+        return `nodirect:`;
     }
 }
 
@@ -198,6 +194,7 @@ export class ConnectCloseState<T> {
     protected _waitForConnected: Promise<T>;
     protected _waitForClosed: Promise<void>;
     protected _connected: boolean;
+    // protected _t: T | null;
 
     constructor() {
         this.shutdown();
@@ -207,6 +204,10 @@ export class ConnectCloseState<T> {
         return this._connected;
     }
 
+    // get value(): T {
+    //     return this._t;
+    // }
+
     connect(cb: () => Promise<T>): Promise<T> {
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
@@ -214,6 +215,7 @@ export class ConnectCloseState<T> {
                 return cb();
             })
             .then((t) => {
+                // this._t = t;
                 this._connected = true;
                 return t;
             })
@@ -231,6 +233,7 @@ export class ConnectCloseState<T> {
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
+                // this._t = null;
                 this._connected = false;
                 return cb();
             });
@@ -240,6 +243,7 @@ export class ConnectCloseState<T> {
 
     shutdown() {
         this._waitForConnected = null;
+        // this._t = null;
         this._waitForClosed = Promise.resolve();
         this._connected = false;
     }

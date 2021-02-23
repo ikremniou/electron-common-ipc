@@ -27,28 +27,46 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 
+    onConnectorShutdown() {
+        super.onConnectorShutdown();
+        this._client = null;
+    }
+
     onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._client) {
-            this.removeChannel(this._client);
+            this._postCommand({
+                peer: this._client.peer,
+                kind: IpcBusCommand.Kind.RemoveListeners,
+                channel: ''
+            });
             this._client = null;
         }
     }
 
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return super.connect(client, options)
-        .then((peer) => {
+        if (client && (this._client == null)) {
             this._client = client;
-            return peer;
-        });
+            return super.connect(client, options)
+            .then((peer) => {
+                return peer;
+            })
+            .catch((err) => {
+                this._client = null;
+                throw err;
+            });
+        }
+        return Promise.reject();
     }
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        if (this._client && (this._client === client)) {
+        if (client && (this._client === client)) {
             this._client = null;
+            this.cancelRequest(client);
+            this.removeChannel(client);
             return super.close(client, options);
         }
-        return Promise.resolve();
+        return Promise.reject();
     }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {

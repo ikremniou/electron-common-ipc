@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -9,7 +9,6 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { WriteBuffersToSocket } from './IpcBusBrokerImpl';
 
 // Implementation for Node process
 /** @internal */
@@ -153,7 +152,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     }
 
                     const handshake: IpcBusConnector.Handshake = {
-                        process: this.process,
+                        process: this._process,
                         logLevel: this._log.level
                     }
                     resolve(handshake);
@@ -203,7 +202,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        this.removeClient();
+                        this.onConnectorShutdown();
                         resolve();
                     };
                     // Below zero = infinite
@@ -214,6 +213,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                             }
                             const msg = `[IPCBusTransport:Net ${this._messageId}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                            this.onConnectorShutdown();
                             reject(msg);
                         }, options.timeoutDelay);
                     }
@@ -221,6 +221,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     for (let key in socketLocalBinds) {
                         socket.addListener(key, socketLocalBinds[key]);
                     }
+                    this.onConnectorBeforeShutdown();
                     this._reset(true);
                 }
                 else {
@@ -238,12 +239,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
-            if (args) {
-                this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.write(this._socketWriter, [ipcBusCommand]);
-            }
+            this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
         }
     }
 

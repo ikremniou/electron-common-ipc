@@ -7,7 +7,7 @@ console.log('IPC Broker instance : Starting')
 
 const ipcBusModule = require('electron-common-ipc');
 const ipcBroker = ipcBusModule.IpcBusBroker.Create();
-ipcBusModule.ActivateIpcBusTrace(true);
+// ipcBusModule.ActivateIpcBusTrace(true);
 
 function GetCmdLineArgValue(argName)  {
     for (let i = 0; i < process.argv.length; ++i) {

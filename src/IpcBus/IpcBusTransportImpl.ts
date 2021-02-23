@@ -80,11 +80,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
+    protected _directChannel: string;
 
     protected _peer: Client.IpcBusPeer;
     protected _logActivate: boolean;
-
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _postCommand: Function;
@@ -98,16 +97,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name: 'IPCTransport',
             process: connector.process
         };
-        this._requestFunctions = new Map<string, DeferredRequestPromise>();
+        this._requestFunctions = new Map();
         this._postDirectMessage = this._postCommand = () => { };
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
 
     get peer(): Client.IpcBusPeer {
         return this._peer;
     }
 
-    protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
+    protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
         ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
             id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
@@ -138,6 +136,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
+    }
+
+    createDirectChannel(client: IpcBusTransport.Client): string {
+        return `${this._directChannel}_p${client.peer.id}_${IpcBusUtils.CreateUniqId()}`;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -241,7 +243,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorShutdown() {
-        this._connectCloseState.shutdown();
+        this._directChannel = '';
         // Cut connection
         this._postDirectMessage = this._postCommand = () => {};
         // no messages to send, it is too late
@@ -289,8 +291,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer);
-        const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
+        const ipcBusCommandRequest: IpcBusCommand.Request = {
+            channel,
+            replyChannel: this.createDirectChannel(client)
+        };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
@@ -337,28 +341,23 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return this._connectCloseState.connect(() => {
-            return this._connector.handshake(this, options)
-                .then((handshake) => {
-                    const peer = this.createPeer(handshake.process, options.peerName);
-                    this._logActivate = handshake.logLevel > 0;
-                    // Connect to ... connector
-                    this._postCommand = this._connector.postCommand.bind(this._connector);
-                    this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);
-                    return peer;
-                });
+        return this._connector.handshake(this, options)
+        .then((handshake) => {
+            this._logActivate = handshake.logLevel > 0;
+            this._directChannel = IpcBusUtils.CreateDirectProcessChannel(handshake.process);
+            // Connect to ... connector
+            this._postCommand = this._connector.postCommand.bind(this._connector);
+            this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);
+            return handshake;
+        })
+        .then((handshake) => {
+            const peer = this.createPeer(handshake.process, options.peerName);
+            return peer;
         });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._connectCloseState.close(() => {
-            this.cancelRequest(client);
-            this.removeChannel(client);
-            return this._connector.shutdown(options)
-            .then(() => {
-                this.onConnectorShutdown();
-            });
-        });
+        return this._connector.shutdown(options);
     }
 
     abstract hasChannel(channel: string): boolean;

@@ -20,7 +20,7 @@
                 // "--inspect-brk=50000",
                 "Main.js",
                 "--remote-debugging-port=8315",
-                // "--disable-sandbox"
+                "--disable-sandbox"
 
             ],
             "env": {
@@ -278,7 +278,17 @@
                 "${workspaceRoot}/lib/**/*.js"
             ],
             "trace": false
-        }
-
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "update-dev",
+            "cwd": "${workspaceFolder}/tools", 
+            "program": "${workspaceFolder}/tools/update-dev.js",
+            "runtimeArgs": [
+            ],
+            "skipFiles": [
+            ]
+        },
     ]
 }

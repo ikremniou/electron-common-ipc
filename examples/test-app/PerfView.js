@@ -1,5 +1,7 @@
 'use strict';
 
+const perfTests = new PerfTests('view');
+
 var processToMaster;
 var transaction = 1;
 var generateReportTimer;
@@ -21,11 +23,14 @@ function startPerformance(type, bufferSize) {
     var typeCommandElt = document.querySelector('.typeCommand');
     var testParams =
         {
-            transaction: transaction,
+            transaction,
             typeCommand: typeCommandElt.options[typeCommandElt.selectedIndex].text,
             typeArgs: type,
             bufferSize: bufferSize
         };
+
+    perfTests.doPerformanceTests(testParams);
+
     processToMaster.send('start-performance-tests', testParams);
     return transaction;
 }
@@ -40,29 +45,7 @@ function doClear(event) {
     }
     results.clear();
     delays = [];
-}
-
-function doSave() {
-    let cvsLike = [];
-    {
-        let cvsRow = [];
-        cvsRow.push(`Type`);
-        cvsRow.push(`Link`);
-        cvsRow.push(`Ref`);
-        cvsRow.push('Time');
-        cvsLike.push(cvsRow);
-    }
-    results.forEach((result) => {
-        if (result.start && result.stop) {
-            let cvsRow = [];
-            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
-            cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
-            cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.type} => ${result.stop.type}`);
-            cvsRow.push(result.delay);
-            cvsLike.push(cvsRow);
-        }
-    });
-    processToMaster.send('save-performance-tests', cvsLike);
+    perfTests.clear();
 }
 
 
@@ -91,7 +74,9 @@ function doSort(event) {
 function doAutomaticTests(event) {
     doClear(null);
     let tests = [];
-    [1000000, 3000000, 5000000, 7000000, 10000000].forEach((size) => {
+    [1000000, 2500000, 5000000, 7500000, 10000000].forEach((size, index) => {
+    // [1000000, 5000000, 10000000].forEach((size, index) => {
+    // [1000000].forEach((size, index) => {
         for (let occ = 0; occ < 3; ++occ) {
             tests.push({ size: size, type: 'string' });
             tests.push({ size: size, type: 'object' });
@@ -99,52 +84,49 @@ function doAutomaticTests(event) {
             tests.push({ size: size, type: 'args' });
         }
     });
-    let i = 0;
-    let intV = setInterval(() => {
+    for (let i = 0; i < tests.length; ++i) {
         startPerformance(tests[i].type, tests[i].size);
-        if (++i >= tests.length) {
-            clearInterval(intV);
-            save
+        if (i == tests.length -1) {
+            generateReport = true;
         }
-    }, 2000);
-    generateReport = true;
-}
-
-function onIPCBus_TestPerformanceStart(ipcBusEvent, msgTestStart) {
-    var uuid = msgTestStart.uuid;
-    let result = results.get(uuid);
-    if (!result) {
-        result = {};
-        results.set(uuid, result);
-    }
-    result.start = msgTestStart;
-    if (result.stop) {
-        onIPCBus_AddTestPerformanceResult(result);
     }
 }
 
-function onIPCBus_TestPerformanceStop(ipcBusEvent, msgTestStop) {
-    var uuid = msgTestStop.uuid;
-    let result = results.get(uuid);
-    if (!result) {
-        result = {};
-        results.set(uuid, result);
+function doSave() {
+    let cvsLike = [];
+    {
+        let cvsRow = [];
+        cvsRow.push(`Type`);
+        cvsRow.push(`Link`);
+        cvsRow.push(`Ref`);
+        cvsRow.push('Time');
+        cvsLike.push(cvsRow);
     }
-    result.stop = msgTestStop;
-    if (result.start) {
-        onIPCBus_AddTestPerformanceResult(result);
-    }
+    delays.forEach((result) => {
+        if (result.start && result.stop) {
+            let cvsRow = [];
+            cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`);
+            if (result.start.peer.id === result.stop.peer.id) {
+                cvsRow.push(`${result.start.peer.process.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type}`);
+            }
+            else {
+                cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
+            }
+            cvsRow.push(result.delay);
+            cvsLike.push(cvsRow);
+        }
+    });
+    processToMaster.send('save-performance-tests', cvsLike);
 }
 
-function onIPCBus_AddTestPerformanceResult(result) {
-    var msgTestStart = result.start;
-    var msgTestStop = result.stop;
-    if (msgTestStart && msgTestStop) {
-        result.delay = msgTestStop.timeStamp - msgTestStart.timeStamp;
-        delays.push(result);
-        delays.sort((l, r) => l.delay - r.delay);
-    }
-    onIPCBus_TestPerformanceResult(result);
+function onTestProgress(testResult, testResults, size) {
+    var testStepElt = document.querySelector(".test-step");
+    testStepElt.value = `${size} => ${testResults.length}`;
+    delays.push(testResult);
+    delays.sort((l, r) => l.delay - r.delay);
+    onIPCBus_TestPerformanceResult(testResult);
 }
 
 function onIPCBus_TestPerformanceResult(result) {
@@ -158,8 +140,13 @@ function onIPCBus_TestPerformanceResult(result) {
         var cell1 = row.insertCell(-1);
         var cell2 = row.insertCell(-1);
         var cell3 = row.insertCell(-1);
-        cellType.innerHTML = `${msgTestStart.test.typeCommand} ${msgTestStart.test.typeArgs} (${msgTestStart.test.bufferSize})`;
-        cellLink.innerHTML = `${msgTestStart.peer.process.type} => ${msgTestStop.peer.process.type}`;
+        cellType.innerHTML = `${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`;
+        if (msgTestStart.peer.id === msgTestStop.peer.id) {
+            cellLink.innerHTML = `${msgTestStart.peer.process.type}`;
+        }
+        else {
+            cellLink.innerHTML = `${msgTestStart.peer.process.type} => ${msgTestStop.peer.process.type}`;
+        }
         cell1.innerHTML = JSON.stringify(msgTestStart.peer);
         cell2.innerHTML = JSON.stringify(msgTestStop.peer);
         cell3.setAttribute('delay', result.delay);
@@ -204,19 +191,23 @@ document.addEventListener('DOMContentLoaded', () => {
     var memSlide = document.querySelector(".memory-slide");
     var memVal = document.querySelector(".memory-value");
     if (memSlide && memVal) {
+        var memVal = document.querySelector(".memory-value");
         memSlide.addEventListener("change", () => {
             memVal.value = memSlide.value;
         });
         memVal.addEventListener("change", () => {
             memSlide.value = memVal.value;
         });
+        memVal.value = 1024 * 1024;
     }
 });
 
 ipcBus.connect()
     .then(() => {
         console.log('renderer : connected to ipcBus');
-        ipcBus.on('test-performance-start', onIPCBus_TestPerformanceStart);
-        ipcBus.on('test-performance-stop', onIPCBus_TestPerformanceStop);
+        // ipcBus.on('test-performance-start', onIPCBus_TestPerformanceStart);
+        // ipcBus.on('test-performance-stop', onIPCBus_TestPerformanceStop);
+        perfTests.connect('view', true);
+        perfTests.onTestProgressCB(onTestProgress);
     });
 
