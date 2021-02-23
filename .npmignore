@@ -3,6 +3,7 @@ build/
 src/
 doc/
 test/
+tools/
 examples/
 *.tgz
 debug.log
