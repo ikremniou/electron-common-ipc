@@ -14,20 +14,19 @@ export interface IpcBusRendererContent extends IpcPacketBufferCore.RawData {
 //     bufferCompressed?: Buffer;
 // }
 
+
+// See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
+// see https://www.electronjs.org/docs/breaking-changes#behavior-changed-values-sent-over-ipc-are-now-serialized-with-structured-clone-algorithm
+// see https://github.com/electron/electron/pull/20214
+// To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
+
 /** @internal */
 export namespace IpcBusRendererContent {
     export function Uint8ArrayToBuffer(rawBuffer: Buffer | Uint8Array): Buffer {
         if (util.types.isUint8Array(rawBuffer)) {
-            // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
-            // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
-            const arr = rawBuffer;
-            rawBuffer = Buffer.from(arr.buffer);
-            if (arr.byteLength !== arr.buffer.byteLength) {
-                // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
-                rawBuffer = rawBuffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
-            }
+            return Buffer.from(rawBuffer.buffer, rawBuffer.byteOffset, rawBuffer.byteLength);
         }
-        return rawBuffer as Buffer;
+        return rawBuffer;
     }
 
     export function FixRawContent(rawContent: IpcBusRendererContent, forceSingleBuffer?: boolean) {

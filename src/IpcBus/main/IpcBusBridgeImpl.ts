@@ -39,7 +39,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     private _useElectronSerialization: boolean;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._useElectronSerialization = false;
+        this._useElectronSerialization = true;
         
         this._peer = { 
             id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
@@ -129,7 +129,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================
     _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
-        this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
+        this._mainTransport.onConnectorRawDataReceived(ipcBusCommand, rawContent);
         this._socketTransport && this._socketTransport.broadcastRawData(ipcBusCommand, rawContent);
     }
 
@@ -145,9 +145,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
         if (this._useElectronSerialization) {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
-            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
                 const packet = new IpcPacketBufferList();
@@ -157,7 +157,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
         else {
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
-            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
                 const packet = new IpcPacketBufferList();

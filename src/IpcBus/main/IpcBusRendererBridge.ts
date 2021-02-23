@@ -37,17 +37,7 @@ function getKeyForTargetFromEvent(event: Electron.IpcMainEvent) {
     return (event.sender.id << 8) + event.frameId;
 }
 
-export function getWebContentsIdentifier(strOrNum: number): WebContentsIdentifier | null {
-    let wcIds: number;
-    // if (typeof strOrNum === 'string') {
-    //     wcIds = parseInt(strOrNum, 10);
-    //     if (isNaN(wcIds)) {
-    //         return null;
-    //     }
-    // }
-    // else {
-        wcIds = strOrNum;
-    // }
+export function getWebContentsIdentifier(wcIds: number): WebContentsIdentifier {
     return {
         wcid: wcIds >> 8,
         frameid: wcIds & 0b11111111,

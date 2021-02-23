@@ -72,8 +72,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             handshake = handshakeArg;
             this._onIpcEventRawDataReceived = (event, ipcBusCommand, rawContent) => {
                 IpcBusRendererContent.FixRawContent(rawContent);
-                // IpcBusRendererContent.UnpackRawContent(rawContent);
-                this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
+                this._client.onConnectorRawDataReceived(ipcBusCommand, rawContent);
             };
             this._onIpcEventArgsReceived = (event, ipcBusCommand, args) => {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
@@ -83,8 +82,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             handshake = peerOrArgs as IpcBusConnector.Handshake;
             this._onIpcEventRawDataReceived = (ipcBusCommand, rawContent) => {
                 IpcBusRendererContent.FixRawContent(rawContent);
-                // IpcBusRendererContent.UnpackRawContent(rawContent);
-                this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
+                this._client.onConnectorRawDataReceived(ipcBusCommand, rawContent);
             };
             this._onIpcEventArgsReceived = (ipcBusCommand, args) => {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
