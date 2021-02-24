@@ -2,7 +2,7 @@ import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
-    // export const KindBridgePrefix = 'B';
+    export const KindBridgePrefix = 'B';
     
     /** @internal */
     export enum Kind {
@@ -26,8 +26,8 @@ export namespace IpcBusCommand {
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',
-        // BridgeAddChannelListener    = 'BLICA',
-        // BridgeRemoveChannelListener = 'BLICR',
+        BridgeAddChannelListener    = 'BLICA',
+        BridgeRemoveChannelListener = 'BLICR',
     };
 
     /** @internal */

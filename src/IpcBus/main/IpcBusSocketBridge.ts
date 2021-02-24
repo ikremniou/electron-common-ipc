@@ -53,8 +53,8 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener:
-            case IpcBusCommand.Kind.RemoveChannelListener:
+            case IpcBusCommand.Kind.BridgeAddChannelListener:
+            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
                 this._connector.postBuffers(buffers);
                 break
 
