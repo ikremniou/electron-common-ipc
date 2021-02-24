@@ -1,10 +1,9 @@
 import type * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, SocketWriter } from 'socket-serializer';
+import { IpcPacketWriter, SocketWriter } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { CreateUniqId } from '../IpcBusUtils';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
@@ -14,19 +13,10 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     private _socketWriter: SocketWriter;
     private _packetOut: IpcPacketWriter;
 
-    private _peer: Client.IpcBusPeer;
+    private _peerBridge: Client.IpcBusPeer;
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
-
-        this._peer = {
-            id: `${contextType}.${CreateUniqId()}`,
-            process: {
-                type: contextType,
-                pid: process ? process.pid : -1
-            },
-            name: ''
-        }
        
         this._packetOut = new IpcPacketWriter();
        
@@ -46,23 +36,32 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
+        this._peerBridge = ipcBusCommand.peer;
         const socket = socketClient.socket;
         this._socketWriter = new SocketWriter(socket);
-
-        if (Array.isArray(ipcBusCommand.channels)) {
-            this._subscriptions.addRefs(ipcBusCommand.channels, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
-        }
 
         const channels = this._subscriptions.getChannels();
         for (let i = 0, l = channels.length; i < l; ++i) {
             this.broadcastToBridgeAddChannel(channels[i]);
         }
+
+        // Add channels after sending the current ones, else we will have a circular refs
+        if (Array.isArray(ipcBusCommand.channels)) {
+            this._subscriptions.addRefs(ipcBusCommand.channels, (socket as any)[this._socketIdProperty], socket, this._peerBridge);
+        }
     }
 
     protected onBridgeClosed(socket?: net.Socket) {
         if (this._socketWriter && ((socket == null) || (socket === this._socketWriter.socket))) {
+            this._subscriptions.removePeer(this._peerBridge);
+
+            const channels = this._subscriptions.getChannels();
+            for (let i = 0, l = channels.length; i < l; ++i) {
+                this.broadcastToBridgeRemoveChannel(channels[i]);
+            }
+
             this._socketWriter = null;
-            this._subscriptions.clear();
+            this._peerBridge = null;
         }
     }
 
@@ -71,7 +70,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.AddChannelListener,
                 channel,
-                peer: this._peer
+                peer: this._peerBridge
             };
             this._packetOut.write(this._socketWriter, [ipcBusCommand]);
         }
@@ -82,15 +81,9 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.RemoveChannelListener,
                 channel,
-                peer: this._peer
+                peer: this._peerBridge
             };
             this._packetOut.write(this._socketWriter, [ipcBusCommand]);
         }
-    }
-
-    protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
-    }
-
-    protected broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
     }
 }

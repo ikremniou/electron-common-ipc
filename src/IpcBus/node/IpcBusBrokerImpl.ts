@@ -282,7 +282,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     }
                 });
                 // if not coming from main bridge => forward
-                this.broadcastToBridgeMessage(socket, ipcBusCommand, ipcPacketBufferList);
+                this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge
@@ -348,6 +348,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected broadcastToBridgeRemoveChannel(channel: string) {
     }
 
-    protected abstract broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
-    protected abstract broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
+    protected broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
+    }
 }
