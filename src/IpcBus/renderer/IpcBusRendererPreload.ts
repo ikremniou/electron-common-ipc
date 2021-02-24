@@ -3,7 +3,7 @@ import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-facto
 // let useContextBridge = process.argv.includes('--context-isolation');
 	// if (useContextBridge) {
 	// 	try {
-	// 		contextBridge.exposeInMainWorld('vscode', globals);
+	// 		contextBridge.exposeInMainWorld('ElectronCommonIpc', globals);
 	// 	} catch (error) {
 	// 		console.error(error);
 
@@ -13,23 +13,18 @@ import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-facto
 
 	// if (!useContextBridge) {
 	// 	// @ts-ignore
-	// 	window.vscode = globals;
+	// 	window.ElectronCommonIpc = globals;
 	// }
 
 // const globals = {
-//     ElectronCommonIpc: {
-//         CreateIpcBusClient() {
+//         CreateIpcBusClient: () => {
 //             // Will work in a preload or with nodeIntegration=true
 //             const electron = require('electron');
 //             if (electron && electron.ipcRenderer) {
 //                 const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
 //                 return ipcBusClient;
 //             }
-//         },
-//         FrameBridge: {
-
 //         }
-//     }
 // }
 
 const trace = false; // true;
@@ -43,11 +38,11 @@ export function PreloadElectronCommonIpcAutomatic(): boolean {
     return _PreloadElectronCommonIpc('Implicit');
 }
 
-export function PreloadElectronCommonIpc(iframeSupport: boolean = false): boolean {
-    return _PreloadElectronCommonIpc('Explicit', iframeSupport);
+export function PreloadElectronCommonIpc(): boolean {
+    return _PreloadElectronCommonIpc('Explicit');
 }
 
-function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = false): boolean {
+function _PreloadElectronCommonIpc(context: string): boolean {
     const windowLocal = window as any;
     try {
         // Will work in a preload or with nodeIntegration=true
