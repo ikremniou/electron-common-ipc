@@ -53,7 +53,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     protected onBridgeClosed(socket?: net.Socket) {
         if (this._socketWriter && ((socket == null) || (socket === this._socketWriter.socket))) {
-            this._subscriptions.removePeer(this._peerBridge);
+            this._subscriptions.removeConnection(this._socketWriter.socket);
 
             const channels = this._subscriptions.getChannels();
             for (let i = 0, l = channels.length; i < l; ++i) {
