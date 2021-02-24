@@ -3,7 +3,6 @@
 const perfTests = new PerfTests('view');
 
 var processToMaster;
-var transaction = 1;
 var generateReportTimer;
 var generateReport = false;
 var noUpdate = false;
@@ -19,11 +18,9 @@ function doPerformance(type) {
 }
 
 function startPerformance(type, bufferSize) {
-    ++transaction;
     var typeCommandElt = document.querySelector('.typeCommand');
     var testParams =
         {
-            transaction,
             typeCommand: typeCommandElt.options[typeCommandElt.selectedIndex].text,
             typeArgs: type,
             bufferSize: bufferSize
@@ -32,7 +29,6 @@ function startPerformance(type, bufferSize) {
     perfTests.doPerformanceTests(testParams);
 
     processToMaster.send('start-performance-tests', testParams);
-    return transaction;
 }
 
 var results = new Map;

@@ -39,7 +39,7 @@ var PerfTests = function _PerfTests(type, busPath) {
                     _ipcBus.on('test-performance-stop', (ipcBusEvent, ...args) => this.onIPCBus_CollectStop(ipcBusEvent, ...args));
                 }
                 else {
-                    _ipcBus.on('test-performance-ping', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformancePing(ipcBusEvent));
+                    _ipcBus.on('test-performance-ping', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformancePing(ipcBusEvent, ...args));
                     _ipcBus.on('test-performance-trace', (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, ...args));
                     _ipcBus.on('test-performance-from-' + _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, ...args));
                     _ipcBus.on('test-performance-to-'+ _uuid, (ipcBusEvent, ...args) => this.onIPCBus_TestPerformance(ipcBusEvent, ...args));
@@ -47,18 +47,21 @@ var PerfTests = function _PerfTests(type, busPath) {
             });
     }
 
-    this.onIPCBus_TestPerformancePing = function _onIPCBus_TestPerformancePing(ipcBusEvent) {
-        _ipcBus.send('test-performance-pong', _uuid);
+    this.onIPCBus_TestPerformancePing = function _onIPCBus_TestPerformancePing(ipcBusEvent, transaction) {
+        _ipcBus.send('test-performance-pong', _uuid, transaction);
     }
 
     this.doPerformanceTests = function _doPerformanceTests(testParams) {
         // _ipcBus.send('test-performance-run', testParams, masterPeers);
+        ++_transaction;
         let targets = [];
-        function collectTarget(event, channel) {
-            targets.push({ peer: event.sender, channel });
+        function collectTarget(event, channel, curTransaction) {
+            if (curTransaction === _transaction) {
+                targets.push({ peer: event.sender, channel });
+            }
         }
         _ipcBus.on('test-performance-pong', collectTarget);
-        _ipcBus.send('test-performance-ping');
+        _ipcBus.send('test-performance-ping', _transaction);
         setTimeout(() => {
             _ipcBus.removeListener('test-performance-pong', collectTarget);
             targets = targets.filter(target => ['node', 'renderer', 'main'].includes(target.peer.process.type)).filter(onlyUnique);
@@ -291,6 +294,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     var _ipcBus = _ipcBusModule.IpcBusClient.Create();
     var _uuid = createUuid();
     var _testProgressCB;
+    var _transaction = 0;
     this.clear();
 }
 

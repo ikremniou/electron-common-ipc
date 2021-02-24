@@ -16,8 +16,8 @@ function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
     return {
         CreateIpcBusClient: () => {
             trace && console.log(`${ElectronCommonIPCNamespace}.CreateIpcBusClient`);
-            // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
             const ipcBusClient = CreateIpcBusClientWindow('renderer', (windowLocal.self === windowLocal.top), ipcWindow);
+            // This instance may be proxyfied and then loose property members
             return ipcBusClient;
         }
     }
@@ -36,21 +36,25 @@ export function PreloadElectronCommonIPC(contextIsolation: boolean): boolean {
     return _PreloadElectronCommonIPC(contextIsolation);
 }
 
+let _PreloadElectronCommonIPCDone = false;
 function _PreloadElectronCommonIPC(contextIsolation: boolean): boolean {
-    if (electron && electron.ipcRenderer) {
-        const windowLocal = window as any;
-        if (contextIsolation) {
-            try {
-                electron.contextBridge.exposeInMainWorld(ElectronCommonIPCNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
+    if (!_PreloadElectronCommonIPCDone) {
+        _PreloadElectronCommonIPCDone = true;
+        if (electron && electron.ipcRenderer) {
+            const windowLocal = window as any;
+            if (contextIsolation) {
+                try {
+                    electron.contextBridge.exposeInMainWorld(ElectronCommonIPCNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
+                }
+                catch (error) {
+                    console.error(error);
+                    contextIsolation = false;
+                }
             }
-            catch (error) {
-                console.error(error);
-                contextIsolation = false;
-            }
-        }
 
-        if (!contextIsolation) {
-            windowLocal[ElectronCommonIPCNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
+            if (!contextIsolation) {
+                windowLocal[ElectronCommonIPCNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
+            }
         }
     }
     return IsElectronCommonIPCAvailable();
