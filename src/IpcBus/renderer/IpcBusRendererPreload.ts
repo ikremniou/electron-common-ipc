@@ -32,7 +32,7 @@ export function PreloadElectronCommonIPCAutomatic(): boolean {
     return _PreloadElectronCommonIPC(false);
 }
 
-export function PreloadElectronCommonIPC(contextIsolation: boolean): boolean {
+export function PreloadElectronCommonIPC(contextIsolation: boolean = false): boolean {
     return _PreloadElectronCommonIPC(contextIsolation);
 }
 
@@ -71,3 +71,7 @@ export function IsElectronCommonIPCAvailable(): boolean {
     return false;
 }
 
+// for backward
+export const PreloadElectronCommonIpcCAutomatic = PreloadElectronCommonIPCAutomatic;
+export const PreloadElectronCommonIpc = PreloadElectronCommonIPC;
+export const IsElectronCommonIpcAvailable = IsElectronCommonIPCAvailable;
