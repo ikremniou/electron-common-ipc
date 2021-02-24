@@ -106,7 +106,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
-        ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
             id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
             process,
@@ -133,6 +132,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 name += `-p${peer.process.pid}`;
             }
             // dynamic part
+            ++IpcBusTransportImpl.s_clientNumber;
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
