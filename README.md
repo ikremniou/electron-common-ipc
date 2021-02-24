@@ -1,7 +1,7 @@
 # electron-common-ipc
-An IPC (Inter-Process Communication) bus for applications built on [Node](https://nodejs.org/en/) or [Electron](https://electronjs.org/). 
+An IPC (Inter-Process Communication) bus for applications built for [Node](https://nodejs.org/en/) and/or [Electron](https://electronjs.org/). 
 
-This bus offers a EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Master, Electron Renderer process/s).
+This bus offers an EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Master, Electron Renderer process/s).
 * Node to Node, 
 * Node to Electron (Master and Renderer processes + Frames), 
 * Electron to Node, 
@@ -29,6 +29,7 @@ npm install electron-common-ipc
 
 Dependencies
 * https://github.com/emmkimme/socket-serializer
+* https://github.com/emmkimme/json-helpers
 * http://electron.atom.io/
 * http://nodejs.org/
 
