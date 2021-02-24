@@ -130,8 +130,8 @@ const win = new BrowserWindow({
 
 preload-ipc.js
 ```js
-const electronCommonIpc = require('electron-common-ipc');
-electronCommonIpc.PreloadElectronCommonIpc();
+const electronCommonIPC = require('electron-common-ipc');
+electronCommonIPC.PreloadElectronCommonIPC();
 ```
 
 You have to bundle your file :
@@ -450,18 +450,18 @@ ipcBus.connect('/my-ipc-bus-path');
 ## Initialization in a Renderer process (either sandboxed or not)
 if use ***sandbox*** you have to preload code like this:
 ```js
-const electronCommonIpc = require('electron-common-ipc');
-if (electronCommonIpc.PreloadElectronCommonIpc()) {
-  electronCommonIpc.ActivateIpcBusTrace(true);
-  window.ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
-  window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIpc.IPCBUS_CHANNEL_QUERY_STATE;
+const electronCommonIPC = require('electron-common-ipc');
+if (electronCommonIPC.PreloadElectronCommonIPC()) {
+  electronCommonIPC.ActivateIpcBusTrace(true);
+  window.ipcBus = window.ElectronCommonIPC.CreateIpcBusClient();
+  window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIPC.IPCBUS_CHANNEL_QUERY_STATE;
 }
 ```
 if not, just type this code in your renderer process:
 ```js
-if (electronCommonIpc.PreloadElectronCommonIpc()) {
-    electronCommonIpc.ActivateIpcBusTrace(true);
-    const ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
+if (electronCommonIPC.PreloadElectronCommonIPC()) {
+    electronCommonIPC.ActivateIpcBusTrace(true);
+    const ipcBus = window.ElectronCommonIPC.CreateIpcBusClient();
 }
 ```
 NOTE: There is no notion of port, buspath in a renderer. IpcBusRenderer connects automatically to the instance of the bridge.

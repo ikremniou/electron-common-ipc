@@ -3,9 +3,9 @@
 
 'use strict';
 
-const electronCommonIpc = require('electron-common-ipc');
-if (electronCommonIpc.PreloadElectronCommonIpc()) {
-  // electronCommonIpc.ActivateIpcBusTrace(true);
+const electronCommonIPC = require('electron-common-ipc');
+if (electronCommonIPC.PreloadElectronCommonIPC()) {
+  // electronCommonIPC.ActivateIpcBusTrace(true);
 }
 
 window.ipcRenderer = require('electron').ipcRenderer;
