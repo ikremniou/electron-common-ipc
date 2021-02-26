@@ -281,9 +281,9 @@ export class ChannelConnectionMap<T, K extends string | number> {
     //     });
     // }
 
-    // getChannelConns(channel: string): Map<K, ConnectionPeers<T, K>> {
-    //     return this._channelsMap.get(channel);
-    // }
+    getChannelConns(channel: string): Map<K, ChannelConnectionPeers<T, K>> {
+        return this._channelsMap.get(channel);
+    }
 
     getPeers(): IpcBusPeer[] {
         const peers: Record<string, IpcBusPeer> = {};

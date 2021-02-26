@@ -1,3 +1,0 @@
-"Type";"Link";"Ref";"Time"
-"Send string (1000000)";"renderer => main";"Send string (1000000) renderer => main";"4"
-"Send string (1000000)";"main => renderer";"Send string (1000000) main => renderer";"5"
