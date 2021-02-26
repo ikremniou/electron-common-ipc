@@ -143,7 +143,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
-    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): bool {
+    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
         const listeners = client.listeners(ipcBusCommand.channel);
         if (listeners.length === 0) {
             return false;
