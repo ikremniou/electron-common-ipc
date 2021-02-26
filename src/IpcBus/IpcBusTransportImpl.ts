@@ -219,7 +219,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                return this.onMessageReceived(false, ipcBusCommand, args);
+                return this._onMessageReceived(false, ipcBusCommand, args);
             case IpcBusCommand.Kind.RequestResponse:
                 return this._onResponseReceived(false, ipcBusCommand, args);
         }
@@ -271,7 +271,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        this.onMessageReceived(true, ipcMessage, args);
+        this._onMessageReceived(true, ipcMessage, args);
         this._postDirectMessage(ipcMessage, args);
     }
 
@@ -314,7 +314,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        this.onMessageReceived(true, ipcMessage, args);
+        this._onMessageReceived(true, ipcMessage, args);
         if (deferredRequest.isSettled()) {
             this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
@@ -369,5 +369,5 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    protected abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean;
+    protected abstract _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean;
 }

@@ -23,7 +23,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
         return this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 

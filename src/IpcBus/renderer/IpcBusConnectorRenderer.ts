@@ -65,6 +65,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     protected _onConnect(eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake): IpcBusConnector.Handshake {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onIpcEventRawDataReceived);
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._onIpcEventArgsReceived);
+
         let handshake: IpcBusConnector.Handshake;
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
