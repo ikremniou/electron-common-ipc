@@ -219,9 +219,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient~getArgs
     onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.SendMessage:
                 return this._onMessageReceived(false, ipcBusCommand, args);
-            }
             case IpcBusCommand.Kind.RequestResponse:
                 return this._onResponseReceived(false, ipcBusCommand, args);
         }
@@ -230,14 +229,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+        // Special code for preventing a costly serialization if there is no channel listening
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.SendMessage:
                 if (this.hasChannel(ipcBusCommand.channel)) {
                     const args = ipcPacketBufferCore.parseArrayAt(1);
                     return this._onMessageReceived(false, ipcBusCommand, args);
                 }
                 break;
-            }
             case IpcBusCommand.Kind.RequestResponse:
                 return this._onResponseReceived(false, ipcBusCommand, undefined, ipcPacketBufferCore);
         }
@@ -246,7 +245,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
-        // Prevent to create a huge buffer if not needed, keep working on a set of buffers
+        // Prevent to create a huge buffer if not needed, keep working with a set of buffers
         const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
         return this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
     }
