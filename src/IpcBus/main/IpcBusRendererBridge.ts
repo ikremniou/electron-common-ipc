@@ -33,11 +33,11 @@ function getWebContentsTargetFromEvent(event: Electron.IpcMainEvent): WebContent
     return { webContents: event.sender, frameid: event.frameId };
 }
 
-function getKeyForTargetFromEvent(event: Electron.IpcMainEvent) {
+function getKeyFromEvent(event: Electron.IpcMainEvent) {
     return (event.sender.id << 8) + event.frameId;
 }
 
-export function getWebContentsIdentifier(wcIds: number): WebContentsIdentifier {
+function getWebContentsIdentifier(wcIds: number): WebContentsIdentifier {
     return {
         wcid: wcIds >> 8,
         frameid: wcIds & 0b11111111,
@@ -181,11 +181,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        // if (webContentsTarget.frameid > IpcBusUtils.TopFrameId) {
-        //     webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
-        // }
-        // else 
-        if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+        if (!ipcBusPeer.process.isMainFrame) {
+            webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
+        }
+        else if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
         }
         else {
@@ -210,7 +209,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(event: Electron.IpcMainEvent | null, ipcchannel: string, ipcBusCommand: IpcBusCommand, data: any): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const key = event ? getKeyForTargetFromEvent(event) : -1;
+                const key = event ? getKeyFromEvent(event) : -1;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
@@ -249,16 +248,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererAdminReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, getKeyForTargetFromEvent(event), getWebContentsTargetFromEvent(event), ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, getKeyFromEvent(event), getWebContentsTargetFromEvent(event), ipcBusCommand.peer);
                 return true;
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, getKeyForTargetFromEvent(event), ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, getKeyFromEvent(event), ipcBusCommand.peer);
                 return true;
-
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, getKeyForTargetFromEvent(event), ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, getKeyFromEvent(event), ipcBusCommand.peer);
                 return true;
-
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(ipcBusCommand.peer);
                 return true;

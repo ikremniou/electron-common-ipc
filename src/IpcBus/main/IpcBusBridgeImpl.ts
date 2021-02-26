@@ -171,6 +171,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
+        // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
         if (this._useElectronSerialization) {
             // Unserialize only once
             const args = ipcPacketBufferCore.parseArrayAt(1);
