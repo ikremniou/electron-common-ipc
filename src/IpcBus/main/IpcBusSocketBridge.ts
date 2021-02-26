@@ -143,14 +143,14 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._peer.id, PeerName, ipcBusCommand.peer);
                 }
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             default:
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
         }
         return true;
@@ -167,7 +167,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     onConnectorShutdown(): void {
         super.onConnectorShutdown();
         this._subscriptions.clear();
-        this._bridge._onNetClosed();
+        this._bridge._onSocketClosed();
     }
 }
 

@@ -126,7 +126,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    // This is coming from the Electron Renderer Process (Electron main ipc)
+    // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
         this._mainTransport.onConnectorRawDataReceived(ipcBusCommand, rawContent);
@@ -144,6 +144,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
+    // This is coming from the Electron Main Process (Electron main ipc)
+    // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
         if (this._useElectronSerialization) {
@@ -170,7 +172,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
-    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
+    _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
         // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
         if (this._useElectronSerialization) {
             // Unserialize only once
@@ -184,7 +186,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    _onNetClosed() {
+    _onSocketClosed() {
         this._socketTransport = null;
     }
 }
