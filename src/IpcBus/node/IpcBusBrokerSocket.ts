@@ -1,3 +1,4 @@
+import { JSONParserV1 } from 'json-helpers';
 import type * as net from 'net';
 
 import { IpcPacketBufferList, BufferListReader } from 'socket-serializer';
@@ -67,11 +68,17 @@ export class IpcBusBrokerSocket {
 
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
-        while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-        // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+        if (this._packetIn.decodeFromReader(this._bufferListReader)) {
+            JSONParserV1.install();
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
-            // this._packetIn.reset();
+            while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+                // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+                const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
+                this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
+                // this._packetIn.reset();
+            }
+            JSONParserV1.uninstall();
         }
         // Remove read buffer
         this._bufferListReader.reduce();

@@ -14,6 +14,7 @@ import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMa
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
+import { JSONParserV1 } from 'json-helpers';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -120,9 +121,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
+            JSONParserV1.install();
             const packet = new IpcPacketBuffer();
             packet.serialize([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            JSONParserV1.uninstall();
         }
     }
 
@@ -138,9 +141,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
+            JSONParserV1.install();
             const packet = new IpcPacketBufferList();
             packet.serialize([ipcBusCommand, args]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            JSONParserV1.uninstall();
         }
     }
 
@@ -152,20 +157,24 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
+                JSONParserV1.install();
                 const packet = new IpcPacketBufferList();
                 packet.serialize([ipcBusCommand, args]);
                 this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+                JSONParserV1.uninstall();
             }
         }
         else {
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
+                JSONParserV1.install();
                 const packet = new IpcPacketBufferList();
                 packet.serialize([ipcBusCommand, args]);
                 hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
+                JSONParserV1.uninstall();
             }
         }
     }

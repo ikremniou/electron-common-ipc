@@ -10,6 +10,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
+import { JSONParserV1 } from 'json-helpers';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA = 'ECIPC:IpcBusRenderer:CommandRawData';
@@ -151,6 +152,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             }
         }
         else {
+            JSONParserV1.install();
             const packetOut = new IpcPacketBuffer();
             packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
@@ -161,6 +163,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             else {
                 this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
             }
+            JSONParserV1.uninstall();
         }
     }
 
@@ -171,10 +174,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
         }
         else {
+            JSONParserV1.install();
             const packetOut = new IpcPacketBuffer();
             packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
+            JSONParserV1.uninstall();
         }
     }
 
