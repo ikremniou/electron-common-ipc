@@ -29,15 +29,23 @@ function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
 // By default this function is always trigerred in index-browser in order to offer an access to ipcBus
 
 export function PreloadElectronCommonIPCAutomatic(): boolean {
-    return _PreloadElectronCommonIPC(false);
+    return _PreloadElectronCommonIPC();
 }
 
-export function PreloadElectronCommonIPC(contextIsolation: boolean = false): boolean {
+export function PreloadElectronCommonIPC(contextIsolation?: boolean): boolean {
     return _PreloadElectronCommonIPC(contextIsolation);
 }
 
+const ContextIsolationDefaultValue = false;
+
 let _PreloadElectronCommonIPCDone = false;
-function _PreloadElectronCommonIPC(contextIsolation: boolean): boolean {
+function _PreloadElectronCommonIPC(contextIsolation?: boolean): boolean {
+    // trace && console.log(`process.argv:${window.process?.argv}`);
+    // trace && console.log(`process.env:${window.process?.env}`);
+    // trace && console.log(`contextIsolation:${contextIsolation}`);
+    if (contextIsolation == null) {
+        contextIsolation = window.process?.argv?.includes('--context-isolation') ?? ContextIsolationDefaultValue;
+    }
     if (!_PreloadElectronCommonIPCDone) {
         _PreloadElectronCommonIPCDone = true;
         if (electron && electron.ipcRenderer) {

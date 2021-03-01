@@ -16,6 +16,12 @@ const electronSession = require('electron').session;
 const ipcMain = require('electron').ipcMain;
 const BrowserWindow = require('electron').BrowserWindow;
 
+const WebPreferencesDefault = {
+    // sandbox: true,
+    // contextIsolation: true,
+    // additionalArguments: ['--context-isolation']
+};
+
 // Debug rules
 electronApp.commandLine.appendSwitch('remote-debugging-port', '55555');
 electronApp.commandLine.appendSwitch('host-rules', 'MAP * 127.0.0.1');
@@ -147,7 +153,7 @@ var MainProcess = (function () {
                         width: width, height: 800,
                         autoHideMenuBar: true,
                         webPreferences: {
-                            sandbox: true,
+                            ...WebPreferencesDefault,
                             nodeIntegrationInSubFrames: true,
                             preload: preloadFile
                         }
@@ -294,8 +300,9 @@ var RendererProcess = (function () {
                 width: width, height: 600,
                 autoHideMenuBar: true,
                 webPreferences: {
+                    ...WebPreferencesDefault,
                     session: getSession(),
-                    preload: preloadFile
+                    preload: preloadFile,
                 }
             });
 
@@ -390,6 +397,7 @@ var NodeProcess = (function () {
             width: width, height: 600,
             autoHideMenuBar: true,
             webPreferences: {
+                ...WebPreferencesDefault,
                 preload: preloadFile
             }
         });

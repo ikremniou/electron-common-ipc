@@ -188,12 +188,12 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return this.addRefCount(channel, key, conn, peer, 1);
     }
 
-    private _releaseConnData(channel: string, connData: ChannelConnectionPeers<T, K>, connsMap: Map<K, ChannelConnectionPeers<T, K>>, peer: IpcBusPeer, all: boolean): number {
+    private _releaseConnData(channel: string, connData: ChannelConnectionPeers<T, K>, connsMap: Map<K, ChannelConnectionPeers<T, K>>, peer: IpcBusPeer, allRef: boolean): number {
         if (peer == null) {
             connData.clearPeers();
         }
         else {
-            if (all) {
+            if (allRef) {
                 if (connData.removePeer(peer) === false) {
                     Logger.enable && this._warn(`Release '${channel}': peerId # ${peer ? peer.id : 'unknown'} is unknown`);
                 }
@@ -213,8 +213,8 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return connsMap.size;
     }
 
-    private _releaseChannel(channel: string, key: K, peer: IpcBusPeer, all: boolean): number {
-        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer ? peer.id : 'unknown'}`);
+    private _releaseChannel(channel: string, key: K, peer: IpcBusPeer, allRef: boolean): number {
+        Logger.enable && this._info(`Release '${channel}' (${allRef}): peerId = ${peer ? peer.id : 'unknown'}`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -226,7 +226,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
                 Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
                 return 0;
             }
-            return this._releaseConnData(channel, connData, connsMap, peer, all);
+            return this._releaseConnData(channel, connData, connsMap, peer, allRef);
         }
     }
 
