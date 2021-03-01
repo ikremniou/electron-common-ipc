@@ -93,7 +93,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
             };
         }
-        // console.warn(`ElectronCommonIPC:handshake${JSON.stringify(handshake)}`);
+        // console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
         // Keep the this._process ref intact as shared with client peers
         this._process = Object.assign(this._process, handshake.process);

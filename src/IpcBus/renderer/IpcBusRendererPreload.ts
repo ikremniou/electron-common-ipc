@@ -10,12 +10,12 @@ catch (err) {
 }
 
 const trace = false; // true;
-export const ElectronCommonIPCNamespace = 'ElectronCommonIPC';
+export const ElectronCommonIpcNamespace = 'ElectronCommonIpc';
 
 function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
     return {
         CreateIpcBusClient: () => {
-            trace && console.log(`${ElectronCommonIPCNamespace}.CreateIpcBusClient`);
+            trace && console.log(`${ElectronCommonIpcNamespace}.CreateIpcBusClient`);
             const ipcBusClient = CreateIpcBusClientWindow('renderer', (windowLocal.self === windowLocal.top), ipcWindow);
             // This instance may be proxyfied and then loose property members
             return ipcBusClient;
@@ -28,31 +28,31 @@ function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
 
 // By default this function is always trigerred in index-browser in order to offer an access to ipcBus
 
-export function PreloadElectronCommonIPCAutomatic(): boolean {
-    return _PreloadElectronCommonIPC();
+export function PreloadElectronCommonIpcAutomatic(): boolean {
+    return _PreloadElectronCommonIpc();
 }
 
-export function PreloadElectronCommonIPC(contextIsolation?: boolean): boolean {
-    return _PreloadElectronCommonIPC(contextIsolation);
+export function PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
+    return _PreloadElectronCommonIpc(contextIsolation);
 }
 
 const ContextIsolationDefaultValue = false;
 
-let _PreloadElectronCommonIPCDone = false;
-function _PreloadElectronCommonIPC(contextIsolation?: boolean): boolean {
+let _PreloadElectronCommonIpcDone = false;
+function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     // trace && console.log(`process.argv:${window.process?.argv}`);
     // trace && console.log(`process.env:${window.process?.env}`);
     // trace && console.log(`contextIsolation:${contextIsolation}`);
     if (contextIsolation == null) {
         contextIsolation = window.process?.argv?.includes('--context-isolation') ?? ContextIsolationDefaultValue;
     }
-    if (!_PreloadElectronCommonIPCDone) {
-        _PreloadElectronCommonIPCDone = true;
+    if (!_PreloadElectronCommonIpcDone) {
+        _PreloadElectronCommonIpcDone = true;
         if (electron && electron.ipcRenderer) {
             const windowLocal = window as any;
             if (contextIsolation) {
                 try {
-                    electron.contextBridge.exposeInMainWorld(ElectronCommonIPCNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
+                    electron.contextBridge.exposeInMainWorld(ElectronCommonIpcNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
                 }
                 catch (error) {
                     console.error(error);
@@ -61,25 +61,22 @@ function _PreloadElectronCommonIPC(contextIsolation?: boolean): boolean {
             }
 
             if (!contextIsolation) {
-                windowLocal[ElectronCommonIPCNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
+                windowLocal[ElectronCommonIpcNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
             }
         }
     }
-    return IsElectronCommonIPCAvailable();
+    return IsElectronCommonIpcAvailable();
 }
 
-export function IsElectronCommonIPCAvailable(): boolean {
+export function IsElectronCommonIpcAvailable(): boolean {
     try {
         const windowLocal = window as any;
-        const electronCommonIPCSpace = windowLocal[ElectronCommonIPCNamespace];
-        return (electronCommonIPCSpace != null);
+        const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
+        return (electronCommonIpcSpace != null);
     }
     catch (err) {
     }
     return false;
 }
 
-// for backward
-export const PreloadElectronCommonIpcCAutomatic = PreloadElectronCommonIPCAutomatic;
-export const PreloadElectronCommonIpc = PreloadElectronCommonIPC;
-export const IsElectronCommonIpcAvailable = IsElectronCommonIPCAvailable;
+
