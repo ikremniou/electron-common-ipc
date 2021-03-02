@@ -34,21 +34,21 @@ function CreateToDirs(libraryName, libraryOutdir) {
     const EikonOnElectronDir = `${WorkspaceDir}\\src\\products\\eikon-on-electron`;
 
     const toDirs = [];
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'node_modules', libraryName, libraryOutdir));
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'build', 'src', 'node_modules', libraryName, libraryOutdir));
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'node_modules', libraryName, libraryOutdir));
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'build', 'src', 'node_modules', libraryName, libraryOutdir));
-    toDirs.push(path.join(EikonOnElectronDir, 'node_modules', libraryName, libraryOutdir));
+    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'node_modules', libraryName));
+    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'build', 'src', 'node_modules', libraryName));
+    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'node_modules', libraryName));
+    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'build', 'src', 'node_modules', libraryName));
+    toDirs.push(path.join(EikonOnElectronDir, 'node_modules', libraryName));
     return toDirs;
 }
 
-function CopyDir(fromDir, toDirs) {
+function CopyDir(fromDir, toDirs, libraryOutdir) {
     const commonDir = LongestCommonPrefix(toDirs);
     toDirs.forEach((topDir) => {
         console.log(`copying to \"${topDir.substr(commonDir.length)}\"`);
         try {
             if (fse.existsSync(topDir)) {
-                fse.copySync(fromDir, topDir, {
+                fse.copySync(fromDir, path.join(topDir, libraryOutdir), {
                     overwrite : true,
                     preserveTimestamps : true
                 });
@@ -65,14 +65,14 @@ function CopyDir(fromDir, toDirs) {
 }
 {
     const fromDir = path.join(__dirname, '..', 'lib');
-    const topDirs = CreateToDirs('electron-common-ipc', 'lib');
-    CopyDir(fromDir, topDirs);
+    const topDirs = CreateToDirs('electron-common-ipc');
+    CopyDir(fromDir, topDirs, 'lib');
 }
 
 {
     const fromDir = path.join(__dirname, '..', 'node_modules', 'socket-serializer', 'lib');
-    const topDirs = CreateToDirs('socket-serializer', 'lib');
-    CopyDir(fromDir, topDirs);
+    const topDirs = CreateToDirs('socket-serializer');
+    CopyDir(fromDir, topDirs, 'lib');
 }
 
 {

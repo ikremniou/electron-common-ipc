@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -171,7 +171,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 JSONParserV1.install();
                 this._packetOut.serialize([ipcBusCommand, args]);
                 hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
-                // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
                 JSONParserV1.uninstall();
             }
