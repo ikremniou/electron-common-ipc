@@ -36,6 +36,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
     protected _peer: Client.IpcBusPeer;
+    protected _packetOut: IpcPacketBuffer;
 
     private _useElectronSerialization: boolean;
 
@@ -53,6 +54,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
+        this._packetOut = new IpcPacketBuffer();
+        this._packetOut.JSON = JSONParserV1;
     }
 
     get noSerialization(): boolean {
@@ -122,9 +125,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
             JSONParserV1.install();
-            const packet = new IpcPacketBuffer();
-            packet.serialize([ipcBusCommand]);
-            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            this._packetOut.serialize([ipcBusCommand]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
             JSONParserV1.uninstall();
         }
     }
@@ -142,9 +144,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
             JSONParserV1.install();
-            const packet = new IpcPacketBufferList();
-            packet.serialize([ipcBusCommand, args]);
-            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            this._packetOut.serialize([ipcBusCommand, args]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
             JSONParserV1.uninstall();
         }
     }
@@ -158,9 +159,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
                 JSONParserV1.install();
-                const packet = new IpcPacketBufferList();
-                packet.serialize([ipcBusCommand, args]);
-                this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+                this._packetOut.serialize([ipcBusCommand, args]);
+                this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
                 JSONParserV1.uninstall();
             }
         }
@@ -169,11 +169,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
                 JSONParserV1.install();
-                const packet = new IpcPacketBufferList();
-                packet.serialize([ipcBusCommand, args]);
-                hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+                this._packetOut.serialize([ipcBusCommand, args]);
+                hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
                 // End with renderer if have to compress
-                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
+                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
                 JSONParserV1.uninstall();
             }
         }

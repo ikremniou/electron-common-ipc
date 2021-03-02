@@ -29,6 +29,7 @@ export class IpcBusBrokerSocket {
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
+        this._packetIn.JSON = JSONParserV1;
 
         this._socketBinds = {};
         this._socketBinds['error'] = this._onSocketError.bind(this);

@@ -31,7 +31,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
+        this._packetIn.JSON = JSONParserV1;
         this._packetOut = new IpcPacketWriter();
+        this._packetOut.JSON = JSONParserV1;
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
