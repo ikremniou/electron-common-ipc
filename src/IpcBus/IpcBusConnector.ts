@@ -11,6 +11,7 @@ export namespace IpcBusConnector {
         process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
         useIPCNativeSerialization?: boolean;
+        // useIPCFrameAPI?: boolean;
     }
 
     /** @internal */

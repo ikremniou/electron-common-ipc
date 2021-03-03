@@ -151,7 +151,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.useIPCNativeSerialization = this._bridge.noSerialization;
+        handshake.useIPCNativeSerialization = this._bridge.useIPCNativeSerialization;
+        // handshake.useIPCFrameAPI = this._bridge.useIPCNativeSerialization;
         return handshake;
     }
 
@@ -181,10 +182,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        if (!ipcBusPeer.process.isMainFrame) {
-            webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
-        }
-        else if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+        // if (this._bridge.useIPCFrameAPI) {
+            if (!ipcBusPeer.process.isMainFrame) {
+                webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
+                return;
+            }
+        // }
+        if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
         }
         else {
@@ -213,7 +217,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
-                        connData.conn.webContents.sendToFrame(connData.conn.frameid, ipcchannel, ipcBusCommand, data);
+                        // if (this._bridge.useIPCFrameAPI) {
+                            connData.conn.webContents.sendToFrame(connData.conn.frameid, ipcchannel, ipcBusCommand, data);
+                        // }
+                        // else {
+                        //     connData.conn.webContents.send(ipcchannel, ipcBusCommand, data);
+                        // }
                     }
                 });
                 break;
@@ -223,7 +232,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 if (webContentsTargetIds) {
                     const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
                     if (webContents) {
-                        webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
+                        // if (this._bridge.useIPCFrameAPI) {
+                            webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
+                        // }
+                        // else {
+                        //     webContents.send(ipcchannel, ipcBusCommand, data);
+                        // }
                     }
                     return true;
                 }

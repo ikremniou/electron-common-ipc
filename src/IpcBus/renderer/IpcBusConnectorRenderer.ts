@@ -28,6 +28,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _onIpcEventRawDataReceived: (...args: any[]) => void;
     private _onIpcEventArgsReceived: (...args: any[]) => void;
     private _useElectronSerialization: boolean;
+    // private _useIPCFrameAPI: boolean;
     private _packetOut: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow) {
@@ -39,19 +40,21 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut.JSON = JSONParserV1;
 
         window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
-            this.onConnectorBeforeShutdown();
-            this.onConnectorShutdown();
+            // console.log(`IPCBUS-'beforeunload'`);
+            // this.onConnectorBeforeShutdown();
+            // this.onConnectorShutdown();
         });
-        // window.addEventListener("pagehide", (event: PageTransitionEvent) => {
+        // window.addEventListener('pagehide', (event: PageTransitionEvent) => {
+        //     // console.log(`IPCBUS-'pagehide'`);
         //     if (event.persisted) {
         //     }
         //     else {
-        //         this.onConnectorBeforeShutdown();
-        //         this.onConnectorShutdown();
+        //         // this.onConnectorBeforeShutdown();
+        //         // this.onConnectorShutdown();
         //     }
         // });
-
         window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+            // console.log(`IPCBUS-'unload'`);
             this.onConnectorBeforeShutdown();
             this.onConnectorShutdown();
         });
@@ -98,6 +101,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         // console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
+        // this._useIPCFrameAPI = handshake.useIPCFrameAPI;
         // Keep the this._process ref intact as shared with client peers
         this._process = Object.assign(this._process, handshake.process);
         this._log.level = handshake.logLevel;
@@ -147,7 +151,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._useElectronSerialization) {
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds && webContentsTargetIds.isMainFrame) {
+            if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
             }
             else {
@@ -160,7 +164,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             JSONParserV1.uninstall();
             const rawContent = this._packetOut.getRawData();
             const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (webContentsTargetIds && webContentsTargetIds.isMainFrame) {
+            if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
                 this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
             }
             else {

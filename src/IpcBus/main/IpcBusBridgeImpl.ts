@@ -38,10 +38,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _peer: Client.IpcBusPeer;
     protected _packetOut: IpcPacketBuffer;
 
-    private _useElectronSerialization: boolean;
+    private _useIPCNativeSerialization: boolean;
+    // private _useIPCFrameAPI: boolean
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._useElectronSerialization = true;
+        this._useIPCNativeSerialization = true;
+        // this._useIPCFrameAPI = true;
         
         this._peer = { 
             id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
@@ -58,8 +60,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         this._packetOut.JSON = JSONParserV1;
     }
 
-    get noSerialization(): boolean {
-        return this._useElectronSerialization;
+    // get useIPCFrameAPI(): boolean {
+    //     return this._useIPCFrameAPI;
+    // }
+
+    get useIPCNativeSerialization(): boolean {
+        return this._useIPCNativeSerialization;
     }
 
     get mainTransport(): IpcBusTransport {
@@ -154,7 +160,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
-        if (this._useElectronSerialization) {
+        if (this._useIPCNativeSerialization) {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
@@ -181,7 +187,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
         // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
-        if (this._useElectronSerialization) {
+        if (this._useIPCNativeSerialization) {
             // Unserialize only once
             const args = ipcPacketBufferCore.parseArrayAt(1);
             this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
