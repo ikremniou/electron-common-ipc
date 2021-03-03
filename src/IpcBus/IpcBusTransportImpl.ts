@@ -98,7 +98,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             process: connector.process
         };
         this._requestFunctions = new Map();
-        this._postDirectMessage = this._postCommand = () => { };
+        this._postDirectMessage = this._postCommand = this._deadMessageHandler;
+    }
+
+    private _deadMessageHandler(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        console.error(`IPCBUS: Receive msg before birth or after death ${JSON.stringify(ipcBusCommand, null, 4)}`);
     }
 
     get peer(): Client.IpcBusPeer {
@@ -254,7 +258,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     onConnectorShutdown() {
         this._directChannel = '';
         // Cut connection
-        this._postDirectMessage = this._postCommand = () => {};
+        this._postDirectMessage = this._postCommand = this._deadMessageHandler;
         // no messages to send, it is too late
     }
 
