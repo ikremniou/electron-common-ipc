@@ -3,7 +3,7 @@
 var processId;
 var peerName;
 var processToMaster = null;
-var ipcBus = (window.CreateIpcBusClient || window.ElectronCommonIPC.CreateIpcBusClient)();
+var ipcBus = (window.CreateIpcBusClient || window.ElectronCommonIpc.CreateIpcBusClient)();
 
 // var bigpayload = null;
 

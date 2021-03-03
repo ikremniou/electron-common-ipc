@@ -23,9 +23,13 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
     protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         let isMessageReceived = false;
-        this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-            isMessageReceived ||= this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
-        });
+        const channelConns = this._subscriptions.getChannelConns(ipcBusCommand.channel);
+        if (channelConns) {
+            isMessageReceived = true;
+            channelConns.forEach((connData) => {
+                this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
+            });
+        }
         return isMessageReceived;
     }
 

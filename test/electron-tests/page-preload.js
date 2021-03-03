@@ -1,7 +1,7 @@
-const electronCommonIPCModule = require('../..');
-electronCommonIPCModule.PreloadElectronCommonIPC();
+const electronCommonIpcModule = require('../..');
+electronCommonIpcModule.PreloadElectronCommonIpc();
 
-console.log(`IsElectronCommonIPCAvailable=${electronCommonIPCModule.IsElectronCommonIPCAvailable()}`);
+console.log(`IsElectronCommonIpcAvailable=${electronCommonIpcModule.IsElectronCommonIpcAvailable()}`);
 
 const ipcRenderer = require('electron').ipcRenderer;
 window.ipcRenderer = ipcRenderer;
