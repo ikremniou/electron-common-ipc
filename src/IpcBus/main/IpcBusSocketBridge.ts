@@ -75,6 +75,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        throw 'not implemented';
         // if (this.hasChannel(ipcBusCommand.channel)) {
         //     ipcBusCommand.bridge = true;
         //     this._packet.serialize([ipcBusCommand, args]);
@@ -111,7 +112,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         // call when closing the transport
     }
 
-    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
+    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         throw 'not implemented';
     }
 
@@ -142,20 +143,20 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._peer.id, PeerName, ipcBusCommand.peer);
                 }
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             default:
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
+                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
         }
         return true;
     }
 
-    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
+    onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
         throw 'not implemented';
     }
 
@@ -166,7 +167,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     onConnectorShutdown(): void {
         super.onConnectorShutdown();
         this._subscriptions.clear();
-        this._bridge._onNetClosed();
+        this._bridge._onSocketClosed();
     }
 }
 

@@ -1,38 +1,27 @@
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
+import type { IpcWindow } from './IpcBusConnectorRenderer';
 
-// let useContextBridge = process.argv.includes('--context-isolation');
-	// if (useContextBridge) {
-	// 	try {
-	// 		contextBridge.exposeInMainWorld('vscode', globals);
-	// 	} catch (error) {
-	// 		console.error(error);
-
-	// 		useContextBridge = false;
-	// 	}
-	// }
-
-	// if (!useContextBridge) {
-	// 	// @ts-ignore
-	// 	window.vscode = globals;
-	// }
-
-// const globals = {
-//     ElectronCommonIpc: {
-//         CreateIpcBusClient() {
-//             // Will work in a preload or with nodeIntegration=true
-//             const electron = require('electron');
-//             if (electron && electron.ipcRenderer) {
-//                 const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
-//                 return ipcBusClient;
-//             }
-//         },
-//         FrameBridge: {
-
-//         }
-//     }
-// }
+let electron: any;
+try {
+    // Will work in a preload or with nodeIntegration=true
+    electron = require('electron');
+}
+catch (err) {
+}
 
 const trace = false; // true;
+export const ElectronCommonIpcNamespace = 'ElectronCommonIpc';
+
+function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
+    return {
+        CreateIpcBusClient: () => {
+            trace && console.log(`${ElectronCommonIpcNamespace}.CreateIpcBusClient`);
+            const ipcBusClient = CreateIpcBusClientWindow('renderer', (windowLocal.self === windowLocal.top), ipcWindow);
+            // This instance may be proxyfied and then loose property members
+            return ipcBusClient;
+        }
+    }
+}
 
 // This function could be called in advance in the preload file of the BrowserWindow
 // Then ipcbus is supported in sandbox or nodeIntegration=false process
@@ -40,42 +29,41 @@ const trace = false; // true;
 // By default this function is always trigerred in index-browser in order to offer an access to ipcBus
 
 export function PreloadElectronCommonIpcAutomatic(): boolean {
-    return _PreloadElectronCommonIpc('Implicit');
+    return _PreloadElectronCommonIpc();
 }
 
-export function PreloadElectronCommonIpc(iframeSupport: boolean = false): boolean {
-    return _PreloadElectronCommonIpc('Explicit', iframeSupport);
+export function PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
+    return _PreloadElectronCommonIpc(contextIsolation);
 }
 
-function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = false): boolean {
-    const windowLocal = window as any;
-    try {
-        // Will work in a preload or with nodeIntegration=true
-        const electron = require('electron');
+const ContextIsolationDefaultValue = false;
+
+let _PreloadElectronCommonIpcDone = false;
+function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
+    // trace && console.log(`process.argv:${window.process?.argv}`);
+    // trace && console.log(`process.env:${window.process?.env}`);
+    // trace && console.log(`contextIsolation:${contextIsolation}`);
+    if (contextIsolation == null) {
+        contextIsolation = window.process?.argv?.includes('--context-isolation') ?? ContextIsolationDefaultValue;
+    }
+    if (!_PreloadElectronCommonIpcDone) {
+        _PreloadElectronCommonIpcDone = true;
         if (electron && electron.ipcRenderer) {
-            windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-            windowLocal.ElectronCommonIpc.Process = process || {};
-            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                    // try {
-                    //     console.warn(`electron-common-ipc:process:${JSON.stringify(windowLocal.ElectronCommonIpc.Process)}`);
-                    //     console.warn(`electron-common-ipc:process.isMainFrame:${JSON.stringify(windowLocal.ElectronCommonIpc.Process.isMainFrame)}`);
-                    // }
-                    // catch(err){};
-                    // try {
-                    //     console.warn(`electron-common-ipc:electron.webFrame:${JSON.stringify(electron.webFrame)}`);
-                    // }
-                    // catch(err){};
-                    trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
-                    const ipcBusClient = CreateIpcBusClientWindow('renderer', (windowLocal.self === windowLocal.top), electron.ipcRenderer as any);
-                    return ipcBusClient;
-                };
+            const windowLocal = window as any;
+            if (contextIsolation) {
+                try {
+                    electron.contextBridge.exposeInMainWorld(ElectronCommonIpcNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
+                }
+                catch (error) {
+                    console.error(error);
+                    contextIsolation = false;
+                }
+            }
+
+            if (!contextIsolation) {
+                windowLocal[ElectronCommonIpcNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
             }
         }
-    }
-    catch (_) {
     }
     return IsElectronCommonIpcAvailable();
 }
@@ -83,9 +71,12 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
 export function IsElectronCommonIpcAvailable(): boolean {
     try {
         const windowLocal = window as any;
-        return (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) != null;
+        const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
+        return (electronCommonIpcSpace != null);
     }
-    catch (_) {
+    catch (err) {
     }
     return false;
 }
+
+

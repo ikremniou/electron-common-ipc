@@ -21,11 +21,12 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]) {
-        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean {
+        let isMessageReceived = false;
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-            this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
+            isMessageReceived ||= this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
         });
+        return isMessageReceived;
     }
 
     onConnectorBeforeShutdown() {

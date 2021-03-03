@@ -47,9 +47,9 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         }
     }
 
-    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         if (this._ipcBusLog.addLogPacket(ipcBusCommand, ipcPacketBuffer)) {
-            super._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+            super._onSocketMessageReceived(ipcBusCommand, ipcPacketBuffer);
         }
     }
 

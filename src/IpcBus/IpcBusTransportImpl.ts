@@ -106,7 +106,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
-        ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
             id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
             process,
@@ -133,6 +132,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 name += `-p${peer.process.pid}`;
             }
             // dynamic part
+            ++IpcBusTransportImpl.s_clientNumber;
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
@@ -143,7 +143,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
-    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
+        const listeners = client.listeners(ipcBusCommand.channel);
+        if (listeners.length === 0) {
+            return false;
+        }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         let logGetMessage: IpcBusCommand.Log;
         if (this._logActivate) {
@@ -191,10 +195,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
             };
         }
-        const listeners = client.listeners(ipcBusCommand.channel);
         for (let i = 0, l = listeners.length; i < l; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
+        return true;
     }
 
     protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
@@ -213,32 +217,37 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient~getArgs
-    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
+    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (this.hasChannel(ipcBusCommand.channel)) {
-                    args = args || ipcPacketBufferCore.parseArrayAt(1);
-                    this.onMessageReceived(false, ipcBusCommand, args);
-                    return true;
-                }
-                break;
-            }
+            case IpcBusCommand.Kind.SendMessage:
+                return this._onMessageReceived(false, ipcBusCommand, args);
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBufferCore);
+                return this._onResponseReceived(false, ipcBusCommand, args);
         }
         return false;
     }
 
     // IpcConnectorClient
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
+        // Special code for preventing a costly serialization if there is no channel listening
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage:
+                if (this.hasChannel(ipcBusCommand.channel)) {
+                    const args = ipcPacketBufferCore.parseArrayAt(1);
+                    return this._onMessageReceived(false, ipcBusCommand, args);
+                }
+                break;
+            case IpcBusCommand.Kind.RequestResponse:
+                return this._onResponseReceived(false, ipcBusCommand, undefined, ipcPacketBufferCore);
+        }
+        return false;
     }
 
     // IpcConnectorClient
-    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
-        // Prevent to create a huge buffer if not needed, keep working on a set of buffers
+    onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
+        // Prevent to create a huge buffer if not needed, keep working with a set of buffers
         const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
+        return this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
     }
 
     // IpcConnectorClient
@@ -265,7 +274,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {
-            this.onMessageReceived(true, ipcMessage, args);
+            this._onMessageReceived(true, ipcMessage, args);
         }
         this._postDirectMessage(ipcMessage, args);
     }
@@ -310,7 +319,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {
-            this.onMessageReceived(true, ipcMessage, args);
+            this._onMessageReceived(true, ipcMessage, args);
         }
         if (deferredRequest.isSettled()) {
             this._connector.logLocalMessage(client.peer, ipcMessage, args);
@@ -366,5 +375,5 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    protected abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean;
 }

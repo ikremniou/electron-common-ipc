@@ -16,6 +16,6 @@ import './IpcBus/log/IpcBusLog-factory-browser';
 import './IpcBus/service/IpcBusService-factory-browser';
 
 
-import { PreloadElectronCommonIpcAutomatic } from './IpcBus/renderer/IpcBusRendererPreload';
-PreloadElectronCommonIpcAutomatic();
+// import { PreloadElectronCommonIpcAutomatic } from './IpcBus/renderer/IpcBusRendererPreload';
+// PreloadElectronCommonIpcAutomatic();
 

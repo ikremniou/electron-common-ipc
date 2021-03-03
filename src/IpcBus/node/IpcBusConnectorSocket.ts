@@ -9,6 +9,7 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
+import { JSONParserV1 } from 'json-helpers';
 
 // Implementation for Node process
 /** @internal */
@@ -30,7 +31,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
+        this._packetIn.JSON = JSONParserV1;
         this._packetOut = new IpcPacketWriter();
+        this._packetOut.JSON = JSONParserV1;
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
@@ -69,11 +72,17 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     // https://nodejs.org/api/net.html#net_event_data
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
-        while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-        // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+        if (this._packetIn.decodeFromReader(this._bufferListReader)) {
+            JSONParserV1.install();
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
-            // this._packetIn.reset();
+            while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+            // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+                const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
+                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
+                // this._packetIn.reset();
+            }
+            JSONParserV1.uninstall();
         }
         // Remove read buffer
         this._bufferListReader.reduce();

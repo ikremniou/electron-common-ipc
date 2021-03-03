@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -14,6 +14,7 @@ import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMa
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
+import { JSONParserV1 } from 'json-helpers';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -35,11 +36,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
     protected _peer: Client.IpcBusPeer;
+    protected _packetOut: IpcPacketBuffer;
 
     private _useElectronSerialization: boolean;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._useElectronSerialization = false;
+        this._useElectronSerialization = true;
         
         this._peer = { 
             id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
@@ -52,6 +54,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
+        this._packetOut = new IpcPacketBuffer();
+        this._packetOut.JSON = JSONParserV1;
     }
 
     get noSerialization(): boolean {
@@ -120,16 +124,17 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
-            const packet = new IpcPacketBuffer();
-            packet.serialize([ipcBusCommand]);
-            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            JSONParserV1.install();
+            this._packetOut.serialize([ipcBusCommand]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
+            JSONParserV1.uninstall();
         }
     }
 
-    // This is coming from the Electron Renderer Process (Electron main ipc)
+    // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
-        this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
+        this._mainTransport.onConnectorRawDataReceived(ipcBusCommand, rawContent);
         this._socketTransport && this._socketTransport.broadcastRawData(ipcBusCommand, rawContent);
     }
 
@@ -138,40 +143,44 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
-            const packet = new IpcPacketBufferList();
-            packet.serialize([ipcBusCommand, args]);
-            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            JSONParserV1.install();
+            this._packetOut.serialize([ipcBusCommand, args]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
+            JSONParserV1.uninstall();
         }
     }
 
+    // This is coming from the Electron Main Process (Electron main ipc)
+    // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
         if (this._useElectronSerialization) {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
-            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
-                const packet = new IpcPacketBufferList();
-                packet.serialize([ipcBusCommand, args]);
-                this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+                JSONParserV1.install();
+                this._packetOut.serialize([ipcBusCommand, args]);
+                this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
+                JSONParserV1.uninstall();
             }
         }
         else {
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
-            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
-                const packet = new IpcPacketBufferList();
-                packet.serialize([ipcBusCommand, args]);
-                hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
-                // End with renderer if have to compress
-                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
+                JSONParserV1.install();
+                this._packetOut.serialize([ipcBusCommand, args]);
+                hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
+                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
+                JSONParserV1.uninstall();
             }
         }
     }
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
-    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
+    _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
+        // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
         if (this._useElectronSerialization) {
             // Unserialize only once
             const args = ipcPacketBufferCore.parseArrayAt(1);
@@ -184,7 +193,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    _onNetClosed() {
+    _onSocketClosed() {
         this._socketTransport = null;
     }
 }

@@ -4403,7 +4403,7 @@ class IpcBusTransportImpl {
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
                 if (this.hasChannel(ipcBusCommand.channel)) {
                     args = args || ipcPacketBuffer.parseArrayAt(1);
-                    this.onMessageReceived(false, ipcBusCommand, args);
+                    this._onMessageReceived(false, ipcBusCommand, args);
                     return true;
                 }
                 break;
@@ -4434,7 +4434,7 @@ class IpcBusTransportImpl {
             this._connector.logMessageSend(null, ipcMessage);
         }
         if (this.hasChannel(channel)) {
-            this.onMessageReceived(true, ipcMessage, args);
+            this._onMessageReceived(true, ipcMessage, args);
         }
         this.postMessage(ipcMessage, args);
     }
@@ -4472,7 +4472,7 @@ class IpcBusTransportImpl {
             logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         }
         if (this.hasChannel(channel)) {
-            this.onMessageReceived(true, ipcMessage, args);
+            this._onMessageReceived(true, ipcMessage, args);
         }
         if (deferredRequest.isSettled()) {
             this._connector.logLocalMessage(client.peer, ipcMessage, args);
@@ -4543,7 +4543,7 @@ class IpcBusTransportMultiImpl extends IpcBusTransportImpl_1.IpcBusTransportImpl
     hasChannel(channel) {
         return this._subscriptions.hasChannel(channel);
     }
-    onMessageReceived(local, ipcBusCommand, args) {
+    _onMessageReceived(local, ipcBusCommand, args) {
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
             this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
         });

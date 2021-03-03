@@ -1,17 +1,16 @@
-
 import { IpcBusClient } from './IpcBusClient';
-// import * as IpcBusUtils from './IpcBusUtils';
-
-// import { IpcBusClientRenderer } from './IpcBusClientRenderer';
+import { ElectronCommonIpcNamespace, PreloadElectronCommonIpcAutomatic } from './renderer/IpcBusRendererPreload';
 
 const windowLocal = window as any;
 export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
-    if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
-        return windowLocal.ElectronCommonIpc.CreateIpcBusClient();
+    const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
+    if (electronCommonIpcSpace && electronCommonIpcSpace.CreateIpcBusClient) {
+        return electronCommonIpcSpace.CreateIpcBusClient();
     }
     return null;
 }
 
 windowLocal.CreateIpcBusClient = CreateIpcBusClient;
-
 IpcBusClient.Create = CreateIpcBusClient;
+
+PreloadElectronCommonIpcAutomatic();

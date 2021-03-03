@@ -36,6 +36,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        throw 'not implemented';
         // if (this.hasChannel(ipcBusCommand.channel)) {
         //     ipcBusCommand.bridge = true;
         //     this._packet.serialize([ipcBusCommand, args]);
@@ -81,14 +82,14 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
     protected _reset(closeServer: boolean) {
         super._reset(closeServer);
-        this._bridge._onNetClosed();
+        this._bridge._onSocketClosed();
     }
 
     protected broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
+        this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferList);
     }
 
     protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
+        this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferList);
     }
 }
