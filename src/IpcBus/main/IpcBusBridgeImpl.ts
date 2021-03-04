@@ -149,8 +149,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (hasSocketChannel) {
             JSONParserV1.install();
             this._packetOut.serialize([ipcBusCommand, args]);
-            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
             JSONParserV1.uninstall();
+            this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
         }
     }
 
@@ -164,8 +164,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             if (hasSocketChannel) {
                 JSONParserV1.install();
                 this._packetOut.serialize([ipcBusCommand, args]);
-                this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
                 JSONParserV1.uninstall();
+                this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
             }
         }
         else {
@@ -174,9 +174,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             if (hasRendererChannel || hasSocketChannel) {
                 JSONParserV1.install();
                 this._packetOut.serialize([ipcBusCommand, args]);
+                JSONParserV1.uninstall();
                 hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
-                JSONParserV1.uninstall();
             }
         }
     }
