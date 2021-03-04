@@ -73,7 +73,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            JSONParserV1.install();
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
             while (this._packetIn.decodeFromReader(this._bufferListReader)) {
@@ -82,10 +81,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                 this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
                 // this._packetIn.reset();
             }
-            JSONParserV1.uninstall();
+            // Remove read buffer
+            this._bufferListReader.reduce();
         }
-        // Remove read buffer
-        this._bufferListReader.reduce();
     }
 
     protected _reset(endSocket: boolean) {

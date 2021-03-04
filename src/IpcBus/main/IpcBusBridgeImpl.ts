@@ -130,10 +130,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
-            JSONParserV1.install();
             this._packetOut.serialize([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, this._packetOut);
-            JSONParserV1.uninstall();
         }
     }
 
