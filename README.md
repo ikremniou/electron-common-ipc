@@ -47,23 +47,24 @@ Dependencies
 Pseuso code in...  
 **Main Process**
 ```ts
-const ipcBusBridge = IpcBusBridge.Create()
-ipcBusBridge.connect()
-const ipcBusClientElectronMain = IpcBusClient.Create()
-ipcBusClientElectronMain.connect()
+const ipcBusBridge = IpcBusBridge.Create();
+ipcBusBridge.connect().then(() => 
+    const ipcBusClientElectronMain = IpcBusClient.Create();
+    ipcBusClientElectronMain.connect();
+});
 ```
 
 **Renderer Process (nodeIntegration = true)** (WebFrame supported)
 ```ts
-const ipcBusClientRenderer1 = IpcBusClient.Create()
-ipcBusClientRenderer1.connect()
+const ipcBusClientRenderer1 = IpcBusClient.Create();
+ipcBusClientRenderer1.connect();
 ```
 
 **Sandboxed Renderer Process (sandbox = true)** (WebFrame supported)
 - load ipcbus library in the preload file
 ```ts
-const ipcBusClientRenderer2 = IpcBusClient.Create
-ipcBusClientRenderer2.connect()
+const ipcBusClientRenderer2 = IpcBusClient.Create();
+ipcBusClientRenderer2.connect();
 ```
 
 done  
@@ -74,17 +75,18 @@ Pseuso code in...
 **Main Process**
 - find a free port (using [Socket port helpers](https://github.com/emmkimme/socket-port-helpers) for instance)
 ```ts
-const ipcBusBroker = IpcBusBroker.Create()
-ipcBusBroker.connect([free port])
-const ipcBusClientNodeMain = IpcBusClient.Create
-ipcBusClientNodeMain.connect([free port])
+const ipcBusBroker = IpcBusBroker.Create();
+ipcBusBroker.connect([free port]).then(() => {
+    const ipcBusClientNodeMain = IpcBusClient.Create();
+    ipcBusClientNodeMain.connect([free port]);
+});
 ```
 
 **Child node process**
 - retrieve free port through commandline or environment variable
 ```ts
 const ipcBusClientNodeChild = IpcBusClient.Create()
-ipcBusClientNodeChild.connect([free port])
+ipcBusClientNodeChild.connect([free port]);
 ```
 
 done  
@@ -94,7 +96,7 @@ ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
 Pseuso code in...  
 **Main Process**
 ```ts
-ipBusBridge.connect([same port as the ipcBusBroker])
+ipBusBridge.connect([same port as the ipcBusBroker]);
 ```
 
 done  
