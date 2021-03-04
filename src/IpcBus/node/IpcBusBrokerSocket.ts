@@ -70,14 +70,10 @@ export class IpcBusBrokerSocket {
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-            this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
-            while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-                // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+            do {
                 const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
                 this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
-                // this._packetIn.reset();
-            }
+            } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();
         }
