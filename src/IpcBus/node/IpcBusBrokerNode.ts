@@ -9,6 +9,7 @@ import { ChannelConnectionMap } from '../IpcBusChannelMap';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
+import { JSONParserV1 } from 'json-helpers';
 
 const PeerName = 'IPCBus:NetBrokerBridge';
 
@@ -34,6 +35,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
        
         this._packetOut = new IpcPacketWriter();
+        this._packetOut.JSON = JSONParserV1;
         this._bridgeSubscriptions = new ChannelConnectionMap<string, string>(PeerName);
     }
 

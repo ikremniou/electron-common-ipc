@@ -8,6 +8,7 @@ import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { CreateIpcBusLog } from './IpcBusLog-factory';
 import { CutData } from './IpcBusLogUtils';
+import { JSONParserV1 } from 'json-helpers';
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
@@ -183,6 +184,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             IpcBusRendererContent.FixRawContent(lograwContent);
             // IpcBusRendererContent.UnpackRawContent(lograwContent);
             const packet = new IpcPacketBuffer(lograwContent);
+            packet.JSON = JSONParserV1;
             return this.addLog(ipcBusCommand, packet.parseArrayAt(1), packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);

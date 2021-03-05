@@ -6,6 +6,7 @@ import { IpcBusCommand } from './IpcBusCommand';
 
 import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector } from './IpcBusConnector';
+import { JSONParserV1 } from 'json-helpers';
 
 /** @internal */
 class DeferredRequestPromise {
@@ -251,6 +252,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
         // Prevent to create a huge buffer if not needed, keep working with a set of buffers
         const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
+        ipcPacketBufferCore.JSON = JSONParserV1;
         return this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
     }
 
