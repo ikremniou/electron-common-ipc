@@ -189,7 +189,15 @@ export class Logger {
 
 };
 
-/** @internal */
+export function ActivateIpcBusTrace(enable: boolean): void {
+    Logger.enable = enable;
+}
+
+export function ActivateServiceTrace(enable: boolean): void {
+    Logger.service = enable;
+}
+
+
 export class ConnectCloseState<T> {
     protected _waitForConnected: Promise<T>;
     protected _waitForClosed: Promise<void>;
