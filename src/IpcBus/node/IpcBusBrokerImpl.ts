@@ -189,6 +189,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected _socketCleanUp(socket: any): void {
         this.onBridgeClosed(socket);
+        // Broadcast peers destruction ?
         this._subscriptions.removeConnection(socket);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }

@@ -165,6 +165,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 const webContentIdentifiers = getWebContentsIdentifier(item.key);
                 return (webContentIdentifiers.wcid === webContentsId);
             });
+            // Broadcast peers destruction ?
             for (let i = 0, l = webContentsTargets.length; i < l; ++i) {
                 this._subscriptions.removeKey(webContentsTargets[i].key);
             }
@@ -182,18 +183,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        // if (this._bridge.useIPCFrameAPI) {
-            if (!ipcBusPeer.process.isMainFrame) {
-                webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
-                return;
-            }
-        // }
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-            webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
+            webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
         }
         else {
             webContents.on('did-finish-load', () => {
-                webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
+                webContents.sendToFrame(webContentsTarget.frameid, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
+                // webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
             });
         }
     }
