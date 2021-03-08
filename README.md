@@ -21,6 +21,7 @@ A WebPage is then able to dialog with a node process and vice-versa.
 * Works with Electron sandboxed renderer process
 * Support for Electron renderer affinity (several webpages hosted in the same renderer process)
 * Basic remote API calls/events and pending messages management with Services
+* ContextIsolation not yet supported, in progress
 
 # Installation
 ```Batchfile
