@@ -39,6 +39,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut = new IpcPacketBuffer();
         this._packetOut.JSON = JSONParserV1;
 
+        // WE MUST NOT CLEAN-UP IPC ON THIS EVENT AS SOME APPS ARE STILL SENDING MESSAGES AT THIS STAGE.
         window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
             // console.log(`IPCBUS-'beforeunload'`);
             // this.onConnectorBeforeShutdown();
