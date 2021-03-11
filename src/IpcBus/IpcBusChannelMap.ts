@@ -66,11 +66,6 @@ export class ChannelConnectionPeers<T, K extends string | number> implements Cha
 }
 
 /** @internal */
-export interface ChannelConnectionMapClient<T, K extends string | number> {
-    channelAdded(channel: string, conn: ChannelConnectionRef<T, K>): void;
-    channelRemoved(channel: string, conn: ChannelConnectionRef<T, K>): void;
-}
-
 interface ChannelRefCount {
     channel: string;
     refCount: number;
@@ -146,6 +141,12 @@ export class ChannelsRefCount {
     }
 }
 
+
+/** @internal */
+export interface ChannelConnectionMapClient<T, K extends string | number> {
+    channelAdded(channel: string, conn: ChannelConnectionRef<T, K>): void;
+    channelRemoved(channel: string, conn: ChannelConnectionRef<T, K>): void;
+}
 
 /** @internal */
 export class ChannelConnectionMap<T, K extends string | number> {
