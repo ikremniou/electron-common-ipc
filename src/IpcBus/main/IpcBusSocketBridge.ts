@@ -8,7 +8,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import type { IpcBusConnector } from '../IpcBusConnector';
-import { ChannelConnectionMap } from '../IpcBusChannelMap';
+import { ChannelsRefCount } from '../IpcBusChannelMap';
 
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
@@ -16,13 +16,13 @@ const PeerName = 'IPCBus:NetBridge';
 
 export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
-    protected _subscriptions: ChannelConnectionMap<string, string>;
+    protected _subscribedChannels: ChannelsRefCount;
 
     constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
         super(connector);
         this._bridge = bridge;
 
-        this._subscriptions = new ChannelConnectionMap<string, string>(PeerName);
+        this._subscribedChannels = new ChannelsRefCount();
     }
 
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
@@ -65,7 +65,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 }
                 break;
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
+                const connData = this._subscribedChannels.pop(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._connector.postBuffers(buffers);
                 }
@@ -97,11 +97,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
+        return this._subscribedChannels.has(channel);
     }
 
     getChannels(): string[] {
-        return this._subscriptions.getChannels();
+        return this._subscribedChannels.getChannels();
     }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
@@ -127,10 +127,10 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, this._peer.id, PeerName, this._peer);
+                this._subscribedChannels.addRef(ipcBusCommand.channel);
                 break;
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, this._peer.id, this._peer);
+                this._subscribedChannels.release(ipcBusCommand.channel);
                 break;
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 throw 'Broker should not send such message';
@@ -143,12 +143,12 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
             case IpcBusCommand.Kind.SendMessage:
                 if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._peer.id, PeerName, this._peer);
+                    this._subscribedChannels.push(ipcBusCommand.request.replyChannel);
                 }
                 this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
+                this._subscribedChannels.pop(ipcBusCommand.request.replyChannel);
                 this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             default:
@@ -168,7 +168,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
     onConnectorShutdown(): void {
         super.onConnectorShutdown();
-        this._subscriptions.clear();
+        this._subscribedChannels.clear();
         this._bridge._onSocketClosed();
     }
 }
