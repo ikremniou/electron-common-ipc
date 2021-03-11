@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "bootstrap": "^3.3.7",
-    "electron": "^11.2.0",
+    "electron": "^10.2.0",
     "electron-common-ipc": "../..",
     "uuid": "^8.3.2"
   }

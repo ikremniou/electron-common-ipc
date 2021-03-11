@@ -49,7 +49,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
             this._socketWriter = new SocketWriter(socketClient.socket);
 
             if (Array.isArray(ipcBusCommand.channels)) {
-                this._bridgeSubscriptions.addRefs(ipcBusCommand.channels, this._peer.id, PeerName, ipcBusCommand.peer);
+                this._bridgeSubscriptions.addRefs(ipcBusCommand.channels, this._peer.id, PeerName, this._peer);
             }
 
             const channels = this._subscriptions.getChannels();
@@ -76,11 +76,11 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected onBridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._bridgeSubscriptions.addRef(ipcBusCommand.channel, this._peer.id, PeerName, ipcBusCommand.peer);
+        this._bridgeSubscriptions.addRef(ipcBusCommand.channel, this._peer.id, PeerName, this._peer);
     }
 
     protected onBridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._bridgeSubscriptions.release(ipcBusCommand.channel, this._peer.id, ipcBusCommand.peer);
+        this._bridgeSubscriptions.release(ipcBusCommand.channel, this._peer.id, this._peer);
     }
 
     protected broadcastToBridgeAddChannel(channel: string) {

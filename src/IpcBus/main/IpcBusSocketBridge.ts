@@ -127,21 +127,23 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, this._peer.id, PeerName, ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, this._peer.id, PeerName, this._peer);
                 break;
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, this._peer.id, ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, this._peer.id, this._peer);
                 break;
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, this._peer.id, ipcBusCommand.peer);
+                throw 'Broker should not send such message';
+                // this._subscriptions.releaseAll(ipcBusCommand.channel, this._peer.id, ipcBusCommand.peer);
                 break;
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer(ipcBusCommand.peer);
+                throw 'Broker should not send such message';
+                // this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
                 if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._peer.id, PeerName, ipcBusCommand.peer);
+                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._peer.id, PeerName, this._peer);
                 }
                 this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
