@@ -124,19 +124,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener:
+            case IpcBusCommand.Kind.BrokerAddChannelListener:
                 this._subscribedChannels.addRef(ipcBusCommand.channel);
                 break;
-            case IpcBusCommand.Kind.RemoveChannelListener:
+            case IpcBusCommand.Kind.BrokerRemoveChannelListener:
                 this._subscribedChannels.release(ipcBusCommand.channel);
-                break;
-            case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                throw 'Broker should not send such message';
-                // this._subscriptions.releaseAll(ipcBusCommand.channel, this._peer.id, ipcBusCommand.peer);
-                break;
-            case IpcBusCommand.Kind.RemoveListeners:
-                throw 'Broker should not send such message';
-                // this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.SendMessage:

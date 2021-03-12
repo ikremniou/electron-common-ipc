@@ -85,7 +85,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     protected broadcastToBridgeAddChannel(channel: string) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.AddChannelListener,
+            kind: IpcBusCommand.Kind.BrokerAddChannelListener,
             channel,
             peer: this._peer
         };
@@ -94,7 +94,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     protected broadcastToBridgeRemoveChannel(channel: string) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.RemoveChannelListener,
+            kind: IpcBusCommand.Kind.BrokerRemoveChannelListener,
             channel,
             peer: this._peer
         };

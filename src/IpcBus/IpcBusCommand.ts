@@ -2,7 +2,8 @@ import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
-    export const KindBridgePrefix = 'B';
+    export const KindBridgePrefix = 'BI';
+    export const KindBrokerPrefix = 'BO';
     
     /** @internal */
     export enum Kind {
@@ -24,10 +25,13 @@ export namespace IpcBusCommand {
         LogLocalSendRequest         = 'LOGMES',
         LogLocalRequestResponse     = 'LOGRQR',
 
-        BridgeConnect               = 'BCOO',    // COnnexion
-        BridgeClose                 = 'BCOC',
-        BridgeAddChannelListener    = 'BLICA',
-        BridgeRemoveChannelListener = 'BLICR',
+        BridgeConnect               = 'BICOO',
+        BridgeClose                 = 'BICOC',
+        BridgeAddChannelListener    = 'BIICA',
+        BridgeRemoveChannelListener = 'BIICR',
+
+        BrokerAddChannelListener    = 'BOICA',
+        BrokerRemoveChannelListener = 'BOICR',
     };
 
     /** @internal */
