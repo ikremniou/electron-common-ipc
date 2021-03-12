@@ -27,8 +27,8 @@ export namespace IpcBusCommand {
 
         BridgeConnect               = 'BICOO',
         BridgeClose                 = 'BICOC',
-        BridgeAddChannelListener    = 'BIICA',
-        BridgeRemoveChannelListener = 'BIICR',
+        BridgeAddChannelListener    = 'BILICA',
+        BridgeRemoveChannelListener = 'BILICR',
 
         BrokerAddChannelListener    = 'BOICA',
         BrokerRemoveChannelListener = 'BOICR',

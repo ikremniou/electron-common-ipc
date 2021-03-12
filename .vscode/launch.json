@@ -169,7 +169,7 @@
                 // "${workspaceFolder}/lib-test/unit-test.js"
                 // "${workspaceFolder}/lib-test/unit-test.misc.js"
                 // "${workspaceFolder}/lib-test/unit-test.engine.js"
-                // "${workspaceRoot}/test/perf.test.js",
+                "${workspaceRoot}/test/perf.test.js",
                 // "${workspaceRoot}/test/service.test.js",
             ],
             "outFiles": [
