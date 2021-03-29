@@ -2,8 +2,8 @@ import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
-    export const KindBridgePrefix = 'BI';
-    export const KindBrokerPrefix = 'BO';
+    export const KindBridgePrefix = 'BI' as const;
+    export const KindBrokerPrefix = 'BO' as const;
     
     /** @internal */
     export enum Kind {

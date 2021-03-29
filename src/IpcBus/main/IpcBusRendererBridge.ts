@@ -159,7 +159,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _trackRendererDestruction(webContents: Electron.WebContents): void {
         // When webContents is destroyed some properties like id are no more accessible !
         const webContentsId = webContents.id;
-        webContents.addListener('destroyed', () => {
+        webContents.once('destroyed', () => {
             // Have to remove this webContents, included its frames
             const webContentsTargets = this._subscriptions.getConns().filter((item) => {
                 const webContentIdentifiers = getWebContentsIdentifier(item.key);

@@ -76,11 +76,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         // To manage re-entrance
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        this._useIPCNativeSerialization = options.useIPCNativeSerialization ?? true;
         return this._rendererConnector.broadcastConnect(options)
         .then(() => {
             if (this._socketTransport == null) {
                 if ((options.port != null) || (options.path != null)) {
-                    if (options.server) {
+                    if (options.server === true) {
                         this._socketTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {

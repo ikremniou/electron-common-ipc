@@ -60,9 +60,10 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestClose:
-                if (this._subscribedChannels.has(ipcBusCommand.channel)) {
+                // Channel is tested before
+                // if (this._subscribedChannels.has(ipcBusCommand.channel)) {
                     this._connector.postBuffers(buffers);
-                }
+                // }
                 break;
             case IpcBusCommand.Kind.RequestResponse:
                 if (this._subscribedChannels.pop(ipcBusCommand.request.replyChannel)) {
