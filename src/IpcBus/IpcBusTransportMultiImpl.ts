@@ -89,14 +89,14 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
-        if (this._subscriptions == null) {
+        if ((this._subscriptions == null) || (client.peer == null)) {
             return;
         }
         this._subscriptions.addRefCount(channel, client.peer.id, client, client.peer, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
-        if (this._subscriptions == null) {
+        if ((this._subscriptions == null) || (client.peer == null)) {
             return;
         }
         if (channel) {

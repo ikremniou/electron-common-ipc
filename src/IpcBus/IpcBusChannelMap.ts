@@ -387,7 +387,7 @@ export class ChannelsRefCount {
             this._channelsMap.set(channel, channelRefCount);
         }
         else {
-            channelRefCount.refCount += 1;
+            ++channelRefCount.refCount;
         }
         return channelRefCount.refCount;
     }
