@@ -186,16 +186,16 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
         // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
-        if (this._useIPCNativeSerialization) {
-            // Unserialize only once
-            const args = ipcPacketBufferCore.parseArrayAt(1);
-            this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
-            this._rendererConnector.broadcastArgs(ipcBusCommand, args);
-        }
-        else {
+        // if (this._useIPCNativeSerialization) {
+        //     // Unserialize only once
+        //     const args = ipcPacketBufferCore.parseArrayAt(1);
+        //     this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
+        //     this._rendererConnector.broadcastArgs(ipcBusCommand, args);
+        // }
+        // else {
             this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
             this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBufferCore);
-        }
+        // }
     }
 
     _onSocketClosed() {
