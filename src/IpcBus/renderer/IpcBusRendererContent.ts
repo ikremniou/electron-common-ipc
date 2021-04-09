@@ -29,36 +29,36 @@ export namespace IpcBusRendererContent {
         return rawBuffer;
     }
 
-    export function FixRawContent(rawContent: IpcBusRendererContent, forceSingleBuffer?: boolean) {
-        if (rawContent.buffer) {
-            rawContent.buffer = Uint8ArrayToBuffer(rawContent.buffer);
+    export function FixRawContent(rawData: IpcBusRendererContent, forceSingleBuffer?: boolean) {
+        if (rawData.buffer) {
+            rawData.buffer = Uint8ArrayToBuffer(rawData.buffer);
         }
-        else if (Array.isArray(rawContent.buffers)) {
-            for (let i = 0, l = rawContent.buffers.length; i < l; ++i) {
-                rawContent.buffers[i] = Uint8ArrayToBuffer(rawContent.buffers[i]);
+        else if (Array.isArray(rawData.buffers)) {
+            for (let i = 0, l = rawData.buffers.length; i < l; ++i) {
+                rawData.buffers[i] = Uint8ArrayToBuffer(rawData.buffers[i]);
             }
             if (forceSingleBuffer) {
-                rawContent.buffer = Buffer.concat(rawContent.buffers);
-                rawContent.buffers = undefined;
+                rawData.buffer = Buffer.concat(rawData.buffers);
+                rawData.buffers = undefined;
             }
         }
     }
 
     // export function PackRawContent(buffRawContent: IpcPacketBuffer.RawData): IpcBusRendererContent {
-    //     const rawContent = buffRawContent as IpcBusRendererContent;
-    //     // if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
-    //     //     rawContent.compressed = true;
-    //     //     rawContent.buffer = CompressBuffer(rawContent.buffer);
+    //     const rawData = buffRawContent as IpcBusRendererContent;
+    //     // if ((rawData.buffer.length > threshold) && !rawData.compressed) {
+    //     //     rawData.compressed = true;
+    //     //     rawData.buffer = CompressBuffer(rawData.buffer);
     //     // }
-    //     return rawContent;
+    //     return rawData;
     // }
 
-    // export function UnpackRawContent(rawContent: IpcBusRendererContent) {
-    //     // if (rawContent.compressed) {
-    //     //     rawContent.compressed = false;
-    //     //     rawContent.buffer = DecompressBuffer(rawContent.buffer);
+    // export function UnpackRawContent(rawData: IpcBusRendererContent) {
+    //     // if (rawData.compressed) {
+    //     //     rawData.compressed = false;
+    //     //     rawData.buffer = DecompressBuffer(rawData.buffer);
     //     // }
-    //     return rawContent;
+    //     return rawData;
     // }
 }
 

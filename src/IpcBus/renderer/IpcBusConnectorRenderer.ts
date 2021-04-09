@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
 import { IpcPacketBuffer } from 'socket-serializer';
+import { JSONParserV1 } from 'json-helpers';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -10,7 +11,6 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
-import { JSONParserV1 } from 'json-helpers';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA = 'ECIPC:IpcBusRenderer:CommandRawData';
@@ -82,9 +82,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         if (handshakeArg) {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             handshake = handshakeArg;
-            this._onIpcEventRawDataReceived = (event, ipcBusCommand, rawContent) => {
-                IpcBusRendererContent.FixRawContent(rawContent);
-                this._client.onConnectorRawDataReceived(ipcBusCommand, rawContent);
+            this._onIpcEventRawDataReceived = (event, ipcBusCommand, rawData) => {
+                IpcBusRendererContent.FixRawContent(rawData);
+                this._client.onConnectorRawDataReceived(ipcBusCommand, rawData);
             };
             this._onIpcEventArgsReceived = (event, ipcBusCommand, args) => {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
@@ -92,9 +92,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             handshake = peerOrArgs as IpcBusConnector.Handshake;
-            this._onIpcEventRawDataReceived = (ipcBusCommand, rawContent) => {
-                IpcBusRendererContent.FixRawContent(rawContent);
-                this._client.onConnectorRawDataReceived(ipcBusCommand, rawContent);
+            this._onIpcEventRawDataReceived = (ipcBusCommand, rawData) => {
+                IpcBusRendererContent.FixRawContent(rawData);
+                this._client.onConnectorRawDataReceived(ipcBusCommand, rawData);
             };
             this._onIpcEventArgsReceived = (ipcBusCommand, args) => {
                 this._client.onConnectorArgsReceived(ipcBusCommand, args);
@@ -150,27 +150,30 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
         if (this._useElectronSerialization) {
-            const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
-                this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+            try {
+                if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
+                    this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                }
+                else {
+                    this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                }
+               return;
             }
-            else {
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+            catch (err) {
+                // maybe an object does not supporting Electron serialization !
             }
         }
+        JSONParserV1.install();
+        this._packetOut.serialize([ipcBusCommand, args]);
+        JSONParserV1.uninstall();
+        const rawData = this._packetOut.getRawData();
+        if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
+            this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
+        }
         else {
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcBusCommand, args]);
-            JSONParserV1.uninstall();
-            const rawContent = this._packetOut.getRawData();
-            const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
-            if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
-                this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
-            }
-            else {
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
-            }
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
         }
     }
 
@@ -178,15 +181,19 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._useElectronSerialization) {
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+            try {
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                return;
+            }
+            catch (err) {
+                // maybe an object does not supporting Electron serialization !
+            }
         }
-        else {
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcBusCommand, args]);
-            JSONParserV1.uninstall();
-            const rawContent = this._packetOut.getRawData();
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
-        }
+        JSONParserV1.install();
+        this._packetOut.serialize([ipcBusCommand, args]);
+        JSONParserV1.uninstall();
+        const rawData = this._packetOut.getRawData();
+        this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
     }
 
     postBuffers(buffers: Buffer[]) {

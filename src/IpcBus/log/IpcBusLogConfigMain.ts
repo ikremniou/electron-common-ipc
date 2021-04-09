@@ -178,9 +178,9 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent): boolean {
+    addLogRawContent(ipcBusCommand: IpcBusCommand, rawData: IpcBusRendererContent): boolean {
         if (ipcBusCommand.log) {
-            const lograwContent = Object.assign({}, rawContent);
+            const lograwContent = Object.assign({}, rawData);
             IpcBusRendererContent.FixRawContent(lograwContent);
             // IpcBusRendererContent.UnpackRawContent(lograwContent);
             const packet = new IpcPacketBuffer(lograwContent);

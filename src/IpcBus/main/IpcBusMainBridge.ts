@@ -66,7 +66,7 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     //     throw new Error('Method not implemented.');
     // }
 
-    // broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBufferCore.RawData): void {
-    //     this.onConnectorRawDataReceived(ipcBusCommand, rawContent);
+    // broadcastContent(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBufferCore.RawData): void {
+    //     this.onConnectorRawDataReceived(ipcBusCommand, rawData);
     // }
 }

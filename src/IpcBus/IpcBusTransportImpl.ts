@@ -249,9 +249,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
+    onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): boolean {
         // Prevent to create a huge buffer if not needed, keep working with a set of buffers
-        const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
+        const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
         return this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
     }

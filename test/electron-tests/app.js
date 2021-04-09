@@ -95,6 +95,10 @@ function createWindows() {
             consoleData(`ipcMain`, data.buffer);
         });
 
+        ipcMain.on(`test-main-rect`, (event, data) => {
+            consoleData(`ipcMain`, rect);
+        });
+
 
         // createWindow('page.html', '{}', {})
         // createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false })

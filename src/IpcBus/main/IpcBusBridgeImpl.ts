@@ -26,7 +26,7 @@ export interface IpcBusBridgeClient {
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void;
     broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
-    broadcastRawData(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): void;
+    broadcastRawData(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void;
 }
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -138,9 +138,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
-    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
-        this._mainTransport.onConnectorRawDataReceived(ipcBusCommand, rawContent);
-        this._socketTransport && this._socketTransport.broadcastRawData(ipcBusCommand, rawContent);
+    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData) {
+        this._mainTransport.onConnectorRawDataReceived(ipcBusCommand, rawData);
+        this._socketTransport && this._socketTransport.broadcastRawData(ipcBusCommand, rawData);
     }
 
     _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {

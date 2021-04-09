@@ -101,6 +101,10 @@ window.addEventListener('load', () => {
               };
               ipcBus.send(`test-main-json`, json);
               ipcRenderer.send(`test-main-json`, json);
+
+              const rect = new DOMRect();
+              ipcRenderer.send(`test-main-rect`, rect);
+
           
             // setTimeout(() => {
             //     console.log('ipcBus - Parent send message');
