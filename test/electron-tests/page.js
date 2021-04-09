@@ -49,6 +49,22 @@ window.addEventListener('load', () => {
         //     console.log('Parent send message');
         //     crossFrameEE.send('test-frame', 'hello frame');
         // }, 100);
+
+        const receiveMessage = (event) => {
+            console.log(`receiveMessage ${JSON.stringify(event.data, null, 4)}`);
+        };
+
+        window.addEventListener("message", receiveMessage, false);
+
+        setTimeout(() => {
+            console.log('Parent self postMessage');
+            window.postMessage("top hello there!", '*');
+
+            const rect = new DOMRect();
+            window.postMessage(rect, '*');
+
+        }, 200);
+
         const window_id = GetWindowId();
         const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
         ipcBus.connect({ peerName: `client-parent-${window_id}` })
@@ -124,6 +140,14 @@ window.addEventListener('load', () => {
         .catch((err) => {
             console.log(`ipcBus - Frame error ${err}`);
         });
+
+        setTimeout(() => {
+            console.log('Frame postMessage');
+            window.top.postMessage("frame hello there!", '*');
+
+            const rect = new DOMRect();
+            window.top.postMessage(rect, '*');
+        }, 200);
     }
     // console.log(`id=${window_id}`);
 

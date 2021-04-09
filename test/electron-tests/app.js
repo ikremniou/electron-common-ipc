@@ -119,8 +119,8 @@ function createWindows() {
         //     { preload: path.join(__dirname, 'page-preload.bundle.js') })
         // createWindow('page-parent.html', 'preload nodeIntegration: false',
         //     { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-        // createWindow('page-parent.html', 'preload nodeIntegration: false, sandbox: true', 
-        //     { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        createWindow('page-parent.html', 'preload nodeIntegration: false, sandbox: true', 
+            { nodeIntegration: false, nodeIntegrationInSubFrames: true, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
         // createWindow('page-parent.html', 'preload sandbox: true',
         //     { nodeIntegration: true, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
     });
