@@ -103,7 +103,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     private _deadMessageHandler(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        console.error(`IPCBUS: Receive msg before birth or after death ${JSON.stringify(ipcBusCommand, null, 4)}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(`IPCBUS: Receive msg before birth or after death ${JSON.stringify(ipcBusCommand, null, 4)}`);
     }
 
     get peer(): Client.IpcBusPeer {

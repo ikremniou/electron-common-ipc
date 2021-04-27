@@ -40,11 +40,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut.JSON = JSONParserV1;
 
         // WE MUST NOT CLEAN-UP IPC ON THIS EVENT AS SOME APPS ARE STILL SENDING MESSAGES AT THIS STAGE.
-        window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
+        // window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
             // console.log(`IPCBUS-'beforeunload'`);
             // this.onConnectorBeforeShutdown();
             // this.onConnectorShutdown();
-        });
+        // });
         // window.addEventListener('pagehide', (event: PageTransitionEvent) => {
         //     // console.log(`IPCBUS-'pagehide'`);
         //     if (event.persisted) {
@@ -54,11 +54,13 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         //         // this.onConnectorShutdown();
         //     }
         // });
-        window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+        // window.addEventListener('unload', (event: BeforeUnloadEvent) => {
             // console.log(`IPCBUS-'unload'`);
-            this.onConnectorBeforeShutdown();
-            this.onConnectorShutdown();
-        });
+            // setTimeout(() => {
+            //     this.onConnectorBeforeShutdown();
+            //     this.onConnectorShutdown();
+            // }, 1);
+        // });
     }
 
     protected onConnectorBeforeShutdown() {
