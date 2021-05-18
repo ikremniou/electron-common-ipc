@@ -1,16 +1,10 @@
 import { IpcBusClient } from './IpcBusClient';
-import { ElectronCommonIpcNamespace, PreloadElectronCommonIpcAutomatic } from './renderer/IpcBusRendererPreload';
 
-const windowLocal = window as any;
 export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
-    const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
-    if (electronCommonIpcSpace && electronCommonIpcSpace.CreateIpcBusClient) {
-        return electronCommonIpcSpace.CreateIpcBusClient();
-    }
-    return null;
+    const newModule = require('./IpcBusClient-new-renderer');
+    return newModule.NewIpcBusClient('renderer');
 }
 
+const windowLocal = window as any;
 windowLocal.CreateIpcBusClient = CreateIpcBusClient;
 IpcBusClient.Create = CreateIpcBusClient;
-
-PreloadElectronCommonIpcAutomatic();
