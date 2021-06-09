@@ -25,3 +25,8 @@ export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClie
     const ipcClient = new IpcBusClientImpl(transport);
     return ipcClient;
 }
+
+export function GetPeerForWindow(window: Electron.BrowserWindow): Client.IpcBusPeer | undefined {
+    const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
+    return bridge.getPeerForWindow(window);
+}

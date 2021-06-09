@@ -152,7 +152,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
+        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifierFromString(ipcBusCommand.channel);
         if (this._useElectronSerialization) {
             try {
                 if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {

@@ -67,6 +67,7 @@ export namespace IpcBusCommand {
 /** @internal */
 export interface IpcBusCommand {
     peer: IpcBusPeer;
+    target?: IpcBusPeer;
 
     kind: IpcBusCommand.Kind;
     channel: string;

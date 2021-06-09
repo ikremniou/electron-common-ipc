@@ -59,18 +59,29 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, channel, args);
+        this._transport.sendMessage(this, undefined, channel, args);
+        return this._connectCloseState.connected;
+    }
+
+    sendTo(peer: Client.IpcBusPeer, channel: string, ...args: any[]): boolean {
+        channel = IpcBusUtils.CheckChannel(channel);
+        this._transport.sendMessage(this, peer, channel, args);
         return this._connectCloseState.connected;
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, channel, timeoutDelay, args);
+        return this._transport.requestMessage(this, undefined, channel, timeoutDelay, args);
+    }
+
+    requestTo(peer: Client.IpcBusPeer, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.requestMessage(this, peer, channel, timeoutDelay, args);
     }
 
     emit(event: string, ...args: any[]): boolean {
         event = IpcBusUtils.CheckChannel(event);
-        this._transport.sendMessage(this, event, args);
+        this._transport.sendMessage(this, undefined, event, args);
         return this._connectCloseState.connected;
     }
  

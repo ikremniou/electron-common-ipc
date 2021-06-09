@@ -1,6 +1,5 @@
 /// <reference types='electron' />
 
-// import * as semver from 'semver';
 import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
@@ -34,7 +33,7 @@ export interface IpcBusBridgeClient {
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _socketTransport: IpcBusBridgeClient;
-    protected _rendererConnector: IpcBusBridgeClient;
+    protected _rendererConnector: IpcBusRendererBridge;
     protected _peer: Client.IpcBusPeer;
     protected _packetOut: IpcPacketBuffer;
 
@@ -70,6 +69,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     get mainTransport(): IpcBusTransport {
         return this._mainTransport;
+    }
+
+    getPeerForWindow(window: Electron.BrowserWindow): Client.IpcBusPeer | undefined {
+        return this._rendererConnector.getPeerForWindow(window);
     }
 
     // IpcBusBridge API

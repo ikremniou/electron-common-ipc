@@ -153,6 +153,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (listeners.length === 0) {
             return false;
         }
+        if (ipcBusCommand.target) {
+            if (client.peer.id !== ipcBusCommand.target.id) {
+                return false;
+            }
+        }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         let logGetMessage: IpcBusCommand.Log;
         if (this._logActivate) {
@@ -269,11 +274,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
+    sendMessage(client: IpcBusTransport.Client, peer: Client.IpcBusPeer | undefined, channel: string, args: any[]): void {
         const ipcMessage: IpcBusCommand = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
-            peer: client.peer
+            peer: client.peer,
+            target: peer
         }
         if (this._logActivate) {
             this._connector.logMessageSend(null, ipcMessage);
@@ -304,7 +310,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         });
     }
 
-    requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestMessage(client: IpcBusTransport.Client, peer: Client.IpcBusPeer | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = {
             channel,
@@ -317,6 +323,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
+            target: peer,
             request: ipcBusCommandRequest
         }
         let logSendMessage: IpcBusCommand.Log;

@@ -59,7 +59,7 @@ export function IsWebContentsChannel(channel: string): boolean {
     return (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0);
 }
 
-export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
+export function GetWebContentsIdentifierFromString(channel: string): WebContentsIdentifier | null {
     if (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0) {
         return UnserializeWebContentsIdentifier(channel.substr(DirectWCChannelPrefixLength));
     }
