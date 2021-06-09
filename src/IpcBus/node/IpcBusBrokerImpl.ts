@@ -276,12 +276,17 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
                 }
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    // Prevent echo message
-                    if (connData.conn !== socket) {
-                        WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
-                    }
-                });
+                // if (ipcBusCommand.target) {
+
+                // }
+                // else {
+                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                        // Prevent echo message
+                        if (connData.conn !== socket) {
+                            WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
+                        }
+                    });
+                // }
                 // if not coming from main bridge => forward
                 this.broadcastToBridgeMessage(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
