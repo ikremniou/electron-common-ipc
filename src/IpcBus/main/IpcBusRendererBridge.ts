@@ -217,8 +217,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     const webContents = electronModule.webContents.fromId(ipcBusCommand.target.process.wcid);
                     if (webContents) {
                         webContents.send(ipcChannel, ipcBusCommand, data);
+                        // webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
                     }
-                    // webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
                 }
                 else {
                     const key = event ? createKeyFromEvent(event) : -1;
