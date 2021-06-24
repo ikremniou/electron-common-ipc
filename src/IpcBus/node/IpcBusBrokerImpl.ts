@@ -271,9 +271,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage:
-                const signature = IpcBusUtils.GetProcessIdentifierFromSignature(ipcBusCommand.target);
-                if (signature) {
-                    const peer = this._peers.get(signature.peerid);
+                const targetIds = IpcBusUtils.GetTargetProcessIdentifiers(ipcBusCommand.target);
+                if (targetIds) {
+                    const peer = this._peers.get(targetIds.peerid);
                     if (peer) {
                         WriteBuffersToSocket(peer.socket, ipcPacketBufferList.buffers);
                         return;
@@ -291,9 +291,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
-                const signature = IpcBusUtils.GetProcessIdentifierFromSignature(ipcBusCommand.target);
-                if (signature) {
-                    const peer = this._peers.get(signature.peerid);
+                const targetIds = IpcBusUtils.GetTargetProcessIdentifiers(ipcBusCommand.target);
+                if (targetIds) {
+                    const peer = this._peers.get(targetIds.peerid);
                     if (peer) {
                         WriteBuffersToSocket(peer.socket, ipcPacketBufferList.buffers);
                         return;

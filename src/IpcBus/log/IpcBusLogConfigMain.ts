@@ -119,13 +119,13 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             case IpcBusLog.Kind.SEND_REQUEST:
             case IpcBusLog.Kind.GET_REQUEST: {
                 message.channel = command.request.channel;
-                message.responseChannel = command.request.replyChannel;
+                message.responseChannel = command.request.id;
                 break;
             }
             case IpcBusLog.Kind.SEND_CLOSE_REQUEST:
             case IpcBusLog.Kind.GET_CLOSE_REQUEST: {
                 message.channel = command.request.channel;
-                message.responseChannel = command.request.replyChannel;
+                message.responseChannel = command.request.id;
                 message.responseStatus = 'cancelled';
                 break;
             }
@@ -133,7 +133,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             case IpcBusLog.Kind.SEND_REQUEST_RESPONSE:
             case IpcBusLog.Kind.GET_REQUEST_RESPONSE: {
                 message.channel = command.request.channel;
-                message.responseChannel = command.request.replyChannel;
+                message.responseChannel = command.request.id;
                 message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
                 break;
             }

@@ -61,7 +61,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
-                if (IpcBusUtils.IsProcessSignature(ipcBusCommand.channel)) {
+                if (IpcBusUtils.IsProcessTarget(ipcBusCommand.channel)) {
                     this._connector.postBuffers(buffers);
                 }
                 break;
@@ -91,7 +91,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscribedChannels.has(channel) || IpcBusUtils.IsProcessSignature(channel);
+        return this._subscribedChannels.has(channel) || IpcBusUtils.IsProcessTarget(channel);
     }
 
     getChannels(): string[] {

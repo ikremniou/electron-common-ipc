@@ -32,7 +32,7 @@ const WebContentsSignaturePrefix = `_target-wc:`;
 const UnknownSignaturePrefix     = `_target-no:`;
 const TargetPrefixPrefixLength = ProcessSignaturePrefix.length;
 
-const RegExpWebContents = /(\w+)_(\d+)_(\d+)_(\d)/;
+const RegExpWebContents = /([^_]+)_(\d+)_(\d+)_(\d)/;
 export interface PeerWebContentsSignature {
     peerid: string;
     wcid: number;
@@ -40,7 +40,7 @@ export interface PeerWebContentsSignature {
     isMainFrame: boolean;
 }
 
-const RegExpProcess = /(\w+)_(\d+)/;
+const RegExpProcess = /([^_]+)_(\d+)/;
 export interface PeerProcessSignature {
     peerid: string;
     pid: number;
@@ -70,45 +70,51 @@ export function UnserializeProcessIdentifier(str: string): PeerProcessSignature 
     return null;
 }
 
-export function GetPeerIdFromSignature(signature: string): string | null {
-    const index = signature.indexOf('_', TargetPrefixPrefixLength);
+export function GetTargetPeerId(target: string): string | null {
+    if (target == null) {
+        return null;
+    }
+    const index = target.indexOf('_', TargetPrefixPrefixLength);
     if (index >= 0) {
-        return signature.substr(TargetPrefixPrefixLength, index - TargetPrefixPrefixLength);
+        return target.substr(TargetPrefixPrefixLength, index - TargetPrefixPrefixLength);
     }
     return null;
 }
 
-export function IsProcessSignature(signature: string): boolean {
-    return (signature && signature.lastIndexOf(ProcessSignaturePrefix, 0) === 0);
+export function IsProcessTarget(target: string): boolean {
+    return (target && target.lastIndexOf(ProcessSignaturePrefix, 0) === 0);
 }
 
-export function GetProcessIdentifierFromSignature(signature: string): PeerProcessSignature | null {
-    if (signature && signature.lastIndexOf(ProcessSignaturePrefix, 0) === 0) {
-        return UnserializeProcessIdentifier(signature.substr(TargetPrefixPrefixLength));
+export function GetTargetProcessIdentifiers(target: string): PeerProcessSignature | null {
+    if (target && target.lastIndexOf(ProcessSignaturePrefix, 0) === 0) {
+        return UnserializeProcessIdentifier(target.substr(TargetPrefixPrefixLength));
     }
     return null;
 }
 
-export function IsWebContentsSignature(signature: string): boolean {
-    return (signature && signature.lastIndexOf(WebContentsSignaturePrefix, 0) === 0);
+export function IsWebContentsTarget(target: string): boolean {
+    return (target && target.lastIndexOf(WebContentsSignaturePrefix, 0) === 0);
 }
 
-export function GetWebContentsIdentifierFromSignature(signature: string): PeerWebContentsSignature | null {
-    if (signature && signature.lastIndexOf(WebContentsSignaturePrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(signature.substr(TargetPrefixPrefixLength));
+export function GetTargetWebContentsIdentifiers(target: string): PeerWebContentsSignature | null {
+    if (target && target.lastIndexOf(WebContentsSignaturePrefix, 0) === 0) {
+        return UnserializeWebContentsIdentifier(target.substr(TargetPrefixPrefixLength));
     }
     return null;
 }
 
-export function CreatePeerSignature(peer: IpcBusPeer): string {
+export function CreateTarget(peer: IpcBusPeer): string {
+    if (peer == null) {
+        return undefined;
+    }
     if (peer.process.wcid) {
-        return `${WebContentsSignaturePrefix}_${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
+        return `${WebContentsSignaturePrefix}${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
     }
     else if (peer.process.pid) {
-        return `${ProcessSignaturePrefix}_${peer.id}_$(peer.process.pid)`;
+        return `${ProcessSignaturePrefix}${peer.id}_${peer.process.pid}`;
     }
     else {
-        return `${UnknownSignaturePrefix}_${peer.id}`;
+        return `${UnknownSignaturePrefix}${peer.id}`;
     }
 }
 

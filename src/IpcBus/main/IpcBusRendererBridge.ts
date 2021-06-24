@@ -84,7 +84,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsSignature(channel);
+        return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsTarget(channel);
     }
 
     getChannels(): string[] {
@@ -189,9 +189,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(local: boolean, ipcChannel: string, ipcBusCommand: IpcBusCommand, data: any): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const signature = IpcBusUtils.GetWebContentsIdentifierFromSignature(ipcBusCommand.target);
-                if (signature) {
-                    const peer = this._peers.get(signature.peerid);
+                const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
+                if (targetIds) {
+                    const peer = this._peers.get(targetIds.peerid);
                     if (peer) {
                         peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
@@ -213,9 +213,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const signature = IpcBusUtils.GetWebContentsIdentifierFromSignature(ipcBusCommand.target);
-                if (signature) {
-                    const peer = this._peers.get(signature.peerid);
+                const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
+                if (targetIds) {
+                    const peer = this._peers.get(targetIds.peerid);
                     if (peer) {
                         peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
                     }

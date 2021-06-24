@@ -152,11 +152,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        const signature = IpcBusUtils.GetWebContentsIdentifierFromSignature(ipcBusCommand.target);
+        const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
         if (this._useElectronSerialization) {
             try {
-                if (/* this._useIPCFrameAPI && */ signature && signature.isMainFrame) {
-                    this._ipcWindow.sendTo(signature.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                if (/* this._useIPCFrameAPI && */ targetIds && targetIds.isMainFrame) {
+                    this._ipcWindow.sendTo(targetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
                 }
                 else {
                     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
@@ -171,8 +171,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut.serialize([ipcBusCommand, args]);
         JSONParserV1.uninstall();
         const rawData = this._packetOut.getRawData();
-        if (/* this._useIPCFrameAPI && */ signature && signature.isMainFrame) {
-            this._ipcWindow.sendTo(signature.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
+        if (/* this._useIPCFrameAPI && */ targetIds && targetIds.isMainFrame) {
+            this._ipcWindow.sendTo(targetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
         }
         else {
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);

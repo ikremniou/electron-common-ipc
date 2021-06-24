@@ -68,7 +68,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
+                const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.id);
                 if (connData) {
                     WriteBuffersToSocket(connData.conn, buffers);
                 }

@@ -39,7 +39,7 @@ class DeferredRequestPromise {
     settled(ipcBusCommand: IpcBusCommand, args: any[]) {
         if (this._settled === false) {
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.request.channel, sender: ipcBusCommand.peer };
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.id}`);
             try {
                 if (ipcBusCommand.request.resolve) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
@@ -142,21 +142,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return name;
     }
 
-    createDirectChannel(client: IpcBusTransport.Client): string {
-        const directChannel = IpcBusUtils.CreatePeerSignature(client.peer);
-        return `${directChannel}p${IpcBusUtils.CreateUniqId()}`;
-    }
-
     // We assume prior to call this function client is not empty and have listeners for this channel !!
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
         const listeners = client.listeners(ipcBusCommand.channel);
         if (listeners.length === 0) {
             return false;
         }
-        if (ipcBusCommand.target) {
-            if (client.peer.id !== ipcBusCommand.target) {
-                return false;
-            }
+        const peerId = IpcBusUtils.GetTargetPeerId(ipcBusCommand.target);
+        if (peerId && (client.peer.id !== peerId)) {
+            return false;
         }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         let logGetMessage: IpcBusCommand.Log;
@@ -171,9 +165,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 ipcBusEvent.request.reject = () => {};
                 const ipcBusCommandResponse: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestResponse,
-                    target: ipcBusCommand.peer.id,
-                    channel: ipcBusCommand.request.replyChannel,
+                    channel: ipcBusCommand.request.id,
                     peer: client.peer,
+                    target: IpcBusUtils.CreateTarget(ipcBusCommand.peer),
                     request: ipcBusCommand.request
                 };
                 if (resolve) {
@@ -220,7 +214,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 this._connector.logMessageGet(deferredRequest.client.peer, local, ipcBusCommand, args);
             }
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-            this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+            this._requestFunctions.delete(ipcBusCommand.request.id);
             deferredRequest.settled(ipcBusCommand, args);
             return true;
         }
@@ -279,7 +273,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: peer.id
+            target: IpcBusUtils.CreateTarget(peer)
         }
         if (this._logActivate) {
             this._connector.logMessageSend(null, ipcMessage);
@@ -314,15 +308,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = {
             channel,
-            replyChannel: this.createDirectChannel(client)
+            id: IpcBusUtils.CreateUniqId()
         };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
-        this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
+        this._requestFunctions.set(ipcBusCommandRequest.id, deferredRequest);
         const ipcMessage: IpcBusCommand = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
+            target: IpcBusUtils.CreateTarget(peer),
             request: ipcBusCommandRequest
         }
         let logSendMessage: IpcBusCommand.Log;
@@ -341,7 +336,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             // Clean-up
             if (timeoutDelay >= 0) {
                 setTimeout(() => {
-                    if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
+                    if (this._requestFunctions.delete(ipcBusCommandRequest.id)) {
                         deferredRequest.timeout();
                         const ipcRequestClose: IpcBusCommand = {
                             kind: IpcBusCommand.Kind.RequestClose,
