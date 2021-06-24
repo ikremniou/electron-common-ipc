@@ -26,6 +26,10 @@ interface WebContentsTarget {
     frameid: number;
 }
 
+interface IpcBusPeerWC extends Client.IpcBusPeer {
+    webContents?: Electron.WebContents;
+}
+
 function getWebContentsTargetFromEvent(event: Electron.IpcMainEvent): WebContentsTarget {
     return { key: createKeyFromEvent(event), webContents: event.sender, frameid: event.frameId };
 }
@@ -51,7 +55,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
     private _ipcMain: Electron.IpcMain;
     private _subscriptions: ChannelConnectionMap<WebContentsTarget, number>;
-    private _peers: Client.IpcBusPeer[];
+    private _peers: Map<string, IpcBusPeerWC>;
 
     private _packetOut: IpcPacketBuffer;
 
@@ -65,7 +69,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         this._ipcMain = require('electron').ipcMain;
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');
-        this._peers = [];
+        this._peers = new Map();
 
         this._subscriptions.client = {
             channelAdded: (channel) => {
@@ -92,8 +96,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     getPeerForWindow(window: Electron.BrowserWindow): Client.IpcBusPeer | undefined {
-        const peer = this._peers.find((cur) => cur.process.wcid === window.webContents.id && cur.process.isMainFrame);
-        return peer;
+        let result: Client.IpcBusPeer;
+        for (const peer of this._peers.values()) {
+            if (peer.process.wcid === window.webContents.id && peer.process.isMainFrame) {
+                result = peer;
+                break;
+            }
+        }
+        return result;
     }
 
     hasChannel(channel: string): boolean {
@@ -154,14 +164,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
         handshake.useIPCNativeSerialization = this._bridge.useIPCNativeSerialization;
         // handshake.useIPCFrameAPI = this._bridge.useIPCNativeSerialization;
-        const index = this._peers.findIndex((cur) => cur.id === peer.id);
-        if (index >= 0) {
-            this._peers[index] = peer;
-        }
-        else {
-            this._peers.push(peer);
-        }
-        
+        this._peers.set(peer.id, { ...peer, webContents } );
+       
         this._trackRendererDestruction(webContentsTarget, peer);
 
         return handshake;
@@ -171,10 +175,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const webContents = webContentsTarget.webContents;
         webContents.once('destroyed', () => {
             this._subscriptions.removeKey(webContentsTarget.key);
-            const index = this._peers.findIndex((cur) => cur.id === peer.id);
-            if (index >= 0) {
-                this._peers.splice(index, 1);
-            }
+            this._peers.delete(peer.id);
         });
     }
 
@@ -214,10 +215,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.target) {
-                    const webContents = electronModule.webContents.fromId(ipcBusCommand.target.process.wcid);
-                    if (webContents) {
-                        webContents.send(ipcChannel, ipcBusCommand, data);
-                        // webContents.sendToFrame(webContentsTargetIds.frameid, ipcchannel, ipcBusCommand, data);
+                    const peer = this._peers.get(ipcBusCommand.target);
+                    if (peer) {
+                        peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
                 }
                 else {

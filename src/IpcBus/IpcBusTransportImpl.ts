@@ -154,7 +154,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             return false;
         }
         if (ipcBusCommand.target) {
-            if (client.peer.id !== ipcBusCommand.target.id) {
+            if (client.peer.id !== ipcBusCommand.target) {
                 return false;
             }
         }
@@ -279,7 +279,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: peer
+            target: peer.id
         }
         if (this._logActivate) {
             this._connector.logMessageSend(null, ipcMessage);
@@ -323,7 +323,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: peer,
+            target: peer.id,
             request: ipcBusCommandRequest
         }
         let logSendMessage: IpcBusCommand.Log;
