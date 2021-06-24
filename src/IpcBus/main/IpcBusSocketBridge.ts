@@ -55,18 +55,13 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeAddChannelListener:
             case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this._connector.postBuffers(buffers);
-                break
-
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestClose:
-                // Channel is tested before
-                // if (this._subscribedChannels.has(ipcBusCommand.channel)) {
-                    this._connector.postBuffers(buffers);
-                // }
+                this._connector.postBuffers(buffers);
                 break;
+
             case IpcBusCommand.Kind.RequestResponse:
-                if (this._subscribedChannels.pop(ipcBusCommand.request.replyChannel)) {
+                if (IpcBusUtils.IsProcessSignature(ipcBusCommand.channel)) {
                     this._connector.postBuffers(buffers);
                 }
                 break;
@@ -96,7 +91,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscribedChannels.has(channel);
+        return this._subscribedChannels.has(channel) || IpcBusUtils.IsProcessSignature(channel);
     }
 
     getChannels(): string[] {
@@ -133,15 +128,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
-                if (ipcBusCommand.request) {
-                    this._subscribedChannels.push(ipcBusCommand.request.replyChannel);
-                }
-                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
-                break;
             case IpcBusCommand.Kind.RequestClose:
-                this._subscribedChannels.pop(ipcBusCommand.request.replyChannel);
-                this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
-                break;
             default:
                 this._bridge._onSocketMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;

@@ -152,11 +152,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifierFromString(ipcBusCommand.channel);
+        const signature = IpcBusUtils.GetWebContentsIdentifierFromSignature(ipcBusCommand.target);
         if (this._useElectronSerialization) {
             try {
-                if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
-                    this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                if (/* this._useIPCFrameAPI && */ signature && signature.isMainFrame) {
+                    this._ipcWindow.sendTo(signature.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
                 }
                 else {
                     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
@@ -164,15 +164,15 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                return;
             }
             catch (err) {
-                // maybe an object does not supporting Electron serialization !
+                // maybe an arg does not supporting Electron serialization !
             }
         }
         JSONParserV1.install();
         this._packetOut.serialize([ipcBusCommand, args]);
         JSONParserV1.uninstall();
         const rawData = this._packetOut.getRawData();
-        if (/* this._useIPCFrameAPI && */ webContentsTargetIds && webContentsTargetIds.isMainFrame) {
-            this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
+        if (/* this._useIPCFrameAPI && */ signature && signature.isMainFrame) {
+            this._ipcWindow.sendTo(signature.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
         }
         else {
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);

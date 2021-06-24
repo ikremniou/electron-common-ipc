@@ -12,21 +12,27 @@ import { IpcBusCommand } from '../IpcBusCommand';
 
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
+interface IpcBusPeerSocket extends Client.IpcBusPeer {
+    socket?: net.Socket;
+}
+
 /** @internal */
 export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     // protected _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
-    private _socketIdValue: number;
-    private _socketIdProperty: any;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: (...args: any[]) => void };
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
-    protected _subscriptions: ChannelConnectionMap<net.Socket, number>;
+    protected _subscriptions: ChannelConnectionMap<net.Socket, string>;
+    private _peers: Map<string, IpcBusPeerSocket>;
 
     constructor(contextType: Client.IpcBusProcessType) {
+        this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
+        this._peers = new Map();
+
         // Callbacks
         this._netBinds = {};
         this._netBinds['error'] = this._onServerError.bind(this);
@@ -35,24 +41,11 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
         // this._onQueryState = this._onQueryState.bind(this);
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
-        this._socketIdValue = 0;
-        this._socketIdProperty = Symbol('__ecipc__');
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
 
-        this._subscriptions = new ChannelConnectionMap<net.Socket, number>('IPCBus:Broker');
         // this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
-
-    // protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
-    //     const queryState = this.queryState();
-    //     if (ipcBusEvent.request) {
-    //         ipcBusEvent.request.resolve(queryState);
-    //     }
-    //     else if (replyChannel != null) {
-    //         this._ipcBusBrokerClient.send(replyChannel, queryState);
-    //     }
-    // }
 
     protected _reset(closeServer: boolean) {
         if (this._server) {
@@ -61,9 +54,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             for (let key in this._netBinds) {
                 server.removeListener(key, this._netBinds[key]);
             }
-
-            // this._ipcBusBrokerClient.removeListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
-            // this._ipcBusBrokerClient.close();
 
             this._socketClients.forEach((socket) => {
                 socket.release(closeServer);
@@ -191,11 +181,15 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this.onBridgeClosed(socket);
         // Broadcast peers destruction ?
         this._subscriptions.removeConnection(socket);
+        for (const peer of this._peers.values()) {
+            if (peer.socket === socket) {
+                this._peers.delete(peer.id);
+            }
+        }
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 
     protected _onSocketConnected(socket: net.Socket): void {
-        (socket as any)[this._socketIdProperty] = ++this._socketIdValue;
         this._socketClients.set(socket, new IpcBusBrokerSocket(socket, this));
     }
 
@@ -254,16 +248,21 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 this._socketCleanUp(socket);
                 break;
 
-            case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
+            case IpcBusCommand.Kind.AddChannelListener: {
+                let peerSocket = this._peers.get(ipcBusCommand.peer.id);
+                if (peerSocket == null) {
+                    peerSocket = { ...ipcBusCommand.peer, socket };
+                }
+                this._subscriptions.addRef(ipcBusCommand.channel, peerSocket.id, socket, ipcBusCommand.peer);
                 break;
+            }
 
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, ipcBusCommand.peer.id, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, ipcBusCommand.peer.id, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
@@ -272,44 +271,41 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage:
-                // Register the replyChannel included bridge if bridge is a socket
-                if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, (socket as any)[this._socketIdProperty], socket, ipcBusCommand.peer);
+                const signature = IpcBusUtils.GetProcessIdentifierFromSignature(ipcBusCommand.target);
+                if (signature) {
+                    const peer = this._peers.get(signature.peerid);
+                    if (peer) {
+                        WriteBuffersToSocket(peer.socket, ipcPacketBufferList.buffers);
+                        return;
+                    }
                 }
-                // if (ipcBusCommand.target) {
-
-                // }
-                // else {
-                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                        // Prevent echo message
-                        if (connData.conn !== socket) {
-                            WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
-                        }
-                    });
-                // }
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    // Prevent echo message
+                    if (connData.conn !== socket) {
+                        WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
+                    }
+                });
                 // if not coming from main bridge => forward
                 this.broadcastToBridgeMessage(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
-                // Resolve request included bridge if bridge is a socket
-                const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                if (connData) {
-                    WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
+                const signature = IpcBusUtils.GetProcessIdentifierFromSignature(ipcBusCommand.target);
+                if (signature) {
+                    const peer = this._peers.get(signature.peerid);
+                    if (peer) {
+                        WriteBuffersToSocket(peer.socket, ipcPacketBufferList.buffers);
+                        return;
+                    }
                 }
                 // Response if not for a socket client, forward to main bridge
-                else {
-                    this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
-                }
+                this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
             }
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestClose: {
-                if (this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel)) {
-                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
-                }
                 // if not coming from main bridge => forward
                 this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 break;

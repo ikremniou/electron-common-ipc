@@ -143,7 +143,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     createDirectChannel(client: IpcBusTransport.Client): string {
-        const directChannel = IpcBusUtils.CreateDirectPeerChannel(client.peer);
+        const directChannel = IpcBusUtils.CreatePeerSignature(client.peer);
         return `${directChannel}p${IpcBusUtils.CreateUniqId()}`;
     }
 
@@ -323,7 +323,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: peer.id,
             request: ipcBusCommandRequest
         }
         let logSendMessage: IpcBusCommand.Log;

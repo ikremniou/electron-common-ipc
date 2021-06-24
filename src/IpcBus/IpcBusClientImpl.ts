@@ -48,14 +48,6 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         });
     }
 
-    createDirectChannel(): string {
-        return this._transport.createDirectChannel(this);
-    }
-
-    createResponseChannel(): string {
-        return this._transport.createDirectChannel(this);
-    }
-
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);

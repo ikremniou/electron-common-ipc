@@ -96,10 +96,6 @@ export interface IpcBusClient extends EventEmitter {
     connect: IpcBusClient.ConnectFunction;
     close: IpcBusClient.CloseFunction;
 
-    createDirectChannel(): string;
-    // legacy
-    createResponseChannel(): string;
-
     send(channel: string, ...args: any[]): boolean;
     sendTo(peer: IpcBusPeer, channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;

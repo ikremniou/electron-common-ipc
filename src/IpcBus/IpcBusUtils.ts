@@ -27,31 +27,26 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const DirectWCChannelPrefix = `direct-wc:`;
-const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
+const ProcessSignaturePrefix     = `_target-pc:`;
+const WebContentsSignaturePrefix = `_target-wc:`;
+const UnknownSignaturePrefix     = `_target-no:`;
+const TargetPrefixPrefixLength = ProcessSignaturePrefix.length;
 
 const RegExpWebContents = /(\w+)_(\d+)_(\d+)_(\d)/;
-export interface WebContentsIdentifier {
+export interface PeerWebContentsSignature {
     peerid: string;
     wcid: number;
     frameid: number;
     isMainFrame: boolean;
 }
 
-const DirectPCChannelPrefix = `direct-pc:`;
-const DirectPCChannelPrefixLength = DirectPCChannelPrefix.length;
-
 const RegExpProcess = /(\w+)_(\d+)/;
-export interface ProcessIdentifier {
+export interface PeerProcessSignature {
     peerid: string;
     pid: number;
 }
 
-function SerializePeerWebContentsTarget(peer: IpcBusPeer): string {
-    return `${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
-}
-
-export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
+export function UnserializeWebContentsIdentifier(str: string): PeerWebContentsSignature | null {
     const tags = str.match(RegExpWebContents);
     if (tags && tags.length > 4) {
         return {
@@ -64,11 +59,7 @@ export function UnserializeWebContentsIdentifier(str: string): WebContentsIdenti
     return null;
 }
 
-function SerializePeerProcessTarget(peer: IpcBusPeer): string {
-    return `${peer.id}_${peer.process.pid}`;
-}
-
-export function UnserializeProcessIdentifier(str: string): ProcessIdentifier | null {
+export function UnserializeProcessIdentifier(str: string): PeerProcessSignature | null {
     const tags = str.match(RegExpProcess);
     if (tags && tags.length > 2) {
         return {
@@ -79,37 +70,45 @@ export function UnserializeProcessIdentifier(str: string): ProcessIdentifier | n
     return null;
 }
 
-export function IsProcessChannel(channel: string): boolean {
-    return (channel.lastIndexOf(DirectPCChannelPrefix, 0) === 0);
-}
-
-export function GetProcessIdentifierFromString(channel: string): ProcessIdentifier | null {
-    if (channel.lastIndexOf(DirectPCChannelPrefix, 0) === 0) {
-        return UnserializeProcessIdentifier(channel.substr(DirectPCChannelPrefixLength));
+export function GetPeerIdFromSignature(signature: string): string | null {
+    const index = signature.indexOf('_', TargetPrefixPrefixLength);
+    if (index >= 0) {
+        return signature.substr(TargetPrefixPrefixLength, index - TargetPrefixPrefixLength);
     }
     return null;
 }
 
-export function IsWebContentsChannel(channel: string): boolean {
-    return (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0);
+export function IsProcessSignature(signature: string): boolean {
+    return (signature && signature.lastIndexOf(ProcessSignaturePrefix, 0) === 0);
 }
 
-export function GetWebContentsIdentifierFromString(channel: string): WebContentsIdentifier | null {
-    if (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(channel.substr(DirectWCChannelPrefixLength));
+export function GetProcessIdentifierFromSignature(signature: string): PeerProcessSignature | null {
+    if (signature && signature.lastIndexOf(ProcessSignaturePrefix, 0) === 0) {
+        return UnserializeProcessIdentifier(signature.substr(TargetPrefixPrefixLength));
     }
     return null;
 }
 
-export function CreateDirectPeerChannel(peer: IpcBusPeer): string {
+export function IsWebContentsSignature(signature: string): boolean {
+    return (signature && signature.lastIndexOf(WebContentsSignaturePrefix, 0) === 0);
+}
+
+export function GetWebContentsIdentifierFromSignature(signature: string): PeerWebContentsSignature | null {
+    if (signature && signature.lastIndexOf(WebContentsSignaturePrefix, 0) === 0) {
+        return UnserializeWebContentsIdentifier(signature.substr(TargetPrefixPrefixLength));
+    }
+    return null;
+}
+
+export function CreatePeerSignature(peer: IpcBusPeer): string {
     if (peer.process.wcid) {
-        return `${DirectWCChannelPrefix}${SerializePeerWebContentsTarget(peer)}`;
+        return `${WebContentsSignaturePrefix}_${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
     }
     else if (peer.process.pid) {
-        return `${DirectPCChannelPrefix}${SerializePeerProcessTarget(peer)}`;
+        return `${ProcessSignaturePrefix}_${peer.id}_$(peer.process.pid)`;
     }
     else {
-        return `nodirect:`;
+        return `${UnknownSignaturePrefix}_${peer.id}`;
     }
 }
 
