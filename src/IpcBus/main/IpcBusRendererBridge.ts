@@ -210,9 +210,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifierFromString(ipcBusCommand.request.replyChannel);
-                if (webContentsTargetIds) {
-                    const peer = this._peers.get(webContentsTargetIds.peerid);
+                // First use target
+                let peerId = ipcBusCommand.target;
+                if (peerId == null) {
+                    const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifierFromString(ipcBusCommand.request.replyChannel);
+                    if (webContentsTargetIds) {
+                        peerId = webContentsTargetIds.peerid;
+                    }
+                }
+                if (peerId) {
+                    const peer = this._peers.get(peerId);
                     if (peer) {
                         peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
                     }

@@ -171,6 +171,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 ipcBusEvent.request.reject = () => {};
                 const ipcBusCommandResponse: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestResponse,
+                    target: ipcBusCommand.peer.id,
                     channel: ipcBusCommand.request.replyChannel,
                     peer: client.peer,
                     request: ipcBusCommand.request
