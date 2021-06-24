@@ -69,7 +69,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         this._rendererRawDataCallback = this._onRendererRawContentReceived.bind(this);
         this._rendererArgsCallback = this._onRendererArgsReceived.bind(this);
-        this._onRendererHandshake = this._onRendererHandshake.bind(this);
+        this._onRendererTransportHandshake = this._onRendererTransportHandshake.bind(this);
     }
 
     getPeerForWindow(window: Electron.BrowserWindow): Client.IpcBusPeer | undefined {
@@ -99,28 +99,28 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
 
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
-        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
 
         return Promise.resolve();
     }
 
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onRendererHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onRendererTransportHandshake);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._rendererArgsCallback);
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
         return Promise.resolve();
     }
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _getHandshake(event: Electron.IpcMainEvent, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
+    private _getTransportHandshake(event: Electron.IpcMainEvent, peerTransport: Client.IpcBusPeer): IpcBusConnector.Handshake {
         const logger = CreateIpcBusLog();
         const webContents = event.sender;
 
         // Inherit from the peer.process and then complete missing information
         const handshake: IpcBusConnector.Handshake = {
-            process: peer.process,
+            process: peerTransport.process,
             logLevel: logger.level,
         };
         handshake.process.wcid = webContents.id;
@@ -140,38 +140,44 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             handshake.process.pid = webContents.id;
         }
         handshake.useIPCNativeSerialization = this._bridge.useIPCNativeSerialization;
-        // handshake.useIPCFrameAPI = this._bridge.useIPCNativeSerialization;
-        const peerWC: IpcBusPeerWC = { ...peer, webContents };
-        this._peers.set(peer.id, peerWC );
-       
-        this._trackRendererDestruction(peerWC);
+
+        const peerWithTransport = { ...peerTransport, webContents };
+        this._peers.set(peerWithTransport.id, peerWithTransport);
+        webContents.once('destroyed', () => {
+            this._subscriptions.removeKey(peerTransport.id);
+        });
 
         return handshake;
     }
 
-    private _trackRendererDestruction(peerWC: IpcBusPeerWC): void {
-        const webContents = peerWC.webContents;
-        webContents.once('destroyed', () => {
-            this._subscriptions.removeKey(peerWC.id);
-            this._peers.delete(peerWC.id);
-        });
-    }
-
-    private _onRendererHandshake(event: Electron.IpcMainEvent, peer: Client.IpcBusPeer): void {
+    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, peerTransport: Client.IpcBusPeer): void {
         const webContents = event.sender;
-        const handshake = this._getHandshake(event, peer);
+        const handshake = this._getTransportHandshake(event, peerTransport);
         // We get back to the webContents
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-            webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, peer, handshake);
+            webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, peerTransport, handshake);
         }
         else {
             webContents.on('did-finish-load', () => {
-                webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, peer, handshake);
+                webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, peerTransport, handshake);
             });
         }
+    }
+
+    private _onPeerHandshake(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
+        const webContents = event.sender;
+        const peerWithTransport = { ...ipcBusCommand.peer, webContents };
+        this._peers.set(peerWithTransport.id, peerWithTransport);
+        webContents.once('destroyed', () => {
+            this._peers.delete(peerWithTransport.id);
+        });
+    }
+
+    private _onPeerShutdown(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
+        this._peers.delete(ipcBusCommand.peer.id);
     }
 
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
@@ -191,9 +197,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.SendMessage: {
                 const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
                 if (targetIds) {
-                    const peer = this._peers.get(targetIds.peerid);
-                    if (peer) {
-                        peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
+                    const peerWithTransport = this._peers.get(targetIds.peerid);
+                    if (peerWithTransport) {
+                        peerWithTransport.webContents.sendToFrame(peerWithTransport.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
                 }
                 else {
@@ -215,9 +221,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
                 if (targetIds) {
-                    const peer = this._peers.get(targetIds.peerid);
-                    if (peer) {
-                        peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
+                    const peerWithTransport = this._peers.get(targetIds.peerid);
+                    if (peerWithTransport) {
+                        peerWithTransport.webContents.sendToFrame(peerWithTransport.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
                 }
                 break;
@@ -248,11 +254,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onRendererAdminReceived(ipcBusCommand: IpcBusCommand): boolean {
+    private _onRendererAdminReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand): boolean {
         switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.Handshake: 
+                this._onPeerHandshake(event, ipcBusCommand);
+                return true;
+            case IpcBusCommand.Kind.Shutdown:
+                this._onPeerShutdown(event, ipcBusCommand);
+                return true;
             case IpcBusCommand.Kind.AddChannelListener: {
-                const peerWC = this._peers.get(ipcBusCommand.peer.id);
-                this._subscriptions.addRef(ipcBusCommand.channel, peerWC.id, peerWC, ipcBusCommand.peer);
+                const peerWithTransport = this._peers.get(ipcBusCommand.peer.id);
+                this._subscriptions.addRef(ipcBusCommand.channel, peerWithTransport.id, peerWithTransport, ipcBusCommand.peer);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelListener:
@@ -269,7 +281,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawData: IpcBusRendererContent) {
-        if (this._onRendererAdminReceived(ipcBusCommand) === false) {
+        if (this._onRendererAdminReceived(event, ipcBusCommand) === false) {
             if (this._broadcastData(true, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData) === false) {
                 IpcBusRendererContent.FixRawContent(rawData);
                 this._bridge._onRendererContentReceived(ipcBusCommand, rawData);
@@ -278,7 +290,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
-        if (this._onRendererAdminReceived(ipcBusCommand) === false) {
+        if (this._onRendererAdminReceived(event, ipcBusCommand) === false) {
             try {
                 if (this._broadcastData(true, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args) === false) {
                     this._bridge._onRendererArgsReceived(ipcBusCommand, args);

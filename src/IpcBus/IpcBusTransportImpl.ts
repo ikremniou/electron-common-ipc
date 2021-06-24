@@ -93,7 +93,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._connector = connector;
 
         this._peer = { 
-            id: `t_${connector.process.type}.${IpcBusUtils.CreateUniqId()}`,
+            id: `t.${connector.process.type}.${IpcBusUtils.CreateUniqId()}`,
             name: 'IPCTransport',
             process: connector.process
         };
@@ -367,11 +367,23 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         })
         .then((handshake) => {
             const peer = this.createPeer(handshake.process, options.peerName);
+            const handshakeCommand: IpcBusCommand = {
+                kind: IpcBusCommand.Kind.Handshake,
+                channel: '',
+                peer: peer
+            };
+            this._postCommand(handshakeCommand);
             return peer;
         });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        const handshakeCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.Shutdown,
+            channel: '',
+            peer: client.peer
+        };
+        this._postCommand(handshakeCommand);
         return this._connector.shutdown(options);
     }
 

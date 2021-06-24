@@ -45,7 +45,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // this._useIPCFrameAPI = true;
         
         this._peer = { 
-            id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
+            id: `t.${contextType}.${IpcBusUtils.CreateUniqId()}`,
             name: 'IPCBusBrige',
             process: {
                 type: contextType,

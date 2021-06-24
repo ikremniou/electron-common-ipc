@@ -54,7 +54,7 @@ export function UnserializeWebContentsIdentifier(str: string): PeerWebContentsSi
             wcid: Number(tags[2]),
             frameid: Number(tags[3]),
             isMainFrame: tags[4] === '1'
-        }
+        };
     }
     return null;
 }
