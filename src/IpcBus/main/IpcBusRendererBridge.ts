@@ -24,16 +24,6 @@ interface IpcBusPeerWC extends Client.IpcBusPeer {
     webContents?: Electron.WebContents;
 }
 
-// Even if electron is not use in a Node process
-// Static import of electron crash the Node process (use require)
-// import { webContents } from 'electron';
-let electronModule: any;
-try {
-    electronModule = require('electron');
-}
-catch (err) {
-}
-
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
@@ -222,9 +212,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifierFromString(ipcBusCommand.request.replyChannel);
                 if (webContentsTargetIds) {
-                    const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
-                    if (webContents) {
-                        webContents.sendToFrame(webContentsTargetIds.frameid, ipcChannel, ipcBusCommand, data);
+                    const peer = this._peers.get(webContentsTargetIds.peerid);
+                    if (peer) {
+                        peer.webContents.sendToFrame(peer.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
                     return true;
                 }

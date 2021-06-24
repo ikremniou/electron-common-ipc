@@ -81,7 +81,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
-    protected _directChannel: string;
 
     protected _peer: Client.IpcBusPeer;
     protected _logActivate: boolean;
@@ -144,7 +143,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     createDirectChannel(client: IpcBusTransport.Client): string {
-        return `${this._directChannel}_p${client.peer.id}_${IpcBusUtils.CreateUniqId()}`;
+        const directChannel = IpcBusUtils.CreateDirectPeerChannel(client.peer);
+        return `${directChannel}p${IpcBusUtils.CreateUniqId()}`;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -263,7 +263,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorShutdown() {
-        this._directChannel = '';
         // Cut connection
         this._postDirectMessage = this._postCommand = this._deadMessageHandler;
         // no messages to send, it is too late
@@ -366,7 +365,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connector.handshake(this, options)
         .then((handshake) => {
             this._logActivate = handshake.logLevel > 0;
-            this._directChannel = IpcBusUtils.CreateDirectProcessChannel(handshake.process);
             // Connect to ... connector
             this._postCommand = this._connector.postCommand.bind(this._connector);
             this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);

@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusProcess } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -31,25 +31,27 @@ const DirectWCChannelPrefix = `direct-wc:`;
 const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
 
 // const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
-const RegExpWebContents = /(\d+)_(\d+)_(\d)/;
+const RegExpWebContents = /(\w+)_(\d+)_(\d+)_(\d)/;
 
 export interface WebContentsIdentifier {
+    peerid: string;
     wcid: number;
     frameid: number;
     isMainFrame: boolean;
 }
 
-function SerializeProcessTarget(process: IpcBusProcess): string {
-    return `${process.wcid}_${process.frameid}_${process.isMainFrame ? '1' : '0'}`;
+function SerializePeerTarget(peer: IpcBusPeer): string {
+    return `${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
 }
 
 export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
     const tags = str.match(RegExpWebContents);
-    if (tags && tags.length > 3) {
+    if (tags && tags.length > 4) {
         return {
-            wcid: Number(tags[1]),
-            frameid: Number(tags[2]),
-            isMainFrame: tags[3] === '1'
+            peerid: tags[1],
+            wcid: Number(tags[2]),
+            frameid: Number(tags[3]),
+            isMainFrame: tags[4] === '1'
         }
     }
     return null;
@@ -66,9 +68,9 @@ export function GetWebContentsIdentifierFromString(channel: string): WebContents
     return null;
 }
 
-export function CreateDirectProcessChannel(process: IpcBusProcess): string {
-    if (process.wcid) {
-        return `${DirectWCChannelPrefix}${SerializeProcessTarget(process)}`;
+export function CreateDirectPeerChannel(peer: IpcBusPeer): string {
+    if (peer.process.wcid) {
+        return `${DirectWCChannelPrefix}${SerializePeerTarget(peer)}`;
     }
     else {
         return `nodirect:`;
