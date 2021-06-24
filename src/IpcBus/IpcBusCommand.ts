@@ -7,8 +7,8 @@ export namespace IpcBusCommand {
     
     /** @internal */
     export enum Kind {
-        Handshake                   = 'HAN',
-        Shutdown                    = 'SHT',
+        // Handshake                   = 'HAN',
+        // Shutdown                    = 'SHT',
         Connect                     = 'COO',    // Obsolete
         Close                       = 'COC',    // Obsolete
 

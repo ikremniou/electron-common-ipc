@@ -234,24 +234,24 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this._onSocketConnected(socket);
     }
 
-    private _onPeerHandshake(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        const peerWithTransport = { ...ipcBusCommand.peer, socket };
-        this._peers.set(peerWithTransport.id, peerWithTransport);
-    }
+    // private _onPeerHandshake(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    //     const peerWithTransport = { ...ipcBusCommand.peer, socket };
+    //     this._peers.set(peerWithTransport.id, peerWithTransport);
+    // }
 
-    private _onPeerShutdown(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._peers.delete(ipcBusCommand.peer.id);
-    }
+    // private _onPeerShutdown(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    //     this._peers.delete(ipcBusCommand.peer.id);
+    // }
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
     onSocketCommand(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Handshake: 
-                this._onPeerHandshake(socket, ipcBusCommand);
-                break;
-            case IpcBusCommand.Kind.Shutdown:
-                this._onPeerShutdown(socket, ipcBusCommand);
-                break;
+            // case IpcBusCommand.Kind.Handshake: 
+            //     this._onPeerHandshake(socket, ipcBusCommand);
+            //     break;
+            // case IpcBusCommand.Kind.Shutdown:
+            //     this._onPeerShutdown(socket, ipcBusCommand);
+            //     break;
 
             case IpcBusCommand.Kind.Connect:
                 break;

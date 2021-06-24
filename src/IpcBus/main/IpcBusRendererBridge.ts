@@ -24,6 +24,8 @@ interface IpcBusPeerWC extends Client.IpcBusPeer {
     webContents?: Electron.WebContents;
 }
 
+
+
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
@@ -145,6 +147,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._peers.set(peerWithTransport.id, peerWithTransport);
         webContents.once('destroyed', () => {
             this._subscriptions.removeKey(peerTransport.id);
+            this._peers.delete(peerWithTransport.id);
         });
 
         return handshake;
@@ -167,18 +170,18 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onPeerHandshake(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
-        const webContents = event.sender;
-        const peerWithTransport = { ...ipcBusCommand.peer, webContents };
-        this._peers.set(peerWithTransport.id, peerWithTransport);
-        webContents.once('destroyed', () => {
-            this._peers.delete(peerWithTransport.id);
-        });
-    }
+    // private _onPeerHandshake(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
+    //     const webContents = event.sender;
+    //     const peerWithTransport = { ...ipcBusCommand.peer, webContents };
+    //     this._peers.set(peerWithTransport.id, peerWithTransport);
+    //     webContents.once('destroyed', () => {
+    //         this._peers.delete(peerWithTransport.id);
+    //     });
+    // }
 
-    private _onPeerShutdown(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
-        this._peers.delete(ipcBusCommand.peer.id);
-    }
+    // private _onPeerShutdown(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
+    //     this._peers.delete(ipcBusCommand.peer.id);
+    // }
 
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         throw 'not implemented';
@@ -256,12 +259,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _onRendererAdminReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand): boolean {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Handshake: 
-                this._onPeerHandshake(event, ipcBusCommand);
-                return true;
-            case IpcBusCommand.Kind.Shutdown:
-                this._onPeerShutdown(event, ipcBusCommand);
-                return true;
+            // case IpcBusCommand.Kind.Handshake: 
+            //     this._onPeerHandshake(event, ipcBusCommand);
+            //     return true;
+            // case IpcBusCommand.Kind.Shutdown:
+            //     this._onPeerShutdown(event, ipcBusCommand);
+            //     return true;
+
             case IpcBusCommand.Kind.AddChannelListener: {
                 const peerWithTransport = this._peers.get(ipcBusCommand.peer.id);
                 this._subscriptions.addRef(ipcBusCommand.channel, peerWithTransport.id, peerWithTransport, ipcBusCommand.peer);

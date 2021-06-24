@@ -367,23 +367,23 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         })
         .then((handshake) => {
             const peer = this.createPeer(handshake.process, options.peerName);
-            const handshakeCommand: IpcBusCommand = {
-                kind: IpcBusCommand.Kind.Handshake,
-                channel: '',
-                peer: peer
-            };
-            this._postCommand(handshakeCommand);
+            // const handshakeCommand: IpcBusCommand = {
+            //     kind: IpcBusCommand.Kind.Handshake,
+            //     channel: '',
+            //     peer: peer
+            // };
+            // this._postCommand(handshakeCommand);
             return peer;
         });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        const handshakeCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.Shutdown,
-            channel: '',
-            peer: client.peer
-        };
-        this._postCommand(handshakeCommand);
+        // const handshakeCommand: IpcBusCommand = {
+        //     kind: IpcBusCommand.Kind.Shutdown,
+        //     channel: '',
+        //     peer: client.peer
+        // };
+        // this._postCommand(handshakeCommand);
         return this._connector.shutdown(options);
     }
 
