@@ -30,9 +30,7 @@ function CleanPipeName(str: string) {
 const DirectWCChannelPrefix = `direct-wc:`;
 const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
 
-// const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
 const RegExpWebContents = /(\w+)_(\d+)_(\d+)_(\d)/;
-
 export interface WebContentsIdentifier {
     peerid: string;
     wcid: number;
@@ -40,7 +38,16 @@ export interface WebContentsIdentifier {
     isMainFrame: boolean;
 }
 
-function SerializePeerTarget(peer: IpcBusPeer): string {
+const DirectPCChannelPrefix = `direct-pc:`;
+const DirectPCChannelPrefixLength = DirectPCChannelPrefix.length;
+
+const RegExpProcess = /(\w+)_(\d+)/;
+export interface ProcessIdentifier {
+    peerid: string;
+    pid: number;
+}
+
+function SerializePeerWebContentsTarget(peer: IpcBusPeer): string {
     return `${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
 }
 
@@ -53,6 +60,32 @@ export function UnserializeWebContentsIdentifier(str: string): WebContentsIdenti
             frameid: Number(tags[3]),
             isMainFrame: tags[4] === '1'
         }
+    }
+    return null;
+}
+
+function SerializePeerProcessTarget(peer: IpcBusPeer): string {
+    return `${peer.id}_${peer.process.pid}`;
+}
+
+export function UnserializeProcessIdentifier(str: string): ProcessIdentifier | null {
+    const tags = str.match(RegExpProcess);
+    if (tags && tags.length > 2) {
+        return {
+            peerid: tags[1],
+            pid: Number(tags[2])
+        }
+    }
+    return null;
+}
+
+export function IsProcessChannel(channel: string): boolean {
+    return (channel.lastIndexOf(DirectPCChannelPrefix, 0) === 0);
+}
+
+export function GetProcessIdentifierFromString(channel: string): ProcessIdentifier | null {
+    if (channel.lastIndexOf(DirectPCChannelPrefix, 0) === 0) {
+        return UnserializeProcessIdentifier(channel.substr(DirectPCChannelPrefixLength));
     }
     return null;
 }
@@ -70,7 +103,10 @@ export function GetWebContentsIdentifierFromString(channel: string): WebContents
 
 export function CreateDirectPeerChannel(peer: IpcBusPeer): string {
     if (peer.process.wcid) {
-        return `${DirectWCChannelPrefix}${SerializePeerTarget(peer)}`;
+        return `${DirectWCChannelPrefix}${SerializePeerWebContentsTarget(peer)}`;
+    }
+    else if (peer.process.pid) {
+        return `${DirectPCChannelPrefix}${SerializePeerProcessTarget(peer)}`;
     }
     else {
         return `nodirect:`;
