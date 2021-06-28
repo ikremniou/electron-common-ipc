@@ -91,8 +91,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
             return true;
         }
-        const target = IpcBusUtils.GetTarget(ipcBusCommand);
-        return (target && (target.type === 'renderer'));
+        return IpcBusUtils.IsTargetRenderer(ipcBusCommand);
     }
 
     getChannels(): string[] {
