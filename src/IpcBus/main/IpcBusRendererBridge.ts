@@ -211,21 +211,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     if (peerEndpoint) {
                         peerEndpoint.webContents.sendToFrame(peerEndpoint.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
+                    return true;
                 }
-                else {
-                    const key = local ? createKeyFromEvent(ipcBusCommand.peer.process.wcid, ipcBusCommand.peer.process.frameid): -1;
-                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                        // Prevent echo message
-                        if (connData.key !== key) {
-                            // if (this._bridge.useIPCFrameAPI) {
-                                connData.conn.webContents.sendToFrame(connData.conn.process.frameid, ipcChannel, ipcBusCommand, data);
-                            // }
-                            // else {
-                            //     connData.conn.webContents.send(ipcchannel, ipcBusCommand, data);
-                            // }
-                        }
-                    });
-                }
+                const key = local ? createKeyFromEvent(ipcBusCommand.peer.process.wcid, ipcBusCommand.peer.process.frameid): -1;
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    // Prevent echo message
+                    if (connData.key !== key) {
+                        connData.conn.webContents.sendToFrame(connData.conn.process.frameid, ipcChannel, ipcBusCommand, data);
+                    }
+                });
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
@@ -236,6 +230,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     if (peerEndpoint) {
                         peerEndpoint.webContents.sendToFrame(peerEndpoint.process.frameid, ipcChannel, ipcBusCommand, data);
                     }
+                    return true;
                 }
                 break;
             }
