@@ -24,7 +24,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
             return true;
         }
-        return IpcBusUtils.IsTargetProcess(ipcBusCommand);
+        return IpcBusUtils.GetTargetProcess(ipcBusCommand) != null;
     }
 
     getChannels(): string[] {

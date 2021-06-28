@@ -91,7 +91,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
             return true;
         }
-        return IpcBusUtils.IsTargetRenderer(ipcBusCommand);
+        return IpcBusUtils.GetTargetRenderer(ipcBusCommand) != null;
     }
 
     getChannels(): string[] {
@@ -204,7 +204,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(local: boolean, ipcChannel: string, ipcBusCommand: IpcBusCommand, data: any): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const target = IpcBusUtils.GetTarget(ipcBusCommand);
+                const target = IpcBusUtils.GetTargetRenderer(ipcBusCommand, true);
                 if (target) {
                     const key = createKeyFromEvent(target.wcid, target.frameid);
                     const peerEndPoint = this._peers.get(key);
@@ -229,7 +229,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const target = IpcBusUtils.GetTarget(ipcBusCommand);
+                const target = IpcBusUtils.GetTargetRenderer(ipcBusCommand, true);
                 if (target) {
                     const key = createKeyFromEvent(target.wcid, target.frameid);
                     const peerEndPoint = this._peers.get(key);

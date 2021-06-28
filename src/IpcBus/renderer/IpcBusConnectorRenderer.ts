@@ -64,7 +64,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        const target = IpcBusUtils.GetTargetRenderer(ipcBusCommand);
         return (target
                 && (target.type == this._peer.process.type)
                 && (target.wcid == this._peer.process.wcid)
@@ -164,7 +164,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        const target = IpcBusUtils.GetTargetRenderer(ipcBusCommand);
         if (this._useElectronSerialization) {
             try {
                 if (target && (target.type === this._peer.process.type) && target.isMainFrame) {

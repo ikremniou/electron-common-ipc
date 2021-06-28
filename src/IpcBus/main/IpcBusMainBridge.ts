@@ -21,7 +21,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        return IpcBusUtils.IsTargetMain(ipcBusCommand);
+        return IpcBusUtils.GetTargetMain(ipcBusCommand) != null;
     }
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {

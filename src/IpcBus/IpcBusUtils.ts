@@ -35,34 +35,46 @@ const TargetRendererSignature = `${TargetSignature}:rend_`;
 
 const TargetSignatureLength = TargetMainSignature.length;
 
-export function IsTargetMain(ipcBusCommand: IpcBusCommand): boolean {
-    if (ipcBusCommand.target && (ipcBusCommand.target.type === 'main')) {
-        return true;
+export function GetTargetMain(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
+    if (ipcBusCommand.target) {
+        return (ipcBusCommand.target.type === 'main') ? ipcBusCommand.target : null;
     }
     if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetMainSignature, 0) === 0)) {
-        return true;
+        if (parse) {
+            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+        }
+        return {};
     }
-    return false;
+    return null;
 }
 
-export function IsTargetProcess(ipcBusCommand: IpcBusCommand): boolean {
-    if (ipcBusCommand.target && (ipcBusCommand.target.type === 'node' || ipcBusCommand.target.type === 'native')) {
-        return true;
+export function GetTargetProcess(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
+    if (ipcBusCommand.target) {
+        return ((ipcBusCommand.target.type === 'node' || ipcBusCommand.target.type === 'native')) ? ipcBusCommand.target : null;
     }
     if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetProcessSignature, 0) === 0)) {
-        return true;
+        if (parse) {
+            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+        }
+        return {};
     }
-    return false;
+    return null;
 }
 
-export function IsTargetRenderer(ipcBusCommand: IpcBusCommand): boolean {
-    if (ipcBusCommand.target && (ipcBusCommand.target.type === 'renderer')) {
-        return true;
+export function GetTargetRenderer(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
+    if (ipcBusCommand.target) {
+        return (ipcBusCommand.target.type === 'renderer') ? ipcBusCommand.target : null;
     }
     if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetRendererSignature, 0) === 0)) {
-        return true;
+        if (parse) {
+            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+        }
+        return {};
     }
-    return false;
+    return null;
 }
 
 export function GetTarget(ipcBusCommand: IpcBusCommand): IpcBusTarget | null {

@@ -97,7 +97,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
         return (target
                 && (target.type === this._peer.process.type)
                 && (target.pid == this._peer.process.pid));
