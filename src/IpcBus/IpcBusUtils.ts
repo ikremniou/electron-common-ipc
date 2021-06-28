@@ -2,7 +2,7 @@
 import * as shortid from 'shortid';
 
 import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
-import type { IpcBusTarget } from './IpcBusCommand';
+import type { IpcBusCommand, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -26,6 +26,24 @@ function CleanPipeName(str: string) {
         }
     }
     return str;
+}
+
+const TargetSignature = '__target__';
+const TargetSignatureLength = TargetSignature.length;
+
+export function GetTarget(ipcBusCommand: IpcBusCommand): IpcBusTarget | null {
+    if (ipcBusCommand.target) {
+        return ipcBusCommand.target;
+    }
+    if (ipcBusCommand.channel && ipcBusCommand.channel.lastIndexOf(TargetSignature, 0) == 0) {
+        const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
+        return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+    }
+    return null;
+}
+
+export function CreateTargetChannel(peer: IpcBusPeer): string {
+    return `__target__${JSON.stringify(CreateTarget(peer))}__target__${CreateUniqId()}`;
 }
 
 export function CreateTarget(peer: IpcBusPeer): IpcBusTarget {

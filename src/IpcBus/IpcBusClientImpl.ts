@@ -24,6 +24,14 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._peer;
     }
 
+    createDirectChannel(): string {
+        return this._transport.createDirectChannel(this);
+    }
+ 
+    createResponseChannel(): string {
+        return this._transport.createDirectChannel(this);
+    }
+
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.connect(() => {
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);

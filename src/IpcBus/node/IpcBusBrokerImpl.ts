@@ -273,9 +273,10 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge
-            case IpcBusCommand.Kind.SendMessage:
-                if (ipcBusCommand.target && ((ipcBusCommand.target.type === 'node') || (ipcBusCommand.target.type === 'native'))) {
-                    const peerEndPoint = this._peers.get(ipcBusCommand.target.pid);
+            case IpcBusCommand.Kind.SendMessage: {
+                const target = IpcBusUtils.GetTarget(ipcBusCommand);
+                if (target && ((target.type === 'node') || (target.type === 'native'))) {
+                    const peerEndPoint = this._peers.get(target.pid);
                     if (peerEndPoint) {
                         WriteBuffersToSocket(peerEndPoint.socket, ipcPacketBufferList.buffers);
                         return;
@@ -290,11 +291,13 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 // if not coming from main bridge => forward
                 this.broadcastToBridgeMessage(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
+            }
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
-                if (ipcBusCommand.target && ((ipcBusCommand.target.type === 'node') || (ipcBusCommand.target.type === 'native'))) {
-                    const peerEndPoint = this._peers.get(ipcBusCommand.target.pid);
+                const target = IpcBusUtils.GetTarget(ipcBusCommand);
+                if (target && ((target.type === 'node') || (target.type === 'native'))) {
+                    const peerEndPoint = this._peers.get(target.pid);
                     if (peerEndPoint) {
                         WriteBuffersToSocket(peerEndPoint.socket, ipcPacketBufferList.buffers);
                         return;

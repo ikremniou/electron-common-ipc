@@ -97,9 +97,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        return (ipcBusCommand.target
-                && (ipcBusCommand.target.type == this._peer.process.type)
-                && (ipcBusCommand.target.pid == this._peer.process.pid));
+        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        return (target
+                && (target.type === this._peer.process.type)
+                && (target.pid == this._peer.process.pid));
     }
 
     /// IpcBusTransportImpl API

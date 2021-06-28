@@ -138,7 +138,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (listeners.length === 0) {
             return false;
         }
-        if (ipcBusCommand.target && ipcBusCommand.target.peerid && (ipcBusCommand.target.peerid !== client.peer.id)) {
+        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        if (target && target.peerid && (target.peerid !== client.peer.id)) {
             return false;
         }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
@@ -362,6 +363,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connector.shutdown(options);
+    }
+
+    createDirectChannel(client: IpcBusTransport.Client): string {
+        return IpcBusUtils.CreateTargetChannel(client.peer);
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {

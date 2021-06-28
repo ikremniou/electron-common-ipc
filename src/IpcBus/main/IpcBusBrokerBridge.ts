@@ -6,6 +6,7 @@ import { WriteBuffersToSocket } from 'socket-serializer';
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
+import * as IpcBusUtils from '../IpcBusUtils';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -20,7 +21,11 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     isTarget(ipcBusCommand: IpcBusCommand) {
-        return this._subscriptions.hasChannel(ipcBusCommand.channel);
+        if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
+            return true;
+        }
+        const target = IpcBusUtils.GetTarget(ipcBusCommand);
+        return (target && ((target.type === 'node') || (target.type === 'native')));
     }
 
     getChannels(): string[] {
