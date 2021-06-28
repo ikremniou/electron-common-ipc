@@ -13,8 +13,8 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    hasChannel(channel: string): boolean {
-        return this._subscriptions ? this._subscriptions.hasChannel(channel) : false;
+    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
+        return this._subscriptions ? this._subscriptions.hasChannel(ipcBusCommand.channel) : false;
     }
 
     getChannels(): string[] {
@@ -38,7 +38,6 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             this._subscriptions.client = null;
             this._subscriptions = null;
             this._postCommand({
-                peer: this._peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''
             });
@@ -49,19 +48,17 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return super.connect(client, options)
             .then((peer) => {
                 if (this._subscriptions == null) {
-                    this._subscriptions = new ChannelConnectionMap<IpcBusTransport.Client, string>(this._peer.name);
+                    this._subscriptions = new ChannelConnectionMap<IpcBusTransport.Client, string>('');
 
                     this._subscriptions.client = {
                         channelAdded: (channel) => {
                             this._postCommand({
-                                peer: this._peer,
                                 kind: IpcBusCommand.Kind.AddChannelListener,
                                 channel
                             })
                         },
                         channelRemoved: (channel) => {
                             this._postCommand({
-                                peer: this._peer,
                                 kind: IpcBusCommand.Kind.RemoveChannelListener,
                                 channel
                             });

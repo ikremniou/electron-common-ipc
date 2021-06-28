@@ -17,7 +17,7 @@ import { JSONParserV1 } from 'json-helpers';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
-    hasChannel(channel: string): boolean;
+    isRecipient(ipcBusCommand: IpcBusCommand): boolean;
 
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
@@ -148,7 +148,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
         this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
-        const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
+        const hasSocketChannel = this._socketTransport && this._socketTransport.isRecipient(ipcBusCommand);
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
             JSONParserV1.install();
@@ -161,7 +161,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
+        const hasSocketChannel = this._socketTransport && this._socketTransport.isRecipient(ipcBusCommand);
         if (this._useIPCNativeSerialization) {
             this._rendererConnector.broadcastArgs(ipcBusCommand, args);
             // Prevent serializing for nothing !
@@ -173,7 +173,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             }
         }
         else {
-            const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
+            const hasRendererChannel = this._rendererConnector.isRecipient(ipcBusCommand);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
                 JSONParserV1.install();

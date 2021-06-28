@@ -27,9 +27,11 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const ProcessSignaturePrefix     = `_target-pc:`;
-const WebContentsSignaturePrefix = `_target-wc:`;
-const UnknownSignaturePrefix     = `_target-no:`;
+const SignaturePrefix     = `_target-:`;
+const ProcessSignaturePrefix     = `${SignaturePrefix}pc:`;
+const MainSignaturePrefix     = `${SignaturePrefix}mn:`;
+const WebContentsSignaturePrefix = `${SignaturePrefix}wc:`;
+const UnknownSignaturePrefix     = `${SignaturePrefix}no:`;
 const TargetPrefixPrefixLength = ProcessSignaturePrefix.length;
 
 const RegExpWebContents = /([^_]+)_(\d+)_(\d+)_(\d)/;
@@ -81,6 +83,17 @@ export function GetTargetPeerId(target: string): string | null {
     return null;
 }
 
+export function IsMainTarget(target: string): boolean {
+    return (target && target.lastIndexOf(MainSignaturePrefix, 0) === 0);
+}
+
+export function GetTargetMainIdentifiers(target: string): PeerProcessSignature | null {
+    if (target && target.lastIndexOf(MainSignaturePrefix, 0) === 0) {
+        return UnserializeProcessIdentifier(target.substr(TargetPrefixPrefixLength));
+    }
+    return null;
+}
+
 export function IsProcessTarget(target: string): boolean {
     return (target && target.lastIndexOf(ProcessSignaturePrefix, 0) === 0);
 }
@@ -103,18 +116,33 @@ export function GetTargetWebContentsIdentifiers(target: string): PeerWebContents
     return null;
 }
 
+// export function CreateTargetedChannel(peer: IpcBusPeer, channel: string): string {
+//     if (peer == null) {
+//         return undefined;
+//     }
+//     const target = CreateTarget(peer);
+//     return `${target}:${channel}`;
+// }
+
 export function CreateTarget(peer: IpcBusPeer): string {
     if (peer == null) {
         return undefined;
     }
-    if (peer.process.wcid) {
-        return `${WebContentsSignaturePrefix}${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
-    }
-    else if (peer.process.pid) {
-        return `${ProcessSignaturePrefix}${peer.id}_${peer.process.pid}`;
-    }
-    else {
-        return `${UnknownSignaturePrefix}${peer.id}`;
+    switch (peer.process.type) {
+        case 'native':
+        case 'node':
+            return `${ProcessSignaturePrefix}${peer.id}_${peer.process.pid}`;
+
+        case 'renderer':
+            return `${WebContentsSignaturePrefix}${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
+        
+        case 'main':
+            return `${MainSignaturePrefix}${peer.id}_${peer.process.pid}`;
+        
+        case 'worker':
+        case 'undefined':
+        default:
+            return `${UnknownSignaturePrefix}${peer.id}`;
     }
 }
 

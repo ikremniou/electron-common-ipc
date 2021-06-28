@@ -7,10 +7,8 @@ export namespace IpcBusCommand {
     
     /** @internal */
     export enum Kind {
-        // Handshake                   = 'HAN',
-        // Shutdown                    = 'SHT',
-        Connect                     = 'COO',    // Obsolete
-        Close                       = 'COC',    // Obsolete
+        Handshake                   = 'HAN',
+        Shutdown                    = 'SHT',
 
         AddChannelListener          = 'LICA',
         RemoveChannelListener       = 'LICR',
@@ -44,8 +42,8 @@ export namespace IpcBusCommand {
 
     /** @internal */
     export interface LogCommand {
-        peer: IpcBusPeer;
         kind: IpcBusCommand.Kind;
+        peer: IpcBusPeer;
         channel: string;
         channels?: string[];
         request?: IpcBusCommand.Request;
@@ -66,10 +64,11 @@ export namespace IpcBusCommand {
 
 /** @internal */
 export interface IpcBusCommand {
-    peer: IpcBusPeer;
+    kind: IpcBusCommand.Kind;
+
+    peer?: IpcBusPeer;
     target?: string;
 
-    kind: IpcBusCommand.Kind;
     channel: string;
     channels?: string[];
     request?: IpcBusCommand.Request;

@@ -151,7 +151,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 kind: ipcBusCommand.kind,
                 timestamp: this.now,
                 peer: ipcBusCommand.peer,
-                command: ipcBusCommand
+                command: ipcBusCommand as any
             };
         }
 

@@ -1,6 +1,7 @@
 import type { EventEmitter } from 'events';
 
 import type * as Client from './IpcBusClient';
+import type { IpcBusCommand } from './IpcBusCommand';
 
 /** @internal */
 export namespace IpcBusTransport {
@@ -12,12 +13,10 @@ export namespace IpcBusTransport {
 
 /** @internal */
 export interface IpcBusTransport {
-    peer: Client.IpcBusPeer;
-
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    hasChannel(channel: string): boolean;
+    isRecipient(ipcBusCommand: IpcBusCommand): boolean;
     getChannels(): string[];
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

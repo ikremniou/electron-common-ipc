@@ -5,7 +5,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 
 import type { IpcBusTransport } from './IpcBusTransport';
-import type { IpcBusConnector } from './IpcBusConnector';
+import type { IpcBusConnector, PostCommandFunction, PostMessageFunction } from './IpcBusConnector';
 import { JSONParserV1 } from 'json-helpers';
 
 /** @internal */
@@ -82,31 +82,21 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected _connector: IpcBusConnector;
 
-    protected _peer: Client.IpcBusPeer;
     protected _logActivate: boolean;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
-    protected _postCommand: Function;
-    protected _postDirectMessage: Function;
+    protected _postCommand: PostCommandFunction;
+    protected _postMessage: PostMessageFunction;
 
     constructor(connector: IpcBusConnector) {
         this._connector = connector;
 
-        this._peer = { 
-            id: `t.${connector.process.type}.${IpcBusUtils.CreateUniqId()}`,
-            name: 'IPCTransport',
-            process: connector.process
-        };
         this._requestFunctions = new Map();
-        this._postDirectMessage = this._postCommand = this._deadMessageHandler;
+        this._postMessage = this._postCommand = this._deadMessageHandler as any;
     }
 
     private _deadMessageHandler(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(`IPCBUS: Receive msg before birth or after death ${JSON.stringify(ipcBusCommand, null, 4)}`);
-    }
-
-    get peer(): Client.IpcBusPeer {
-        return this._peer;
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(`IPCBUS: not managed ${JSON.stringify(ipcBusCommand, null, 4)}`);
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
@@ -149,7 +139,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             return false;
         }
         const peerId = IpcBusUtils.GetTargetPeerId(ipcBusCommand.target);
-        if (peerId && (client.peer.id !== peerId)) {
+        if (peerId && (peerId !== client.peer.id)) {
             return false;
         }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
@@ -186,7 +176,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     }
                 }
                 else {
-                    this._postDirectMessage(ipcBusCommandResponse, argsResponse);
+                    this._postMessage(ipcBusCommandResponse, argsResponse);
                 }
             }
             ipcBusEvent.request = {
@@ -237,7 +227,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // Special code for preventing a costly serialization if there is no channel listening
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                if (this.hasChannel(ipcBusCommand.channel)) {
+                if (this.isRecipient(ipcBusCommand)) {
                     const args = ipcPacketBufferCore.parseArrayAt(1);
                     return this._onMessageReceived(false, ipcBusCommand, args);
                 }
@@ -259,7 +249,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient
     onConnectorShutdown() {
         // Cut connection
-        this._postDirectMessage = this._postCommand = this._deadMessageHandler;
+        this._postMessage = this._postCommand = this._deadMessageHandler as any;
         // no messages to send, it is too late
     }
 
@@ -279,10 +269,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        if (this.hasChannel(channel)) {
+        if (this.isRecipient(ipcMessage)) {
             this._onMessageReceived(true, ipcMessage, args);
         }
-        this._postDirectMessage(ipcMessage, args);
+        this._postMessage(ipcMessage, args);
     }
 
     protected cancelRequest(client?: IpcBusTransport.Client): void {
@@ -299,7 +289,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 if (this._logActivate) {
                     this._connector.logMessageSend(null, ipcRequestClose);
                 }
-                this._postCommand(ipcRequestClose);
+                this._postMessage(ipcRequestClose);
             }
         });
     }
@@ -325,7 +315,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        if (this.hasChannel(channel)) {
+        if (this.isRecipient(ipcMessage)) {
             this._onMessageReceived(true, ipcMessage, args);
         }
         if (deferredRequest.isSettled()) {
@@ -347,11 +337,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         if (logSendMessage) {
                             this._connector.logMessageSend(logSendMessage, ipcRequestClose);
                         }
-                        this._postCommand(ipcRequestClose);
+                        this._postMessage(ipcRequestClose);
                     }
                 }, timeoutDelay);
             }
-            this._postDirectMessage(ipcMessage, args);
+            this._postMessage(ipcMessage, args);
         }
         return deferredRequest.promise;
     }
@@ -362,32 +352,20 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._logActivate = handshake.logLevel > 0;
             // Connect to ... connector
             this._postCommand = this._connector.postCommand.bind(this._connector);
-            this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);
+            this._postMessage = this._connector.postMessage.bind(this._connector);
             return handshake;
         })
         .then((handshake) => {
             const peer = this.createPeer(handshake.process, options.peerName);
-            // const handshakeCommand: IpcBusCommand = {
-            //     kind: IpcBusCommand.Kind.Handshake,
-            //     channel: '',
-            //     peer: peer
-            // };
-            // this._postCommand(handshakeCommand);
             return peer;
         });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        // const handshakeCommand: IpcBusCommand = {
-        //     kind: IpcBusCommand.Kind.Shutdown,
-        //     channel: '',
-        //     peer: client.peer
-        // };
-        // this._postCommand(handshakeCommand);
         return this._connector.shutdown(options);
     }
 
-    abstract hasChannel(channel: string): boolean;
+    abstract isRecipient(ipcBusCommand: IpcBusCommand): boolean;
     abstract getChannels(): string[];
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

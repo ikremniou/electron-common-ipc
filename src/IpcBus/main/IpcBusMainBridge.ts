@@ -7,6 +7,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import * as IpcBusUtils from '../IpcBusUtils';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
@@ -16,12 +17,12 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 
         this._bridge = bridge;
 
-        this.postDirectMessage = this.postCommand;
+        this.postMessage = this.postCommand;
     }
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            process: this.process,
+            process: this.peer.process,
             logLevel: this._log.level
         }
         return Promise.resolve(handshake);
@@ -31,11 +32,12 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return Promise.resolve();
     }
 
-    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         // fake body
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        ipcBusCommand.peer = this._peer;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:
@@ -58,6 +60,12 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
+
+    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
+        return super.isRecipient(ipcBusCommand) || IpcBusUtils.IsMainTarget(ipcBusCommand.channel);
+    }
+    
+    
     // broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
     //     throw new Error('Method not implemented.');
     // }

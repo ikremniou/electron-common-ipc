@@ -35,7 +35,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
-        this._process.isMainFrame = isMainFrame;
+        this._peer.process.isMainFrame = isMainFrame;
         this._packetOut = new IpcPacketBuffer();
         this._packetOut.JSON = JSONParserV1;
 
@@ -105,11 +105,14 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
         // this._useIPCFrameAPI = handshake.useIPCFrameAPI;
-        // Keep the this._process ref intact as shared with client peers
-        this._process = Object.assign(this._process, handshake.process);
+        // Keep the this._peer.process ref intact as shared with client peers
+        this._peer.process = Object.assign(this._peer.process, handshake.process);
         this._log.level = handshake.logLevel;
         this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, this._onIpcEventRawDataReceived);
         this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, this._onIpcEventArgsReceived);
+
+        this.onConnectorHandshake();
+
         return handshake;
     };
 
@@ -123,6 +126,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                     clearTimeout(timer);
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     this.addClient(client);
+
                     const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
                     resolve(handshake);
                 };
@@ -138,7 +142,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 }
                 // We wait for the bridge confirmation
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, client.peer);
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._peer);
             });
         });
     }
@@ -151,7 +155,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
         if (this._useElectronSerialization) {
             try {
@@ -182,6 +186,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        ipcBusCommand.peer = this._peer;
         if (this._useElectronSerialization) {
             try {
                 this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);

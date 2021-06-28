@@ -28,10 +28,8 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
-            this._peer = peer;
             const channels = this._bridge.getChannels();
             this._postCommand({
-                peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
                 channel: undefined,
                 channels
@@ -42,7 +40,6 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
     broadcastClose(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         this._postCommand({
-            peer: this._peer,
             kind: IpcBusCommand.Kind.BridgeClose,
             channel: ''
         });
@@ -90,8 +87,8 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         this.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
     }
 
-    hasChannel(channel: string): boolean {
-        return this._subscribedChannels.has(channel) || IpcBusUtils.IsProcessTarget(channel);
+    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
+        return this._subscribedChannels.has(ipcBusCommand.channel) || IpcBusUtils.IsProcessTarget(ipcBusCommand.channel);
     }
 
     getChannels(): string[] {
@@ -107,14 +104,6 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean {
-        throw 'not implemented';
-    }
-
-    // protected sendMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-    //     throw 'not implemented';
-    // }
-
-    protected _postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         throw 'not implemented';
     }
 

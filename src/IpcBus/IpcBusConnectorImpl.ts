@@ -10,35 +10,50 @@ import { CreateUniqId, ConnectCloseState } from './IpcBusUtils';
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
-    protected _process: Client.IpcBusProcess;
-    protected _messageId: string;
+    protected _peer: Client.IpcBusPeer;
     protected _messageCount: number;
     protected _log: IpcBusLogConfig;
 
     protected _connectCloseState: ConnectCloseState<IpcBusConnector.Handshake>;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._process = {
-            type: contextType,
-            pid: process ? process.pid: -1
+        this._peer = { 
+            id: `endpoint.${contextType}.${CreateUniqId()}`,
+            name: 'IPCEndPoint',
+            process: {
+                type: contextType,
+                pid: process ? process.pid: -1
+            }
         };
 
         this._connectCloseState = new ConnectCloseState<IpcBusConnector.Handshake>();
 
         this._log = CreateIpcBusLog();
-        this._messageId = `m_${this._process.type}.${CreateUniqId()}`
         this._messageCount = 0;
     }
 
-    get process(): Client.IpcBusProcess {
-        return this._process;
+    get peer(): Client.IpcBusPeer {
+        return this._peer;
     }
 
     protected onConnectorBeforeShutdown() {
         this._client && this._client.onConnectorBeforeShutdown();
     }
 
+    protected onConnectorHandshake() {
+        const handshakeCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.Handshake,
+            channel: ''
+        };
+        this.postCommand(handshakeCommand);
+    }
+
     protected onConnectorShutdown() {
+        const shutdownCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.Shutdown,
+            channel: ''
+        };
+        this.postCommand(shutdownCommand);
         this._connectCloseState.shutdown();
         this._client && this._client.onConnectorShutdown();
         this.removeClient();
@@ -65,7 +80,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log {
         if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             // static part . dynamic part
-            const id = `${this._messageId}.${this._messageCount++}`;
+            const id = `${this._peer.id}.${this._messageCount++}`;
             ipcBusCommand.log = {
                 id,
                 kind: ipcBusCommand.kind,
@@ -121,7 +136,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     abstract shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    abstract postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    abstract postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    abstract postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    abstract postCommand(ipcBusCommand: Omit<IpcBusCommand, 'peer'>, args?: any[]): void;
     abstract postBuffers(buffers: Buffer[]): void;
 }
