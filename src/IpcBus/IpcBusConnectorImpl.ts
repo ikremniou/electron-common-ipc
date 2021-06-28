@@ -18,8 +18,8 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._peer = { 
-            id: `endpoint.${contextType}.${CreateUniqId()}`,
-            name: 'IPCEndPoint',
+            id: `Endpoint.${contextType}.${CreateUniqId()}`,
+            name: 'IPCEndpoint',
             process: {
                 type: contextType,
                 pid: process ? process.pid: -1

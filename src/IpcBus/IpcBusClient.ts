@@ -14,7 +14,7 @@ export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worke
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
-    rid?: number;   // Renderer Id
+    rid?: number;   // Routing Id
     wcid?: number;  // WebContent Id
     frameid?: number; // Frame Id
     isMainFrame?: boolean;

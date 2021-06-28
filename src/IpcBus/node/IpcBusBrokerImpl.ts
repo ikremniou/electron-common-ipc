@@ -27,11 +27,11 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
     protected _subscriptions: ChannelConnectionMap<net.Socket, string>;
-    private _peers: Map<number, IpcBusPeerSocket>;
+    private _endpoints: Map<number, IpcBusPeerSocket>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
-        this._peers = new Map();
+        this._endpoints = new Map();
 
         // Callbacks
         this._netBinds = {};
@@ -181,9 +181,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this.onBridgeClosed(socket);
         // Broadcast peers destruction ?
         this._subscriptions.removeConnection(socket);
-        for (const peer of this._peers.values()) {
+        for (const peer of this._endpoints.values()) {
             if (peer.socket === socket) {
-                this._peers.delete(peer.process.pid);
+                this._endpoints.delete(peer.process.pid);
             }
         }
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
@@ -234,29 +234,29 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this._onSocketConnected(socket);
     }
 
-    private _onEndPointHandshake(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        const peerEndPoint = { ...ipcBusCommand.peer, socket };
-        this._peers.set(peerEndPoint.process.pid, peerEndPoint);
+    private _onEndpointHandshake(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+        const peerEndpoint = { ...ipcBusCommand.peer, socket };
+        this._endpoints.set(peerEndpoint.process.pid, peerEndpoint);
     }
 
-    private _onEndPointShutdown(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._peers.delete(ipcBusCommand.peer.process.pid);
+    private _onEndpointShutdown(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+        this._endpoints.delete(ipcBusCommand.peer.process.pid);
     }
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
     onSocketCommand(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
-                this._onEndPointHandshake(socket, ipcBusCommand);
+                this._onEndpointHandshake(socket, ipcBusCommand);
                 break;
             case IpcBusCommand.Kind.Shutdown:
-                this._onEndPointShutdown(socket, ipcBusCommand);
+                this._onEndpointShutdown(socket, ipcBusCommand);
                 // this._socketCleanUp(socket);
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const peerEndPoint = this._peers.get(ipcBusCommand.peer.process.pid);
-                this._subscriptions.addRef(ipcBusCommand.channel, peerEndPoint.id, socket, ipcBusCommand.peer);
+                const peerEndpoint = this._endpoints.get(ipcBusCommand.peer.process.pid);
+                this._subscriptions.addRef(ipcBusCommand.channel, peerEndpoint.id, socket, ipcBusCommand.peer);
                 break;
             }
 
@@ -276,9 +276,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.SendMessage: {
                 const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
                 if (target) {
-                    const peerEndPoint = this._peers.get(target.pid);
-                    if (peerEndPoint) {
-                        WriteBuffersToSocket(peerEndPoint.socket, ipcPacketBufferList.buffers);
+                    const peerEndpoint = this._endpoints.get(target.pid);
+                    if (peerEndpoint) {
+                        WriteBuffersToSocket(peerEndpoint.socket, ipcPacketBufferList.buffers);
                         return;
                     }
                 }
@@ -297,9 +297,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.RequestResponse: {
                 const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
                 if (target) {
-                    const peerEndPoint = this._peers.get(target.pid);
-                    if (peerEndPoint) {
-                        WriteBuffersToSocket(peerEndPoint.socket, ipcPacketBufferList.buffers);
+                    const peerEndpoint = this._endpoints.get(target.pid);
+                    if (peerEndpoint) {
+                        WriteBuffersToSocket(peerEndpoint.socket, ipcPacketBufferList.buffers);
                         return;
                     }
                 }
