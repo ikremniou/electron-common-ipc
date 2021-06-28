@@ -16,7 +16,7 @@ export interface IpcBusTransport {
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    isRecipient(ipcBusCommand: IpcBusCommand): boolean;
+    isTarget(ipcBusCommand: IpcBusCommand): boolean;
     getChannels(): string[];
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

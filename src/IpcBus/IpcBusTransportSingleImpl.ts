@@ -12,8 +12,11 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
-        return (this._client && (this._client.listenerCount(ipcBusCommand.channel) > 0));
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        if (this._client && (this._client.listenerCount(ipcBusCommand.channel) > 0)) {
+            return true;
+        }
+        return super.isTarget(ipcBusCommand);
     }
 
     getChannels(): string[] {

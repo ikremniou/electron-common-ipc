@@ -96,6 +96,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
     }
 
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        return IpcBusUtils.IsProcessTarget(ipcBusCommand.target);
+    }
+
     /// IpcBusTransportImpl API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return this._connectCloseState.connect(() => {

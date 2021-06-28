@@ -13,8 +13,11 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
-        return this._subscriptions ? this._subscriptions.hasChannel(ipcBusCommand.channel) : false;
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        if (this._subscriptions && this._subscriptions.hasChannel(ipcBusCommand.channel)) {
+            return true;
+        }
+        return super.isTarget(ipcBusCommand);
     }
 
     getChannels(): string[] {

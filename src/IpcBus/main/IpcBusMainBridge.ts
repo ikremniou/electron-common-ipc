@@ -20,6 +20,10 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         this.postMessage = this.postCommand;
     }
 
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        return IpcBusUtils.IsMainTarget(ipcBusCommand.target);
+    }
+    
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
             process: this.peer.process,
@@ -60,21 +64,27 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
+    // broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    //     throw 'not implemented';
+    // }
 
-    isRecipient(ipcBusCommand: IpcBusCommand): boolean {
-        return super.isRecipient(ipcBusCommand) || IpcBusUtils.IsMainTarget(ipcBusCommand.channel);
-    }
-    
-    
+    // broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    //     throw 'not implemented';
+    // }
+
     // broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
-    //     throw new Error('Method not implemented.');
+    //     throw 'not implemented';
+    // }
+
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     this.onConnectorArgsReceived(ipcBusCommand, args);
     // }
 
     // broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-    //     throw new Error('Method not implemented.');
+    //     this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
     // }
 
-    // broadcastContent(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBufferCore.RawData): void {
+    // broadcastRawData(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void {
     //     this.onConnectorRawDataReceived(ipcBusCommand, rawData);
     // }
 }

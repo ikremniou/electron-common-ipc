@@ -87,8 +87,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return result;
     }
 
-    isRecipient(ipcBuspCommand: IpcBusCommand): boolean {
-        return this._subscriptions.hasChannel(ipcBuspCommand.channel) || IpcBusUtils.IsWebContentsTarget(ipcBuspCommand.channel);
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        return this._subscriptions.hasChannel(ipcBusCommand.channel) || IpcBusUtils.IsWebContentsTarget(ipcBusCommand.target);
     }
 
     getChannels(): string[] {

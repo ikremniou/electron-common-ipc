@@ -27,11 +27,11 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const SignaturePrefix     = `_target-:`;
-const ProcessSignaturePrefix     = `${SignaturePrefix}pc:`;
-const MainSignaturePrefix     = `${SignaturePrefix}mn:`;
-const WebContentsSignaturePrefix = `${SignaturePrefix}wc:`;
-const UnknownSignaturePrefix     = `${SignaturePrefix}no:`;
+const SignaturePrefix     = `_target-`;
+const ProcessSignaturePrefix     = `${SignaturePrefix}pc_`;
+const MainSignaturePrefix     = `${SignaturePrefix}mn_`;
+const WebContentsSignaturePrefix = `${SignaturePrefix}wc_`;
+const UnknownSignaturePrefix     = `${SignaturePrefix}no_`;
 const TargetPrefixPrefixLength = ProcessSignaturePrefix.length;
 
 const RegExpWebContents = /([^_]+)_(\d+)_(\d+)_(\d)/;

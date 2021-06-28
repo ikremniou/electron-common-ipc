@@ -63,6 +63,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // });
     }
 
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        return IpcBusUtils.IsWebContentsTarget(ipcBusCommand.target);
+    }
+
     protected onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._onIpcEventRawDataReceived) {

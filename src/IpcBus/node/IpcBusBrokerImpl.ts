@@ -255,8 +255,8 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const peerSocket = this._peers.get(ipcBusCommand.peer.process.pid);
-                this._subscriptions.addRef(ipcBusCommand.channel, peerSocket.id, socket, ipcBusCommand.peer);
+                const peerEndPoint = this._peers.get(ipcBusCommand.peer.process.pid);
+                this._subscriptions.addRef(ipcBusCommand.channel, peerEndPoint.id, socket, ipcBusCommand.peer);
                 break;
             }
 

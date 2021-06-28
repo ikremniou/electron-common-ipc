@@ -37,11 +37,13 @@ export interface PostMessageFunction {
 export interface IpcBusConnector {
     readonly peer: Client.IpcBusPeer | null;
 
+    isTarget(ipcBusCommand: IpcBusCommand): boolean;
+
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    postCommand (ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postBuffers(buffers: Buffer[]): void;
 
     logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log;

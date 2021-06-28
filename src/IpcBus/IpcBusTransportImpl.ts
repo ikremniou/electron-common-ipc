@@ -227,7 +227,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // Special code for preventing a costly serialization if there is no channel listening
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                if (this.isRecipient(ipcBusCommand)) {
+                if (this.isTarget(ipcBusCommand)) {
                     const args = ipcPacketBufferCore.parseArrayAt(1);
                     return this._onMessageReceived(false, ipcBusCommand, args);
                 }
@@ -269,7 +269,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        if (this.isRecipient(ipcMessage)) {
+        if (this.isTarget(ipcMessage)) {
             this._onMessageReceived(true, ipcMessage, args);
         }
         this._postMessage(ipcMessage, args);
@@ -315,7 +315,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         }
         // Broadcast locally
-        if (this.isRecipient(ipcMessage)) {
+        if (this.isTarget(ipcMessage)) {
             this._onMessageReceived(true, ipcMessage, args);
         }
         if (deferredRequest.isSettled()) {
@@ -365,7 +365,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connector.shutdown(options);
     }
 
-    abstract isRecipient(ipcBusCommand: IpcBusCommand): boolean;
+    isTarget(ipcBusCommand: IpcBusCommand): boolean {
+        return this._connector.isTarget(ipcBusCommand);
+    }
+
     abstract getChannels(): string[];
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
