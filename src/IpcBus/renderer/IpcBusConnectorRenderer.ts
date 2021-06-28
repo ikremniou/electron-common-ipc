@@ -64,7 +64,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        return IpcBusUtils.IsWebContentsTarget(ipcBusCommand.target);
+        return (ipcBusCommand.target
+                && (ipcBusCommand.target.type == this._peer.process.type)
+                && (ipcBusCommand.target.wcid == this._peer.process.wcid)
+                && (ipcBusCommand.target.frameid == this._peer.process.frameid));
     }
 
     protected onConnectorBeforeShutdown() {
@@ -160,11 +163,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
         if (this._useElectronSerialization) {
             try {
-                if (/* this._useIPCFrameAPI && */ targetIds && targetIds.isMainFrame) {
-                    this._ipcWindow.sendTo(targetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
+                if (ipcBusCommand.target && (ipcBusCommand.target.type === this._peer.process.type) && ipcBusCommand.target.isMainFrame) {
+                    this._ipcWindow.sendTo(ipcBusCommand.target.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
                 }
                 else {
                     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS, ipcBusCommand, args);
@@ -179,8 +181,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut.serialize([ipcBusCommand, args]);
         JSONParserV1.uninstall();
         const rawData = this._packetOut.getRawData();
-        if (/* this._useIPCFrameAPI && */ targetIds && targetIds.isMainFrame) {
-            this._ipcWindow.sendTo(targetIds.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
+        if (ipcBusCommand.target && (ipcBusCommand.target.type === this._peer.process.type) && ipcBusCommand.target.isMainFrame) {
+            this._ipcWindow.sendTo(ipcBusCommand.target.wcid, IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);
         }
         else {
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawData);

@@ -126,7 +126,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         return rendererChannels.concat(mainChannels);
     }
 
-
     // This is coming from the Electron Main Process (Electron main ipc)
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================

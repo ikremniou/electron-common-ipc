@@ -4,7 +4,6 @@ import type { IpcPacketBufferCore } from 'socket-serializer';
 import { IpcPacketBuffer } from 'socket-serializer';
 import { JSONParserV1 } from 'json-helpers';
 
-import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
@@ -88,7 +87,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        return this._subscriptions.hasChannel(ipcBusCommand.channel) || IpcBusUtils.IsWebContentsTarget(ipcBusCommand.target);
+        return this._subscriptions.hasChannel(ipcBusCommand.channel)
+                || (ipcBusCommand.target.type === 'renderer');
     }
 
     getChannels(): string[] {
@@ -201,9 +201,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(local: boolean, ipcChannel: string, ipcBusCommand: IpcBusCommand, data: any): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
-                if (targetIds) {
-                    const key = createKeyFromEvent(targetIds.wcid, targetIds.frameid);
+                if (ipcBusCommand.target) {
+                    const key = createKeyFromEvent(ipcBusCommand.target.wcid, ipcBusCommand.target.frameid);
                     const peerEndPoint = this._peers.get(key);
                     if (peerEndPoint) {
                         peerEndPoint.webContents.sendToFrame(peerEndPoint.process.frameid, ipcChannel, ipcBusCommand, data);
@@ -226,9 +225,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const targetIds = IpcBusUtils.GetTargetWebContentsIdentifiers(ipcBusCommand.target);
-                if (targetIds) {
-                    const key = createKeyFromEvent(targetIds.wcid, targetIds.frameid);
+                if (ipcBusCommand.target) {
+                    const key = createKeyFromEvent(ipcBusCommand.target.wcid, ipcBusCommand.target.frameid);
                     const peerEndPoint = this._peers.get(key);
                     if (peerEndPoint) {
                         peerEndPoint.webContents.sendToFrame(peerEndPoint.process.frameid, ipcChannel, ipcBusCommand, data);

@@ -35,8 +35,6 @@ export interface PostMessageFunction {
 
 /** @internal */
 export interface IpcBusConnector {
-    readonly peer: Client.IpcBusPeer | null;
-
     isTarget(ipcBusCommand: IpcBusCommand): boolean;
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;

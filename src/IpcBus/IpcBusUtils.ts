@@ -2,6 +2,7 @@
 import * as shortid from 'shortid';
 
 import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import type { IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -27,123 +28,14 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const SignaturePrefix     = `_target-`;
-const ProcessSignaturePrefix     = `${SignaturePrefix}pc_`;
-const MainSignaturePrefix     = `${SignaturePrefix}mn_`;
-const WebContentsSignaturePrefix = `${SignaturePrefix}wc_`;
-const UnknownSignaturePrefix     = `${SignaturePrefix}no_`;
-const TargetPrefixPrefixLength = ProcessSignaturePrefix.length;
-
-const RegExpWebContents = /([^_]+)_(\d+)_(\d+)_(\d)/;
-export interface PeerWebContentsSignature {
-    peerid: string;
-    wcid: number;
-    frameid: number;
-    isMainFrame: boolean;
-}
-
-const RegExpProcess = /([^_]+)_(\d+)/;
-export interface PeerProcessSignature {
-    peerid: string;
-    pid: number;
-}
-
-export function UnserializeWebContentsIdentifier(str: string): PeerWebContentsSignature | null {
-    const tags = str.match(RegExpWebContents);
-    if (tags && tags.length > 4) {
-        return {
-            peerid: tags[1],
-            wcid: Number(tags[2]),
-            frameid: Number(tags[3]),
-            isMainFrame: tags[4] === '1'
-        };
-    }
-    return null;
-}
-
-export function UnserializeProcessIdentifier(str: string): PeerProcessSignature | null {
-    const tags = str.match(RegExpProcess);
-    if (tags && tags.length > 2) {
-        return {
-            peerid: tags[1],
-            pid: Number(tags[2])
-        }
-    }
-    return null;
-}
-
-export function GetTargetPeerId(target: string): string | null {
-    if (target == null) {
-        return null;
-    }
-    const index = target.indexOf('_', TargetPrefixPrefixLength);
-    if (index >= 0) {
-        return target.substr(TargetPrefixPrefixLength, index - TargetPrefixPrefixLength);
-    }
-    return null;
-}
-
-export function IsMainTarget(target: string): boolean {
-    return (target && target.lastIndexOf(MainSignaturePrefix, 0) === 0);
-}
-
-export function GetTargetMainIdentifiers(target: string): PeerProcessSignature | null {
-    if (target && target.lastIndexOf(MainSignaturePrefix, 0) === 0) {
-        return UnserializeProcessIdentifier(target.substr(TargetPrefixPrefixLength));
-    }
-    return null;
-}
-
-export function IsProcessTarget(target: string): boolean {
-    return (target && target.lastIndexOf(ProcessSignaturePrefix, 0) === 0);
-}
-
-export function GetTargetProcessIdentifiers(target: string): PeerProcessSignature | null {
-    if (target && target.lastIndexOf(ProcessSignaturePrefix, 0) === 0) {
-        return UnserializeProcessIdentifier(target.substr(TargetPrefixPrefixLength));
-    }
-    return null;
-}
-
-export function IsWebContentsTarget(target: string): boolean {
-    return (target && target.lastIndexOf(WebContentsSignaturePrefix, 0) === 0);
-}
-
-export function GetTargetWebContentsIdentifiers(target: string): PeerWebContentsSignature | null {
-    if (target && target.lastIndexOf(WebContentsSignaturePrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(target.substr(TargetPrefixPrefixLength));
-    }
-    return null;
-}
-
-// export function CreateTargetedChannel(peer: IpcBusPeer, channel: string): string {
-//     if (peer == null) {
-//         return undefined;
-//     }
-//     const target = CreateTarget(peer);
-//     return `${target}:${channel}`;
-// }
-
-export function CreateTarget(peer: IpcBusPeer): string {
+export function CreateTarget(peer: IpcBusPeer): IpcBusTarget {
     if (peer == null) {
         return undefined;
     }
-    switch (peer.process.type) {
-        case 'native':
-        case 'node':
-            return `${ProcessSignaturePrefix}${peer.id}_${peer.process.pid}`;
-
-        case 'renderer':
-            return `${WebContentsSignaturePrefix}${peer.id}_${peer.process.wcid}_${peer.process.frameid}_${peer.process.isMainFrame ? '1' : '0'}`;
-        
-        case 'main':
-            return `${MainSignaturePrefix}${peer.id}_${peer.process.pid}`;
-        
-        case 'worker':
-        case 'undefined':
-        default:
-            return `${UnknownSignaturePrefix}${peer.id}`;
-    }
+    return {
+        ...peer.process,
+        peerid: peer.id
+    };
 }
 
 export function CheckChannel(channel: any): string {

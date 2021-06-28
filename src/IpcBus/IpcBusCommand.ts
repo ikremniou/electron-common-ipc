@@ -1,4 +1,4 @@
-import type { IpcBusPeer } from './IpcBusClient';
+import type { IpcBusPeer, IpcBusProcess } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
@@ -62,12 +62,16 @@ export namespace IpcBusCommand {
     }
 }
 
+export interface IpcBusTarget extends IpcBusProcess {
+    peerid: string;
+}
+
 /** @internal */
 export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
 
     peer?: IpcBusPeer;
-    target?: string;
+    target?: IpcBusTarget;
 
     channel: string;
     channels?: string[];

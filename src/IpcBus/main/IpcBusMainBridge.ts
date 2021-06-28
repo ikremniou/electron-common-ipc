@@ -7,7 +7,6 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import * as IpcBusUtils from '../IpcBusUtils';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
@@ -21,12 +20,12 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        return IpcBusUtils.IsMainTarget(ipcBusCommand.target);
+        return (ipcBusCommand.target && (ipcBusCommand.target.type === 'main'));
     }
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            process: this.peer.process,
+            process: this._peer.process,
             logLevel: this._log.level
         }
         return Promise.resolve(handshake);

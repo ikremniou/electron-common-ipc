@@ -32,10 +32,6 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._messageCount = 0;
     }
 
-    get peer(): Client.IpcBusPeer {
-        return this._peer;
-    }
-
     protected onConnectorBeforeShutdown() {
         this._client && this._client.onConnectorBeforeShutdown();
     }
