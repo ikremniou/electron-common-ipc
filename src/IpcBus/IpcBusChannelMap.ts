@@ -199,17 +199,6 @@ export class ChannelConnectionMap<T, K extends string | number> {
         });
     }
 
-    // removeConnection(conn: T) {
-    //     // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
-    //     this._channelsMap.forEach((connsMap, channel) => {
-    //         connsMap.forEach((connData) => {
-    //             if (connData.data === conn) {
-    //                 this._releaseConnData(channel, connData, connsMap, null, true);
-    //             }
-    //         });
-    //     });
-    // }
-
     removeKey(key: K) {
         Logger.enable && this._info(`removeKey: key = ${key}`);
         this._channelsMap.forEach((connsMap, channel) => {
@@ -235,16 +224,6 @@ export class ChannelConnectionMap<T, K extends string | number> {
     getChannelConns(channel: string): Map<K, ChannelConnectionDataRef<T, K>> {
         return this._channelsMap.get(channel);
     }
-
-    // getEndpoints(): IpcBusEndpoint[] {
-    //     const endpoints: Record<number, IpcBusEndpoint> = {};
-    //     this._channelsMap.forEach((connsMap) => {
-    //         connsMap.forEach((connData) => {
-    //             endpoints[peerRefCount.endpoint.id] = peerRefCount.endpoint;
-    //         });
-    //     });
-    //     return Object.values(endpoints);
-    // }
 
     getConns(): ChannelConnectionData<T, K>[] {
         // @ts-ignore really an edge case for the compiler that has not been implemented

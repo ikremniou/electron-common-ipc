@@ -23,7 +23,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            endpoint: this._endpoint,
+            endpoint: this._process,
             logLevel: this._log.level
         }
         return Promise.resolve(handshake);
@@ -38,7 +38,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {
-        ipcCommand.endpoint = this._endpoint;
+        ipcCommand.process = this._process;
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:

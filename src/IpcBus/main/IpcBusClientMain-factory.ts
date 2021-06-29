@@ -26,7 +26,7 @@ export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClie
     return ipcClient;
 }
 
-export function GetEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusEndpoint | undefined {
+export function GetEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
     const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
     return bridge.getEndpointForWindow(window);
 }

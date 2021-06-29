@@ -261,7 +261,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    sendMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusEndpoint | Client.IpcBusEndpoint | undefined, channel: string, args: any[]): void {
+    sendMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, args: any[]): void {
         const ipcMessage: IpcBusMessage = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
@@ -297,7 +297,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         });
     }
 
-    requestMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusEndpoint | Client.IpcBusEndpoint | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = {
             channel,

@@ -66,6 +66,14 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                if (target) {
+                    const endpoint = this._endpoints.get(target.pid);
+                    if (endpoint) {
+                        WriteBuffersToSocket(endpoint.socket, buffers);
+                        return;
+                    }
+                }
                 // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
                 this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
                     WriteBuffersToSocket(connData.data.socket, buffers);

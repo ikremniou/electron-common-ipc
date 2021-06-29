@@ -21,7 +21,7 @@ import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import * as IpcBusUtils from '../IpcBusUtils';
 
-interface IpcBusEndpointWebContents extends Client.IpcBusEndpoint {
+interface IpcBusEndpointWebContents extends Client.IpcBusProcess {
     webContents: Electron.WebContents;
 }
  
@@ -69,8 +69,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._onRendererTransportHandshake = this._onRendererTransportHandshake.bind(this);
     }
 
-    getEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusEndpoint | undefined {
-        let result: Client.IpcBusEndpoint;
+    getEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
+        let result: Client.IpcBusProcess;
         for (const endpoint of this._endpoints.values()) {
             if (endpoint.wcid === window.webContents.id && endpoint.isMainFrame) {
                 result = endpoint;
@@ -118,7 +118,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _getTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusEndpoint): IpcBusConnector.Handshake {
+    private _getTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusProcess): IpcBusConnector.Handshake {
         const logger = CreateIpcBusLog();
         const webContents = event.sender;
 
@@ -153,7 +153,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return handshake;
     }
 
-    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusEndpoint): void {
+    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusProcess): void {
         const webContents = event.sender;
         const handshake = this._getTransportHandshake(event, endpoint);
         // We get back to the webContents
@@ -172,7 +172,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _onEndpointHandshake(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand) {
         const webContents = event.sender;
-        const endpoint: IpcBusEndpointWebContents = { ...ipcCommand.endpoint, webContents };
+        const endpoint: IpcBusEndpointWebContents = { ...ipcCommand.process, webContents };
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
         webContents.once('destroyed', () => {
@@ -181,7 +181,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onEndpointShutdown(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand) {
-        const endpoint = ipcCommand.endpoint;
+        const endpoint = ipcCommand.process;
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.delete(key);
     }
@@ -267,24 +267,24 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const endpoint = ipcCommand.endpoint;
-                const endpointWC = this._endpoints.get(endpoint.id);
-                this._subscriptions.addRef(ipcCommand.channel, endpoint.id, endpointWC);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                const endpointWC = this._endpoints.get(key);
+                this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {
-                const endpoint = ipcCommand.endpoint;
-                this._subscriptions.release(ipcCommand.channel, endpoint.id);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                this._subscriptions.release(ipcCommand.channel, key);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelAllListeners: {
-                const endpoint = ipcCommand.endpoint;
-                this._subscriptions.releaseAll(ipcCommand.channel, endpoint.id);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                this._subscriptions.releaseAll(ipcCommand.channel, key);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveListeners: {
-                const endpoint = ipcCommand.endpoint;
-                this._subscriptions.removeKey(endpoint.id);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                this._subscriptions.removeKey(key);
                 return true;
             }
         }
@@ -294,7 +294,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererMessageRawDataReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent) {
         if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData) === false) {
             IpcBusRendererContent.FixRawContent(rawData);
-            this._bridge._onRendererContentReceived(ipcMessage, rawData);
+            this._bridge._onRendererRawDataReceived(ipcMessage, rawData);
         }
     }
 
@@ -312,7 +312,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const rawData = this._packetOut.getRawData();
             if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData) === false) {
                 IpcBusRendererContent.FixRawContent(rawData);
-                this._bridge._onRendererContentReceived(ipcMessage, rawData);
+                this._bridge._onRendererRawDataReceived(ipcMessage, rawData);
             }
         }
     }

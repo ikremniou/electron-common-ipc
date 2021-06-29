@@ -1,4 +1,4 @@
-import type { IpcBusEndpoint, IpcBusPeer } from './IpcBusClient';
+import type { IpcBusProcess, IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
@@ -46,7 +46,7 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface LogCommand {
         kind: IpcBusCommand.Kind;
-        peer: IpcBusEndpoint;
+        peer: IpcBusProcess;
         channel: string;
         channels?: string[];
         request?: IpcBusCommand.Request;
@@ -55,8 +55,8 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface Log {
         id: string;
-        peer: IpcBusEndpoint;
-        related_peer?: IpcBusEndpoint;
+        peer: IpcBusProcess;
+        related_peer?: IpcBusProcess;
         kind: IpcBusCommand.Kind;
         timestamp: number;
         local?: boolean;
@@ -65,7 +65,7 @@ export namespace IpcBusCommand {
     }
 }
 
-export interface IpcBusTarget extends Omit<IpcBusEndpoint, 'id'> {
+export interface IpcBusTarget extends IpcBusProcess {
     peerid?: string;
 }
 
@@ -74,7 +74,7 @@ export interface IpcBusCommandBase {
 }
 
 export interface IpcBusCommand extends IpcBusCommandBase {
-    endpoint?: IpcBusEndpoint;
+    process?: IpcBusProcess;
 
     channel?: string;
     channels?: string[];

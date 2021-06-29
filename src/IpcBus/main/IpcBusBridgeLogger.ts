@@ -37,7 +37,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     _onRendererContentReceived(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent) {
         if (this._ipcBusLog.addLogRawContent(ipcMessage, IpcBusRendererContent)) {
-            super._onRendererContentReceived(ipcMessage, IpcBusRendererContent);
+            super._onRendererRawDataReceived(ipcMessage, IpcBusRendererContent);
         }
     }
 

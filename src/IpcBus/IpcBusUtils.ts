@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusEndpoint, IpcBusProcess, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusProcess, IpcBusPeer } from './IpcBusClient';
 import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
@@ -77,7 +77,7 @@ export function GetTargetRenderer(ipcBusMessage: IpcBusMessage, parse: boolean =
     return null;
 }
 
-export function CreateKeyForEndpoint(endpoint: IpcBusEndpoint | IpcBusProcess): number {
+export function CreateKeyForEndpoint(endpoint: IpcBusProcess | IpcBusProcess): number {
     if (endpoint.wcid && endpoint.frameid) {
         return (endpoint.wcid << 8) + endpoint.frameid;
     }
@@ -120,21 +120,21 @@ export function CreateTargetChannel(peer: IpcBusPeer): string {
     return `${prefix}${CreateUniqId()}`;
 }
 
-export function CreateTarget(peerOrEndpoint: IpcBusPeer | IpcBusEndpoint | undefined): IpcBusTarget {
-    if (peerOrEndpoint == null) {
+export function CreateTarget(peerOrProcess: IpcBusPeer | IpcBusProcess | undefined): IpcBusTarget {
+    if (peerOrProcess == null) {
         return undefined;
     }
-    if ((peerOrEndpoint as any).process) {
-        const peer = peerOrEndpoint as IpcBusPeer;
+    if ((peerOrProcess as any).process) {
+        const peer = peerOrProcess as IpcBusPeer;
         return {
             ...peer.process,
             peerid: peer.id
         };
     }
     else {
-        const endpoint = peerOrEndpoint as IpcBusEndpoint;
+        const process = peerOrProcess as IpcBusProcess;
         return {
-            ...endpoint
+            ...process
         };
     }
 }

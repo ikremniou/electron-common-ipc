@@ -49,23 +49,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void {
-        switch (ipcCommand.kind) {
-            case IpcBusCommand.Kind.BridgeAddChannelListener:
-            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-            case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestClose:
-                this._connector.postBuffers(buffers);
-                break;
-
-            case IpcBusCommand.Kind.RequestResponse: {
-                const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
-                if (target) {
-                    this._connector.postBuffers(buffers);
-                }
-                break;
-            }
-        }
+        this._connector.postBuffers(buffers);
     }
 
     broadcastArgs(ipcCommand: IpcBusCommand, args: any[]): void {

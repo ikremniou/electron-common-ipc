@@ -61,7 +61,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         return this._mainTransport;
     }
 
-    getEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusEndpoint | undefined {
+    getEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
         return this._rendererConnector.getEndpointForWindow(window);
     }
 
@@ -129,7 +129,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
-    _onRendererContentReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
+    _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
         this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData);
         this._socketTransport && this._socketTransport.broadcastRawData(ipcMessage, rawData);
     }

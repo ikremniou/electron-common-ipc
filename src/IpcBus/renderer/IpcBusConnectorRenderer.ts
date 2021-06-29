@@ -36,7 +36,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
-        this._endpoint.isMainFrame = isMainFrame;
+        this._process.isMainFrame = isMainFrame;
         this._packetOut = new IpcPacketBuffer();
         this._packetOut.JSON = JSONParserV1;
 
@@ -67,9 +67,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     isTarget(ipcMessage: IpcBusMessage): boolean {
         const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
         return (target
-                && (target.type == this._endpoint.type)
-                && (target.wcid == this._endpoint.wcid)
-                && (target.frameid == this._endpoint.frameid));
+                && (target.type == this._process.type)
+                && (target.wcid == this._process.wcid)
+                && (target.frameid == this._process.frameid));
     }
 
     protected onConnectorBeforeShutdown() {
@@ -82,19 +82,19 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
     }
 
-    protected _onConnect(eventOrEndpoint: any, endpointOrArgs: Client.IpcBusEndpoint | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake): IpcBusConnector.Handshake {
+    protected _onConnect(eventOrProcess: any, processOrArgs: Client.IpcBusProcess | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake): IpcBusConnector.Handshake {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // if (this._onIpcEventRawDataReceived) {
         //     this._ipcWindow.removeListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onIpcEventRawDataReceived);
         //     this._ipcWindow.removeListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onIpcEventArgsReceived);
         // }
         let handshake: IpcBusConnector.Handshake;
-        let endpoint: Client.IpcBusEndpoint;
+        let process: Client.IpcBusProcess;
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             handshake = handshakeArg;
-            endpoint = endpointOrArgs as Client.IpcBusEndpoint;
+            process = processOrArgs as Client.IpcBusProcess;
             this._onIpcEventRawDataReceived = (event, ipcCommand, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
                 this._client.onConnectorRawDataReceived(ipcCommand, rawData);
@@ -104,8 +104,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             };
         }
         else {
-            handshake = endpointOrArgs as IpcBusConnector.Handshake;
-            endpoint = eventOrEndpoint as Client.IpcBusEndpoint;
+            handshake = processOrArgs as IpcBusConnector.Handshake;
+            process = eventOrProcess as Client.IpcBusProcess;
             this._onIpcEventRawDataReceived = (ipcCommand, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
                 this._client.onConnectorRawDataReceived(ipcCommand, rawData);
@@ -118,8 +118,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
         // this._useIPCFrameAPI = handshake.useIPCFrameAPI;
         // Keep the this._peer.process ref intact as shared with client peers
-        this._endpoint = Object.assign(this._endpoint, endpoint);
-        this._endpoint.id = IpcBusUtils.CreateKeyForEndpoint(this._endpoint);
+        this._process = Object.assign(this._process, process);
         this._log.level = handshake.logLevel;
         this._ipcWindow.addListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onIpcEventRawDataReceived);
         this._ipcWindow.addListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onIpcEventArgsReceived);
@@ -135,12 +134,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
                 // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                 let timer: NodeJS.Timer;
-                const onIpcConnect = (eventOrEndpoint: any, endpointOrArgs: Client.IpcBusEndpoint | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
+                const onIpcConnect = (eventOrProcess: any, processOrArgs: Client.IpcBusProcess | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
                     clearTimeout(timer);
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     this.addClient(client);
 
-                    const handshake = this._onConnect(eventOrEndpoint, endpointOrArgs, handshakeArg);
+                    const handshake = this._onConnect(eventOrProcess, processOrArgs, handshakeArg);
                     resolve(handshake);
                 };
 
@@ -155,7 +154,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 }
                 // We wait for the bridge confirmation
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._endpoint);
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._process);
             });
         });
     }
@@ -198,7 +197,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
     postCommand(ipcCommand: IpcBusCommand): void {
-        ipcCommand.endpoint = this._endpoint;
+        ipcCommand.process = this._process;
         this._ipcWindow.send(IPCBUS_RENDERER_COMMAND, ipcCommand);
     }
 
