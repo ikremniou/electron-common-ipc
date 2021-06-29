@@ -20,7 +20,7 @@ import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import * as IpcBusUtils from '../IpcBusUtils';
 
-interface IpcBusEndpointWC extends Client.IpcBusEndpoint {
+interface IpcBusEndpointWebContents extends Client.IpcBusEndpoint {
     webContents?: Electron.WebContents;
 }
 
@@ -34,8 +34,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
     private _ipcMain: Electron.IpcMain;
 
-    private _subscriptions: ChannelConnectionMap<IpcBusEndpointWC, number>;
-    private _endpoints: Map<number, IpcBusEndpointWC>;
+    private _subscriptions: ChannelConnectionMap<IpcBusEndpointWebContents, number>;
+    private _endpoints: Map<number, IpcBusEndpointWebContents>;
 
     private _packetOut: IpcPacketBuffer;
 
@@ -175,17 +175,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _onEndpointHandshake(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
         const webContents = event.sender;
-        const peerEndpoint = { ...ipcBusCommand.peer.process, webContents };
-        const key = createKeyFromEvent(peerEndpoint.wcid, peerEndpoint.frameid);
-        this._endpoints.set(key, peerEndpoint);
+        const endpoint = { ...ipcBusCommand.peer.process, webContents };
+        const key = createKeyFromEvent(endpoint.wcid, endpoint.frameid);
+        this._endpoints.set(key, endpoint);
         webContents.once('destroyed', () => {
             this._endpoints.delete(key);
         });
     }
 
     private _onEndpointShutdown(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand) {
-        const peerEndpoint = ipcBusCommand.peer;
-        const key = createKeyFromEvent(peerEndpoint.process.wcid, peerEndpoint.process.frameid);
+        const endpoint = ipcBusCommand.peer;
+        const key = createKeyFromEvent(endpoint.process.wcid, endpoint.process.frameid);
         this._endpoints.delete(key);
     }
 
@@ -270,18 +270,18 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const key = createKeyFromEvent(event.sender.id, event.frameId);
+                const key = createKeyFromEvent(ipcBusCommand.peer.process.wcid, ipcBusCommand.peer.process.frameid);
                 const endpoint = this._endpoints.get(key);
                 this._subscriptions.addRef(ipcBusCommand.channel, key, endpoint, ipcBusCommand.peer);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {
-                const key = createKeyFromEvent(event.sender.id, event.frameId);
+                const key = createKeyFromEvent(ipcBusCommand.peer.process.wcid, ipcBusCommand.peer.process.frameid);
                 this._subscriptions.release(ipcBusCommand.channel, key, ipcBusCommand.peer);
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelAllListeners: {
-                const key = createKeyFromEvent(event.sender.id, event.frameId);
+                const key = createKeyFromEvent(ipcBusCommand.peer.process.wcid, ipcBusCommand.peer.process.frameid);
                 this._subscriptions.releaseAll(ipcBusCommand.channel, key, ipcBusCommand.peer);
                 return true;
             }

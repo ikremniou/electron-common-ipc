@@ -12,7 +12,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
-interface IpcBusPeerSocket extends Client.IpcBusPeer {
+interface IpcBusEndpointSocket extends Client.IpcBusEndpoint {
     socket?: net.Socket;
 }
 
@@ -26,8 +26,8 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
-    protected _subscriptions: ChannelConnectionMap<net.Socket, string>;
-    private _endpoints: Map<number, IpcBusPeerSocket>;
+    protected _subscriptions: ChannelConnectionMap<IpcBusEndpointSocket, number>;
+    private _endpoints: Map<number, IpcBusEndpointSocket>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
@@ -40,7 +40,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this._netBinds['connection'] = this._onServerConnection.bind(this);
 
         // this._onQueryState = this._onQueryState.bind(this);
-        this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
+        this._socketClients = new Map();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
 
@@ -181,9 +181,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this.onBridgeClosed(socket);
         // Broadcast peers destruction ?
         this._subscriptions.removeConnection(socket);
-        for (const peer of this._endpoints.values()) {
-            if (peer.socket === socket) {
-                this._endpoints.delete(peer.process.pid);
+        for (const endpoint of this._endpoints.values()) {
+            if (endpoint.socket === socket) {
+                this._endpoints.delete(endpoint.pid);
             }
         }
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
@@ -235,8 +235,8 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     }
 
     private _onEndpointHandshake(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        const peerEndpoint = { ...ipcBusCommand.peer, socket };
-        this._endpoints.set(peerEndpoint.process.pid, peerEndpoint);
+        const endpoint = { ...ipcBusCommand.peer.process, socket };
+        this._endpoints.set(endpoint.pid, endpoint);
     }
 
     private _onEndpointShutdown(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
@@ -255,19 +255,21 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const peerEndpoint = this._endpoints.get(ipcBusCommand.peer.process.pid);
-                this._subscriptions.addRef(ipcBusCommand.channel, peerEndpoint.id, socket, ipcBusCommand.peer);
+                const key = ipcBusCommand.peer.process.pid;
+                const endpoint = this._endpoints.get(key);
+                this._subscriptions.addRef(ipcBusCommand.channel, key, endpoint, ipcBusCommand.peer);
                 break;
             }
-
-            case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, ipcBusCommand.peer.id, ipcBusCommand.peer);
+            case IpcBusCommand.Kind.RemoveChannelListener: {
+                const key = ipcBusCommand.peer.process.pid;
+                this._subscriptions.release(ipcBusCommand.channel, key, ipcBusCommand.peer);
                 break;
-
-            case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, ipcBusCommand.peer.id, ipcBusCommand.peer);
+            }
+            case IpcBusCommand.Kind.RemoveChannelAllListeners: {
+                const key = ipcBusCommand.peer.process.pid;
+                this._subscriptions.releaseAll(ipcBusCommand.channel, key, ipcBusCommand.peer);
                 break;
-
+            }
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
@@ -276,16 +278,16 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.SendMessage: {
                 const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
                 if (target) {
-                    const peerEndpoint = this._endpoints.get(target.pid);
-                    if (peerEndpoint) {
-                        WriteBuffersToSocket(peerEndpoint.socket, ipcPacketBufferList.buffers);
+                    const endpoint = this._endpoints.get(target.pid);
+                    if (endpoint) {
+                        WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
                         return;
                     }
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
-                    if (connData.conn !== socket) {
-                        WriteBuffersToSocket(connData.conn, ipcPacketBufferList.buffers);
+                    if (connData.conn.socket !== socket) {
+                        WriteBuffersToSocket(connData.conn.socket, ipcPacketBufferList.buffers);
                     }
                 });
                 // if not coming from main bridge => forward
@@ -297,9 +299,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.RequestResponse: {
                 const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
                 if (target) {
-                    const peerEndpoint = this._endpoints.get(target.pid);
-                    if (peerEndpoint) {
-                        WriteBuffersToSocket(peerEndpoint.socket, ipcPacketBufferList.buffers);
+                    const endpoint = this._endpoints.get(target.pid);
+                    if (endpoint) {
+                        WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
                         return;
                     }
                 }
