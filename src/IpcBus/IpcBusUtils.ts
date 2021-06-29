@@ -35,46 +35,41 @@ const TargetRendererSignature = `${TargetSignature}:rend_`;
 
 const TargetSignatureLength = TargetMainSignature.length;
 
+// function _GetTargetFromChannel(targetSignature: string, ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
+//     if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0)) {
+//         if (ipcMessage.channel.lastIndexOf(targetSignature, 0) !== 0) {
+//             return null;
+//         }
+//         if (parse) {
+//             const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+//             return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+//         }
+//     }
+//     return null;
+// }
+
 export function GetTargetMain(ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
     if (ipcMessage.target) {
         return (ipcMessage.target.type === 'main') ? ipcMessage.target : null;
     }
-    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetMainSignature, 0) === 0)) {
-        if (parse) {
-            const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-        }
-        return {} as IpcBusTarget;
-    }
     return null;
+    // return _GetTargetFromChannel(TargetMainSignature, ipcMessage, parse);
 }
 
 export function GetTargetProcess(ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
     if (ipcMessage.target) {
-        return ((ipcMessage.target.type === 'node' || ipcMessage.target.type === 'native')) ? ipcMessage.target : null;
-    }
-    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetProcessSignature, 0) === 0)) {
-        if (parse) {
-            const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-        }
-        return {} as IpcBusTarget;
+        return ((ipcMessage.target.type === 'node') || (ipcMessage.target.type === 'native')) ? ipcMessage.target : null;
     }
     return null;
+    // return _GetTargetFromChannel(TargetProcessSignature, ipcMessage, parse);
 }
 
-export function GetTargetRenderer(ipcBusMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
-    if (ipcBusMessage.target) {
-        return (ipcBusMessage.target.type === 'renderer') ? ipcBusMessage.target : null;
-    }
-    if (ipcBusMessage.channel && (ipcBusMessage.channel.lastIndexOf(TargetRendererSignature, 0) === 0)) {
-        if (parse) {
-            const index = ipcBusMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcBusMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-        }
-        return {} as IpcBusTarget;
+export function GetTargetRenderer(ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return (ipcMessage.target.type === 'renderer') ? ipcMessage.target : null;
     }
     return null;
+    // return _GetTargetFromChannel(TargetRendererSignature, ipcMessage, parse);
 }
 
 export function CreateKeyForEndpoint(endpoint: IpcBusProcess | IpcBusProcess): number {
@@ -90,10 +85,10 @@ export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
     if (ipcMessage.target) {
         return ipcMessage.target;
     }
-    if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
-        const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-        return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-    }
+    // if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
+    //     const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+    //     return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+    // }
     return null;
 }
 

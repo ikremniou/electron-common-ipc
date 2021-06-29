@@ -35,7 +35,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         if (this._subscribedChannels.has(ipcMessage.channel)) {
             return true;
         }
-        return IpcBusUtils.GetTargetMain(ipcMessage) != null;
+        return (IpcBusUtils.GetTargetMain(ipcMessage) != null) 
+               || (IpcBusUtils.GetTargetRenderer(ipcMessage) != null)
     }
     
     protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcCommand: IpcBusCommand) {

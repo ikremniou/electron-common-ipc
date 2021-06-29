@@ -67,7 +67,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     isTarget(ipcMessage: IpcBusMessage): boolean {
         const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
         return (target
-                && (target.type == this._process.type)
                 && (target.wcid == this._process.wcid)
                 && (target.frameid == this._process.frameid));
     }
