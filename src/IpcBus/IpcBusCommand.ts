@@ -63,7 +63,7 @@ export namespace IpcBusCommand {
 }
 
 export interface IpcBusTarget extends IpcBusProcess {
-    peerid: string;
+    peerid?: string;
 }
 
 /** @internal */

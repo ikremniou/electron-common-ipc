@@ -11,6 +11,15 @@ export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH'
 // see { ElectronProcessType } from 'electron-process-type/lib/v2'
 export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
 
+export interface IpcBusEndpoint {
+    type: IpcBusProcessType;
+    pid: number;    // Process Id
+    rid?: number;   // Routing Id
+    wcid?: number;  // WebContent Id
+    frameid?: number; // Frame Id
+    isMainFrame?: boolean;
+}
+
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
@@ -101,9 +110,9 @@ export interface IpcBusClient extends EventEmitter {
     createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;
-    sendTo(peer: IpcBusPeer, channel: string, ...args: any[]): boolean;
+    sendTo(peer: IpcBusPeer | IpcBusEndpoint, channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
-    requestTo(peer: IpcBusPeer, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
+    requestTo(peer: IpcBusPeer | IpcBusEndpoint, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API
     emit(event: string, ...args: any[]): boolean;

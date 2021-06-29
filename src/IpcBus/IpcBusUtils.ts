@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusEndpoint } from './IpcBusClient';
 import type { IpcBusCommand, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
@@ -111,14 +111,23 @@ export function CreateTargetChannel(peer: IpcBusPeer): string {
     return `${prefix}${CreateUniqId()}`;
 }
 
-export function CreateTarget(peer: IpcBusPeer): IpcBusTarget {
-    if (peer == null) {
+export function CreateTarget(peerOrEndpoint: IpcBusPeer | IpcBusEndpoint | undefined): IpcBusTarget {
+    if (peerOrEndpoint == null) {
         return undefined;
     }
-    return {
-        ...peer.process,
-        peerid: peer.id
-    };
+    if ((peerOrEndpoint as any).process) {
+        const peer = peerOrEndpoint as IpcBusPeer;
+        return {
+            ...peer.process,
+            peerid: peer.id
+        };
+    }
+    else {
+        const endpoint = peerOrEndpoint as IpcBusEndpoint;
+        return {
+            ...endpoint
+        };
+    }
 }
 
 export function CheckChannel(channel: any): string {
