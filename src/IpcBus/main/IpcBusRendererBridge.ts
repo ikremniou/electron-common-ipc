@@ -201,7 +201,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastData(local: boolean, ipcChannel: string, ipcMessage: IpcBusMessage, data: any): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
                 if (target) {
                     const key = IpcBusUtils.CreateKeyForEndpoint(target);
                     const endpoint = this._endpoints.get(key);
@@ -220,7 +220,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
                 if (target) {
                     const key = IpcBusUtils.CreateKeyForEndpoint(target);
                     const endpoint = this._endpoints.get(key);

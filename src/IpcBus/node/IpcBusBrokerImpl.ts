@@ -283,7 +283,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);
                     if (endpoint) {
@@ -305,7 +305,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);
                     if (endpoint) {

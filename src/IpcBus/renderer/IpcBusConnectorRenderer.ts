@@ -167,7 +167,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
-        const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+        const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
         if (this._useElectronSerialization) {
             try {
                 if (target && target.isMainFrame) {
@@ -176,7 +176,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 else {
                     this._ipcWindow.send(IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
                 }
-               return;
+                return;
             }
             catch (err) {
                 // maybe an arg does not supporting Electron serialization !

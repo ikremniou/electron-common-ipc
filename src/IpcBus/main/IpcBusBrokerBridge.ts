@@ -66,7 +66,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);
                     if (endpoint) {
@@ -82,7 +82,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);
                     if (endpoint) {
