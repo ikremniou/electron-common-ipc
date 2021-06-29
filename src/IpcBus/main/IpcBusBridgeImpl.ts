@@ -130,12 +130,15 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
-        this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData);
-        this._socketTransport && this._socketTransport.broadcastRawData(ipcMessage, rawData);
+        this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData);
+        const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
+        if (hasSocketChannel) {
+            this._socketTransport.broadcastRawData(ipcMessage, rawData);
+        }
     }
 
     _onRendererArgsReceived(ipcMessage: IpcBusMessage, args: any[]) {
-        this._mainTransport.onConnectorArgsReceived(ipcMessage, args);
+        this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorArgsReceived(ipcMessage, args);
         const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
@@ -184,8 +187,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         //     this._rendererConnector.broadcastArgs(ipcCommand, args);
         // }
         // else {
-            this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore);
-            this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
+            this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore);
+            this._rendererConnector.isTarget(ipcMessage) && this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
         // }
     }
 

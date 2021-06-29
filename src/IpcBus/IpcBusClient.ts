@@ -101,9 +101,9 @@ export interface IpcBusClient extends EventEmitter {
     createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;
-    sendTo(peer: IpcBusPeer | IpcBusProcess, channel: string, ...args: any[]): boolean;
+    sendTo(target: IpcBusPeer | IpcBusProcess, channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
-    requestTo(peer: IpcBusPeer | IpcBusProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
+    requestTo(target: IpcBusPeer | IpcBusProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API
     emit(event: string, ...args: any[]): boolean;

@@ -97,7 +97,7 @@ export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
 }
 
 export function CreateTargetChannel(peer: IpcBusPeer): string {
-    const target = CreateTarget(peer);
+    const target = CreateMessageTarget(peer);
     let prefix: string;
     switch (peer.process.type) {
         case 'native':
@@ -119,19 +119,19 @@ export function CreateTargetChannel(peer: IpcBusPeer): string {
     return `${prefix}${CreateUniqId()}`;
 }
 
-export function CreateTarget(peerOrProcess: IpcBusPeer | IpcBusProcess | undefined): IpcBusTarget {
-    if (peerOrProcess == null) {
+export function CreateMessageTarget(target: IpcBusPeer | IpcBusProcess | undefined): IpcBusTarget {
+    if (target == null) {
         return undefined;
     }
-    if ((peerOrProcess as any).process) {
-        const peer = peerOrProcess as IpcBusPeer;
+    if ((target as any).process) {
+        const peer = target as IpcBusPeer;
         return {
             ...peer.process,
             peerid: peer.id
         };
     }
     else {
-        const process = peerOrProcess as IpcBusProcess;
+        const process = target as IpcBusProcess;
         return {
             ...process
         };

@@ -157,7 +157,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcMessage.request.id,
                     peer: client.peer,
-                    target: IpcBusUtils.CreateTarget(ipcMessage.peer),
+                    target: IpcBusUtils.CreateMessageTarget(ipcMessage.peer),
                     request: ipcMessage.request
                 };
                 if (resolve) {
@@ -225,14 +225,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
-        // Special code for preventing a costly serialization if there is no channel listening
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                if (this.isTarget(ipcMessage)) {
-                    const args = ipcPacketBufferCore.parseArrayAt(1);
-                    return this._onMessageReceived(false, ipcMessage, args);
-                }
-                break;
+                const args = ipcPacketBufferCore.parseArrayAt(1);
+                return this._onMessageReceived(false, ipcMessage, args);
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 return this._onResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
@@ -261,12 +257,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    sendMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, args: any[]): void {
+    sendMessage(client: IpcBusTransport.Client, target: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, args: any[]): void {
         const ipcMessage: IpcBusMessage = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusUtils.CreateTarget(peerOrEndpoint)
+            target: IpcBusUtils.CreateMessageTarget(target)
         }
         // if (this._logActivate) {
         //     this._connector.logMessageSend(null, ipcMessage);
@@ -297,7 +293,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         });
     }
 
-    requestMessage(client: IpcBusTransport.Client, peerOrEndpoint: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestMessage(client: IpcBusTransport.Client, target: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = {
             channel,
@@ -310,7 +306,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusUtils.CreateTarget(peerOrEndpoint),
+            target: IpcBusUtils.CreateMessageTarget(target),
             request: ipcBusCommandRequest
         }
         // let logSendMessage: IpcBusCommand.Log;
