@@ -89,10 +89,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         //     this._ipcWindow.removeListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onIpcEventArgsReceived);
         // }
         let handshake: IpcBusConnector.Handshake;
+        let endpoint: Client.IpcBusEndpoint;
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             handshake = handshakeArg;
+            endpoint = endpointOrArgs as Client.IpcBusEndpoint;
             this._onIpcEventRawDataReceived = (event, ipcCommand, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
                 this._client.onConnectorRawDataReceived(ipcCommand, rawData);
@@ -103,6 +105,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             handshake = endpointOrArgs as IpcBusConnector.Handshake;
+            endpoint = eventOrEndpoint as Client.IpcBusEndpoint;
             this._onIpcEventRawDataReceived = (ipcCommand, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
                 this._client.onConnectorRawDataReceived(ipcCommand, rawData);
@@ -115,7 +118,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._useElectronSerialization = handshake.useIPCNativeSerialization;
         // this._useIPCFrameAPI = handshake.useIPCFrameAPI;
         // Keep the this._peer.process ref intact as shared with client peers
-        this._endpoint = Object.assign(this._endpoint, handshake.endpoint);
+        this._endpoint = Object.assign(this._endpoint, endpoint);
         this._endpoint.id = IpcBusUtils.CreateKeyForEndpoint(this._endpoint);
         this._log.level = handshake.logLevel;
         this._ipcWindow.addListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onIpcEventRawDataReceived);

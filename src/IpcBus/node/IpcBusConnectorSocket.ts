@@ -42,8 +42,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._netBinds['close'] = this._onSocketClose.bind(this);
         this._netBinds['data'] = this._onSocketData.bind(this);
         this._netBinds['end'] = this._onSocketEnd.bind(this);
-
-        this.postMessage = this.postCommand;
     }
     
     // https://nodejs.org/api/net.html#net_event_error_1
@@ -246,14 +244,14 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcCommand: IpcBusCommand, args?: any[]): void {
-        // fake body
+        if (this._socketWriter) {
+            this._packetOut.write(this._socketWriter, [ipcCommand, args]);
+        }
     }
 
     postCommand(ipcCommand: IpcBusCommand): void {
         if (this._socketWriter) {
             ipcCommand.endpoint = this._endpoint;
-            // this._logLevel && this.trackCommandPost(ipcCommand, args);
-            // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
             this._packetOut.write(this._socketWriter, [ipcCommand]);
         }
     }
