@@ -33,7 +33,7 @@ const TargetMainSignature     = `${TargetSignature}:main_`;
 const TargetProcessSignature  = `${TargetSignature}:proc_`;
 const TargetRendererSignature = `${TargetSignature}:rend_`;
 
-const TargetSignatureLength = TargetMainSignature.length;
+// const TargetSignatureLength = TargetMainSignature.length;
 
 // function _GetTargetFromChannel(targetSignature: string, ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
 //     if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0)) {
