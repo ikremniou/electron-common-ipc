@@ -122,25 +122,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return false;
     }
 
-    // Channel is supposed to be new
-    pushResponseChannel(channel: string, key: K, data: T) {
-        this._addChannel(null, channel, key, data, 1);
-    }
-
-    popResponseChannel(channel: string): ChannelConnectionData<T, K> | null {
-        const connsMap = this._channelsMap.get(channel);
-        if (connsMap == null) {
-            return null;
-        }
-        if (connsMap.size !== 1) {
-            throw 'should not happen';
-        }
-        const connData = connsMap.values().next().value;
-        this._removeChannel(null, channel, connData);
-        return connData;
-    }
-
-    addRefCount(channel: string,  key: K, data: T, count: number): number {
+    addRefCount(channel: string, key: K, data: T, count: number): number {
         Logger.enable && this._info(`AddRef: '${channel}': key = ${key}`);
 
         let connsMap = this._channelsMap.get(channel);
@@ -162,7 +144,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return connsMap.size;
     }
 
-    addRef(channel: string,  key: K, data: T): number {
+    addRef(channel: string, key: K, data: T): number {
         return this.addRefCount(channel, key, data, 1);
     }
 

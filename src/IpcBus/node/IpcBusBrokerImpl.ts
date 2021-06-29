@@ -27,7 +27,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
     protected _subscriptions: ChannelConnectionMap<IpcBusEndpointSocket, number>;
-    private _endpoints: Map<number, IpcBusEndpointSocket>;
+    protected _endpoints: Map<number, IpcBusEndpointSocket>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');

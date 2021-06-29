@@ -74,9 +74,13 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const connData = this._subscriptions.popResponseChannel(ipcMessage.request.id);
-                if (connData) {
-                    WriteBuffersToSocket(connData.data.socket, buffers);
+                const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
+                if (target) {
+                    const endpoint = this._endpoints.get(target.pid);
+                    if (endpoint) {
+                        WriteBuffersToSocket(endpoint.socket, buffers);
+                        return;
+                    }
                 }
                 break;
             }
