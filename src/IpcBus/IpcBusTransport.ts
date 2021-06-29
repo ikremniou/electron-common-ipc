@@ -1,7 +1,7 @@
 import type { EventEmitter } from 'events';
 
 import type * as Client from './IpcBusClient';
-import type { IpcBusCommand } from './IpcBusCommand';
+import type { IpcBusMessage } from './IpcBusCommand';
 
 /** @internal */
 export namespace IpcBusTransport {
@@ -18,7 +18,7 @@ export interface IpcBusTransport {
 
     createDirectChannel(client: IpcBusTransport.Client): string;
 
-    isTarget(ipcBusCommand: IpcBusCommand): boolean;
+    isTarget(ipcMessage: IpcBusMessage): boolean;
     getChannels(): string[];
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

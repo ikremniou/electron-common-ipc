@@ -1,5 +1,5 @@
 import type * as Client from './IpcBusClient';
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusConnector } from './IpcBusConnector';
@@ -12,11 +12,11 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        if (this._client && (this._client.listenerCount(ipcBusCommand.channel) > 0)) {
+    isTarget(ipcMessage: IpcBusMessage): boolean {
+        if (this._client && (this._client.listenerCount(ipcMessage.channel) > 0)) {
             return true;
         }
-        return super.isTarget(ipcBusCommand);
+        return super.isTarget(ipcMessage);
     }
 
     getChannels(): string[] {
@@ -26,8 +26,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
-        return this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[]): boolean {
+        return this._onClientMessageReceived(this._client, local, ipcMessage, args);
     }
 
     onConnectorShutdown() {

@@ -11,15 +11,6 @@ export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH'
 // see { ElectronProcessType } from 'electron-process-type/lib/v2'
 export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
 
-export interface IpcBusEndpoint {
-    type: IpcBusProcessType;
-    pid: number;    // Process Id
-    rid?: number;   // Routing Id
-    wcid?: number;  // WebContent Id
-    frameid?: number; // Frame Id
-    isMainFrame?: boolean;
-}
-
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
@@ -33,6 +24,10 @@ export interface IpcBusPeer {
     id: string;
     name: string;
     process: IpcBusProcess;
+}
+
+export interface IpcBusEndpoint extends IpcBusProcess {
+    id: number;
 }
 
 export interface IpcBusRequest {

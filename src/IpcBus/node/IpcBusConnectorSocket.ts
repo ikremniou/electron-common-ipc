@@ -6,7 +6,7 @@ import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
 
-import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { JSONParserV1 } from 'json-helpers';
@@ -29,6 +29,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
         super(contextType);
 
+        this._endpoint.id = IpcBusUtils.CreateKeyForEndpoint(this._endpoint);
+
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
         this._packetIn.JSON = JSONParserV1;
@@ -46,7 +48,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     
     // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {
-        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error ${err}`;
+        const msg = `[IPCBusTransport:Net ${this._endpoint.id}] socket error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         // this._socket.destroy();
         this.onConnectorShutdown();
@@ -55,7 +57,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
     // https://nodejs.org/api/net.html#net_event_close_1
     protected _onSocketClose() {
-        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket close`;
+        const msg = `[IPCBusTransport:Net ${this._endpoint.id}] socket close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this.onConnectorShutdown();
         this._reset(false);
@@ -63,7 +65,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
     // https://nodejs.org/api/net.html#net_event_end
     protected _onSocketEnd() {
-        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket end`;
+        const msg = `[IPCBusTransport:Net ${this._endpoint.id}] socket end`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this.onConnectorShutdown();
         this._reset(false);
@@ -74,8 +76,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
-                const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
+                const ipcCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
+                this._client.onConnectorPacketReceived(ipcCommand, this._packetIn);
             } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();
@@ -96,11 +98,11 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
     }
 
-    isTarget(ipcBusCommand: IpcBusCommand): boolean {
-        const target = IpcBusUtils.GetTargetProcess(ipcBusCommand, true);
+    isTarget(ipcMessage: IpcBusMessage): boolean {
+        const target = IpcBusUtils.GetTargetProcess(ipcMessage, true);
         return (target
-                && (target.type === this._peer.process.type)
-                && (target.pid == this._peer.process.pid));
+                && (target.type === this._endpoint.type)
+                && (target.pid == this._endpoint.pid));
     }
 
     /// IpcBusTransportImpl API
@@ -120,18 +122,18 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        const msg = `[IPCBusTransport:Net ${this._peer.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
+                        const msg = `[IPCBusTransport:Net ${this._endpoint.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
                 const catchError = (err: any) => {
-                    const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error = ${err} on ${JSON.stringify(options)}`;
+                    const msg = `[IPCBusTransport:Net ${this._endpoint.id}] socket error = ${err} on ${JSON.stringify(options)}`;
                     fctReject(msg);
                 };
 
                 const catchClose = () => {
-                    const msg = `[IPCBusTransport:Net ${this._peer.id}] socket close`;
+                    const msg = `[IPCBusTransport:Net ${this._endpoint.id}] socket close`;
                     fctReject(msg);
                 };
 
@@ -150,7 +152,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         this._socket.addListener(key, this._netBinds[key]);
                     }
 
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._peer.id}] connected on ${JSON.stringify(options)}`);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._endpoint.id}] connected on ${JSON.stringify(options)}`);
                     if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
                         this._socketWriter = new SocketWriter(this._socket);
                     }
@@ -164,7 +166,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     this.onConnectorHandshake();
 
                     const handshake: IpcBusConnector.Handshake = {
-                        process: this._peer.process,
+                        endpoint: this._endpoint,
                         logLevel: this._log.level
                     }
                     resolve(handshake);
@@ -223,7 +225,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                             for (let key in socketLocalBinds) {
                                 socket.removeListener(key, socketLocalBinds[key]);
                             }
-                            const msg = `[IPCBusTransport:Net ${this._peer.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
+                            const msg = `[IPCBusTransport:Net ${this._endpoint.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             this.onConnectorShutdown();
                             reject(msg);
@@ -243,16 +245,16 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postMessage(ipcCommand: IpcBusCommand, args?: any[]): void {
         // fake body
     }
 
-    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcCommand: IpcBusCommand): void {
         if (this._socketWriter) {
-            ipcBusCommand.peer = this._peer;
-            // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
+            ipcCommand.endpoint = this._endpoint;
+            // this._logLevel && this.trackCommandPost(ipcCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
-            this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
+            this._packetOut.write(this._socketWriter, [ipcCommand]);
         }
     }
 

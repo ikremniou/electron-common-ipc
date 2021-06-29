@@ -1,8 +1,8 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer, IpcBusEndpoint } from './IpcBusClient';
-import type { IpcBusCommand, IpcBusTarget } from './IpcBusCommand';
+import type { IpcConnectOptions, IpcBusEndpoint, IpcBusProcess, IpcBusPeer } from './IpcBusClient';
+import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -35,55 +35,64 @@ const TargetRendererSignature = `${TargetSignature}:rend_`;
 
 const TargetSignatureLength = TargetMainSignature.length;
 
-export function GetTargetMain(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
-    if (ipcBusCommand.target) {
-        return (ipcBusCommand.target.type === 'main') ? ipcBusCommand.target : null;
+export function GetTargetMain(ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return (ipcMessage.target.type === 'main') ? ipcMessage.target : null;
     }
-    if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetMainSignature, 0) === 0)) {
+    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetMainSignature, 0) === 0)) {
         if (parse) {
-            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+            const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
         }
-        return {};
+        return {} as IpcBusTarget;
     }
     return null;
 }
 
-export function GetTargetProcess(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
-    if (ipcBusCommand.target) {
-        return ((ipcBusCommand.target.type === 'node' || ipcBusCommand.target.type === 'native')) ? ipcBusCommand.target : null;
+export function GetTargetProcess(ipcMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return ((ipcMessage.target.type === 'node' || ipcMessage.target.type === 'native')) ? ipcMessage.target : null;
     }
-    if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetProcessSignature, 0) === 0)) {
+    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetProcessSignature, 0) === 0)) {
         if (parse) {
-            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+            const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
         }
-        return {};
+        return {} as IpcBusTarget;
     }
     return null;
 }
 
-export function GetTargetRenderer(ipcBusCommand: IpcBusCommand, parse: boolean = false): Partial<IpcBusTarget> | null {
-    if (ipcBusCommand.target) {
-        return (ipcBusCommand.target.type === 'renderer') ? ipcBusCommand.target : null;
+export function GetTargetRenderer(ipcBusMessage: IpcBusMessage, parse: boolean = false): IpcBusTarget | null {
+    if (ipcBusMessage.target) {
+        return (ipcBusMessage.target.type === 'renderer') ? ipcBusMessage.target : null;
     }
-    if (ipcBusCommand.channel && (ipcBusCommand.channel.lastIndexOf(TargetRendererSignature, 0) === 0)) {
+    if (ipcBusMessage.channel && (ipcBusMessage.channel.lastIndexOf(TargetRendererSignature, 0) === 0)) {
         if (parse) {
-            const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
-            return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+            const index = ipcBusMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+            return JSON.parse(ipcBusMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
         }
-        return {};
+        return {} as IpcBusTarget;
     }
     return null;
 }
 
-export function GetTarget(ipcBusCommand: IpcBusCommand): IpcBusTarget | null {
-    if (ipcBusCommand.target) {
-        return ipcBusCommand.target;
+export function CreateKeyForEndpoint(endpoint: IpcBusEndpoint | IpcBusProcess): number {
+    if (endpoint.wcid && endpoint.frameid) {
+        return (endpoint.wcid << 8) + endpoint.frameid;
     }
-    if (ipcBusCommand.channel && ipcBusCommand.channel.lastIndexOf(TargetSignature, 0) == 0) {
-        const index = ipcBusCommand.channel.indexOf(TargetSignature, TargetSignatureLength);
-        return JSON.parse(ipcBusCommand.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+    else {
+        return endpoint.pid;
+    }
+}
+
+export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return ipcMessage.target;
+    }
+    if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
+        const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+        return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
     }
     return null;
 }

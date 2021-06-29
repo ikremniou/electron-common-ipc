@@ -31,14 +31,14 @@
 //         });
 //     }
 
-//     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void {
-//         const log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
+//     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcCommand: IpcBusCommand, args: any[]): void {
+//         const log: any = { packetSize: packet.packetSize, command: ipcCommand};
 //         if (args) {
 //             for (let i = 0, l = args.length; i < l; ++i) {
 //                 log[`arg${i}`] = args[i];
 //             }
 //         }
 //         log['socket'] = socket.remotePort ? socket.remotePort : '';
-//         this._logger.info(ipcBusCommand.kind, log);
+//         this._logger.info(ipcCommand.kind, log);
 //     }
 // }

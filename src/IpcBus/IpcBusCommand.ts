@@ -1,4 +1,4 @@
-import type { IpcBusPeer, IpcBusProcess as IpcBusEndpoint } from './IpcBusClient';
+import type { IpcBusEndpoint, IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
@@ -7,6 +7,7 @@ export namespace IpcBusCommand {
     
     /** @internal */
     export enum Kind {
+        // Command
         Handshake                   = 'HAN',
         Shutdown                    = 'SHT',
 
@@ -14,10 +15,6 @@ export namespace IpcBusCommand {
         RemoveChannelListener       = 'LICR',
         RemoveChannelAllListeners   = 'LICRA',
         RemoveListeners             = 'LIR',
-
-        SendMessage                 = 'MES',
-        RequestResponse             = 'RQR',
-        RequestClose                = 'RQC',
 
         LogGetMessage               = 'LOGGET',
         LogLocalSendRequest         = 'LOGMES',
@@ -30,6 +27,12 @@ export namespace IpcBusCommand {
 
         BrokerAddChannelListener    = 'BOICA',
         BrokerRemoveChannelListener = 'BOICR',
+
+        // Message
+        SendMessage                 = 'MES',
+        RequestResponse             = 'RQR',
+        RequestClose                = 'RQC',
+
     };
 
     /** @internal */
@@ -43,7 +46,7 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface LogCommand {
         kind: IpcBusCommand.Kind;
-        peer: IpcBusPeer;
+        peer: IpcBusEndpoint;
         channel: string;
         channels?: string[];
         request?: IpcBusCommand.Request;
@@ -52,8 +55,8 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface Log {
         id: string;
-        peer: IpcBusPeer;
-        related_peer?: IpcBusPeer;
+        peer: IpcBusEndpoint;
+        related_peer?: IpcBusEndpoint;
         kind: IpcBusCommand.Kind;
         timestamp: number;
         local?: boolean;
@@ -62,19 +65,26 @@ export namespace IpcBusCommand {
     }
 }
 
-export interface IpcBusTarget extends IpcBusEndpoint {
+export interface IpcBusTarget extends Omit<IpcBusEndpoint, 'id'> {
     peerid?: string;
 }
 
-/** @internal */
-export interface IpcBusCommand {
+export interface IpcBusCommandBase {
     kind: IpcBusCommand.Kind;
+}
 
-    peer?: IpcBusPeer;
+export interface IpcBusCommand extends IpcBusCommandBase {
+    endpoint?: IpcBusEndpoint;
+
+    channel?: string;
+    channels?: string[];
+}
+
+export interface IpcBusMessage extends IpcBusCommandBase {
+    peer: IpcBusPeer;
     target?: IpcBusTarget;
 
     channel: string;
-    channels?: string[];
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
 }
