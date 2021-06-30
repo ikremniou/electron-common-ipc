@@ -17,9 +17,9 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Client {
         // peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-        onConnectorRawDataReceived(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): boolean;
-        onConnectorArgsReceived(ipcCommand: IpcBusCommand, args: any[]): boolean;
+        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
+        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean;
+        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean;
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
@@ -43,8 +43,8 @@ export interface IpcBusConnector {
     postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 
-    // logMessageSend(previousLog: IpcBusCommand.Log, ipcCommand: IpcBusCommand): IpcBusCommand.Log;
-    // logLocalMessage(peer: Client.IpcBusPeer, ipcCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;
-    // logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;
+    // logMessageSend(previousLog: IpcBusMessage.Log, ipcMessage: IpcBusMessage): IpcBusCommand.Log;
+    // logLocalMessage(peer: Client.IpcBusPeer, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;
+    // logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;
 }
 

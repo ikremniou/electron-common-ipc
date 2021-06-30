@@ -76,8 +76,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
-                const ipcCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-                this._client.onConnectorPacketReceived(ipcCommand, this._packetIn);
+                const ipcMessage: IpcBusMessage = this._packetIn.parseArrayAt(0);
+                this._client.onConnectorPacketReceived(ipcMessage, this._packetIn);
             } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();

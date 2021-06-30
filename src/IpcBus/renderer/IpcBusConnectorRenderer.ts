@@ -94,23 +94,23 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             handshake = handshakeArg;
             process = processOrArgs as Client.IpcBusProcess;
-            this._onIpcEventRawDataReceived = (event, ipcCommand, rawData) => {
+            this._onIpcEventRawDataReceived = (event, ipcMessage, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
-                this._client.onConnectorRawDataReceived(ipcCommand, rawData);
+                this._client.onConnectorRawDataReceived(ipcMessage, rawData);
             };
-            this._onIpcEventArgsReceived = (event, ipcCommand, args) => {
-                this._client.onConnectorArgsReceived(ipcCommand, args);
+            this._onIpcEventArgsReceived = (event, ipcMessage, args) => {
+                this._client.onConnectorArgsReceived(ipcMessage, args);
             };
         }
         else {
             handshake = processOrArgs as IpcBusConnector.Handshake;
             process = eventOrProcess as Client.IpcBusProcess;
-            this._onIpcEventRawDataReceived = (ipcCommand, rawData) => {
+            this._onIpcEventRawDataReceived = (ipcMessage, rawData) => {
                 IpcBusRendererContent.FixRawContent(rawData);
-                this._client.onConnectorRawDataReceived(ipcCommand, rawData);
+                this._client.onConnectorRawDataReceived(ipcMessage, rawData);
             };
-            this._onIpcEventArgsReceived = (ipcCommand, args) => {
-                this._client.onConnectorArgsReceived(ipcCommand, args);
+            this._onIpcEventArgsReceived = (ipcMessage, args) => {
+                this._client.onConnectorArgsReceived(ipcMessage, args);
             };
         }
         // console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
