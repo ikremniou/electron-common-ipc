@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader, WriteBuffersToSocket } from 'socket-serializer';
+import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -244,22 +244,17 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcCommand: IpcBusCommand, args?: any[]): void {
+    postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
         if (this._socketWriter) {
-            this._packetOut.write(this._socketWriter, [ipcCommand, args]);
+            // ipcMessage.process = this._process;
+            this._packetOut.write(this._socketWriter, [ipcMessage, args]);
         }
     }
 
     postCommand(ipcCommand: IpcBusCommand): void {
         if (this._socketWriter) {
-            ipcCommand.process = this._process;
+            ipcCommand.process = ipcCommand.process || this._process;
             this._packetOut.write(this._socketWriter, [ipcCommand]);
-        }
-    }
-
-    postBuffers(buffers: Buffer[]) {
-        if (this._socket) {
-            WriteBuffersToSocket(this._socket, buffers);
         }
     }
 }

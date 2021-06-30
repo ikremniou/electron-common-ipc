@@ -71,20 +71,20 @@ export interface IpcBusTarget extends IpcBusProcess {
 
 export interface IpcBusCommandBase {
     kind: IpcBusCommand.Kind;
+    channel?: string;
 }
 
 export interface IpcBusCommand extends IpcBusCommandBase {
     process?: IpcBusProcess;
-
-    channel?: string;
     channels?: string[];
 }
 
 export interface IpcBusMessage extends IpcBusCommandBase {
+    channel: string;
+
     peer: IpcBusPeer;
     target?: IpcBusTarget;
 
-    channel: string;
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
 }

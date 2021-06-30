@@ -167,6 +167,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
+        // ipcMessage.process = ipcMessage.process || this._process;
         const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
         if (this._useElectronSerialization) {
             try {
@@ -196,11 +197,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
     postCommand(ipcCommand: IpcBusCommand): void {
-        ipcCommand.process = this._process;
+        ipcCommand.process = ipcCommand.process || this._process;
         this._ipcWindow.send(IPCBUS_RENDERER_COMMAND, ipcCommand);
-    }
-
-    postBuffers(buffers: Buffer[]) {
-        throw 'not implemented';
     }
 }

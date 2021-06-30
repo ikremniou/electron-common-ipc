@@ -42,7 +42,6 @@ export interface IpcBusConnector {
 
     postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
     postCommand(ipcCommand: IpcBusCommand): void;
-    postBuffers(buffers: Buffer[]): void;
 
     // logMessageSend(previousLog: IpcBusCommand.Log, ipcCommand: IpcBusCommand): IpcBusCommand.Log;
     // logLocalMessage(peer: Client.IpcBusPeer, ipcCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;

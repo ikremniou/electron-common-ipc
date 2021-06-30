@@ -132,5 +132,4 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     abstract postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
     abstract postCommand(ipcCommand: IpcBusCommand): void;
-    abstract postBuffers(buffers: Buffer[]): void;
 }

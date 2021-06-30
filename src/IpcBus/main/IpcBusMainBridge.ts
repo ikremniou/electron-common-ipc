@@ -34,11 +34,11 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void {
+        // ipcBusMessage.process = this._process;
         this._bridge._onMainMessageReceived(ipcBusMessage, args);
     }
 
     postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {
-        ipcCommand.process = this._process;
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:
@@ -46,13 +46,10 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     
             case IpcBusCommand.Kind.AddChannelListener:
             case IpcBusCommand.Kind.RemoveChannelListener:
+                ipcCommand.process = ipcCommand.process || this._process;
                 this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
         }
-    }
-
-    postBuffers(buffers: Buffer[]) {
-        throw 'not implemented';
     }
 }
 

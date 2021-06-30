@@ -1,8 +1,6 @@
 /// <reference types='electron' />
 
-import { IpcPacketBuffer } from 'socket-serializer';
-import type { IpcPacketBufferCore } from 'socket-serializer';
-import { JSONParserV1 } from 'json-helpers';
+import { IpcPacketBuffer, IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -11,12 +9,13 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelsRefCount } from '../IpcBusChannelMap';
+import type { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 
-import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeClient, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
 const PeerName = 'IPCBus:NetBridge';
 
-export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
+export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscribedChannels: ChannelsRefCount;
 
@@ -49,37 +48,32 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
-        const packetOut = new IpcPacketBuffer();
-        packetOut.JSON = JSONParserV1;
-        packetOut.serialize([ipcCommand]);
-        this._connector.postBuffers(packetOut.buffers);
+        this._connector.postCommand(ipcCommand);
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void {
-        this._connector.postBuffers(buffers);
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+        const connector = this._connector as IpcBusConnectorSocket;
+        if (connector.socket) {
+            WriteBuffersToSocket(connector.socket, buffers);
+        }
     }
 
-    broadcastArgs(ipcCommand: IpcBusCommand, args: any[]): void {
-        throw 'not implemented';
-        // if (this.hasChannel(ipcCommand.channel)) {
-        //     ipcCommand.bridge = true;
-        //     this._packet.serialize([ipcCommand, args]);
-        //     this.broadcastBuffer(ipcCommand, this._packet.buffer);
-        // }
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+        this._connector.postMessage(ipcMessage, args);
     }
 
-    broadcastRawData(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void {
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
         if (rawData.buffer) {
-            this.broadcastBuffers(ipcCommand, [rawData.buffer]);
+            this.broadcastBuffers(ipcMessage, [rawData.buffer]);
         }
         else {
-            this.broadcastBuffers(ipcCommand, rawData.buffers);
+            this.broadcastBuffers(ipcMessage, rawData.buffers);
         }
     }
 
-    broadcastPacket(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this.broadcastBuffers(ipcCommand, ipcPacketBufferCore.buffers);
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
@@ -127,11 +121,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return true;
     }
 
-    onConnectorRawDataReceived(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): boolean {
+    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
         throw 'not implemented';
     }
 
-    onConnectorArgsReceived(ipcCommand: IpcBusCommand, args: any[]): boolean {
+    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean {
         throw 'not implemented';
     }
 
