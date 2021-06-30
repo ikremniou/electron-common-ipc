@@ -245,6 +245,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         const endpoint = ipcCommand.process;
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.delete(key);
+        this._subscriptions.remove(key);
     }
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
@@ -314,14 +315,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     }
                 }
                 // Response if not for a socket client, forward to main bridge
-                this.broadcastToBridge(socket, ipcMessage, ipcPacketBufferList);
-                break;
-            }
-
-            // Socket can come from C++ process, Node.js process or main bridge
-            case IpcBusCommand.Kind.RequestClose: {
-                // if not coming from main bridge => forward
-                const ipcMessage = ipcCommand as IpcBusMessage;
                 this.broadcastToBridge(socket, ipcMessage, ipcPacketBufferList);
                 break;
             }

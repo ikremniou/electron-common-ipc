@@ -109,8 +109,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestResponse:
-            case IpcBusCommand.Kind.RequestClose: {
+            case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
                 this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
                 break;

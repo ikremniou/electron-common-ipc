@@ -147,7 +147,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         const key = IpcBusUtils.CreateKeyForEndpoint(handshake.endpoint);
         webContents.once('destroyed', () => {
-            this._subscriptions.remove(key);
+            if (this._endpoints.delete(key)) {
+                this._subscriptions.remove(key);
+            }
         });
 
         return handshake;
@@ -176,14 +178,18 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
         webContents.once('destroyed', () => {
-            this._endpoints.delete(key);
+            if (this._endpoints.delete(key)) {
+                this._subscriptions.remove(key);
+            }
         });
     }
 
     private _onEndpointShutdown(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand) {
         const endpoint = ipcCommand.process;
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
-        this._endpoints.delete(key);
+        if (this._endpoints.delete(key)) {
+            this._subscriptions.remove(key);
+        }
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
@@ -203,41 +209,23 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From renderer transport
     private _broadcastData(local: boolean, ipcChannel: string, ipcMessage: IpcBusMessage, data: any): boolean {
-        switch (ipcMessage.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
-                if (target) {
-                    const key = IpcBusUtils.CreateKeyForEndpoint(target);
-                    const endpoint = this._endpoints.get(key);
-                    if (endpoint) {
-                        endpoint.webContents.sendToFrame(endpoint.frameid, ipcChannel, ipcMessage, data);
-                    }
-                    return true;
-                }
-                const key = local ? IpcBusUtils.CreateKeyForEndpoint(ipcMessage.peer.process): -1;
-                this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
-                    // Prevent echo message
-                    if (connData.key !== key) {
-                        connData.data.webContents.sendToFrame(connData.data.frameid, ipcChannel, ipcMessage, data);
-                    }
-                });
-                break;
+        const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+        if (target) {
+            const key = IpcBusUtils.CreateKeyForEndpoint(target);
+            const endpoint = this._endpoints.get(key);
+            if (endpoint) {
+                endpoint.webContents.sendToFrame(endpoint.frameid, ipcChannel, ipcMessage, data);
             }
-            case IpcBusCommand.Kind.RequestResponse: {
-                const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
-                if (target) {
-                    const key = IpcBusUtils.CreateKeyForEndpoint(target);
-                    const endpoint = this._endpoints.get(key);
-                    if (endpoint) {
-                        endpoint.webContents.sendToFrame(endpoint.frameid, ipcChannel, ipcMessage, data);
-                    }
-                    return true;
+            return true;
+        }
+        if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
+            const key = local ? IpcBusUtils.CreateKeyForEndpoint(ipcMessage.peer.process): -1;
+            this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
+                // Prevent echo message
+                if (connData.key !== key) {
+                    connData.data.webContents.sendToFrame(connData.data.frameid, ipcChannel, ipcMessage, data);
                 }
-                break;
-            }
-
-            // case IpcBusCommand.Kind.RequestClose:
-            //     break;
+            });
         }
         return false;
     }

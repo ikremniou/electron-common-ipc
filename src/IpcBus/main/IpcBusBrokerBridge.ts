@@ -62,36 +62,19 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
-        switch (ipcMessage.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
-                if (target) {
-                    const endpoint = this._endpoints.get(target.pid);
-                    if (endpoint) {
-                        WriteBuffersToSocket(endpoint.socket, buffers);
-                        return;
-                    }
-                }
-                // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
-                this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
-                    WriteBuffersToSocket(connData.data.socket, buffers);
-                });
-                break;
+        const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+        if (target) {
+            const endpoint = this._endpoints.get(target.pid);
+            if (endpoint) {
+                WriteBuffersToSocket(endpoint.socket, buffers);
+                return;
             }
-            case IpcBusCommand.Kind.RequestResponse: {
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
-                if (target) {
-                    const endpoint = this._endpoints.get(target.pid);
-                    if (endpoint) {
-                        WriteBuffersToSocket(endpoint.socket, buffers);
-                        return;
-                    }
-                }
-                break;
-            }
-
-            case IpcBusCommand.Kind.RequestClose:
-                break;
+        }
+        if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
+            // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
+            this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
+                WriteBuffersToSocket(connData.data.socket, buffers);
+            });
         }
     }
 

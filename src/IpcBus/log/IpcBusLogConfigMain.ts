@@ -68,13 +68,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     //             needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
     //             break;
     //         }
-    //         case IpcBusCommand.Kind.RequestClose: {
-    //             if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
-    //                 return null;
-    //             }
-    //             kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
-    //             break;
-    //         }
     //         case IpcBusCommand.Kind.RequestResponse:
     //         case IpcBusCommand.Kind.LogLocalRequestResponse: {
     //             if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
@@ -90,9 +83,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     //             }
     //             else if (command.kind === IpcBusCommand.Kind.RequestResponse) {
     //                 kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-    //             }
-    //             else if (command.kind === IpcBusCommand.Kind.RequestClose) {
-    //                 kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
     //             }
     //             needArgs = (this._level & IpcBusLogConfig.Level.GetArgs) === IpcBusLogConfig.Level.GetArgs;
     //             break;

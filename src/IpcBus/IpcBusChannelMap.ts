@@ -191,7 +191,9 @@ export class ChannelConnectionMap<T, K extends string | number> {
         Logger.enable && this._info(`remove key = ${key}`);
         this._channelsMap.forEach((connsMap, channel) => {
             const connData = connsMap.get(key);
-            this._releaseConnData(channel, connData, connsMap, true);
+            if (connData) {
+                this._releaseConnData(channel, connData, connsMap, true);
+            }
         });
     }
 

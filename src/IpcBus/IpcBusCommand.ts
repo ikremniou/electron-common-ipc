@@ -31,8 +31,6 @@ export namespace IpcBusCommand {
         // Message
         SendMessage                 = 'MES',
         RequestResponse             = 'RQR',
-        RequestClose                = 'RQC',
-
     };
 
     /** @internal */
@@ -40,7 +38,6 @@ export namespace IpcBusCommand {
         id: string;
         channel: string;
         resolve?: boolean;
-        reject?: boolean;
     }
 
     /** @internal */
