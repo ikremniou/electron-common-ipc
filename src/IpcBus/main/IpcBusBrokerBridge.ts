@@ -39,33 +39,31 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return super.close(options).then(() => {});
     }
 
-    broadcastArgs(ipcCommand: IpcBusCommand, args: any[]): void {
+    broadcastCommand(ipcCommand: IpcBusCommand): void {
         throw 'not implemented';
-        // if (this.hasChannel(ipcCommand.channel)) {
-        //     ipcCommand.bridge = true;
-        //     this._packet.serialize([ipcCommand, args]);
-        //     this.broadcastBuffer(ipcCommand, this._packet.buffer);
-        // }
     }
 
-    broadcastRawData(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+        throw 'not implemented';
+    }
+
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
         if (rawData.buffer) {
-            this.broadcastBuffers(ipcCommand, [rawData.buffer]);
+            this.broadcastBuffers(ipcMessage, [rawData.buffer]);
         }
         else {
-            this.broadcastBuffers(ipcCommand, rawData.buffers);
+            this.broadcastBuffers(ipcMessage, rawData.buffers);
         }
     }
 
-    broadcastPacket(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this.broadcastBuffers(ipcCommand, ipcPacketBufferCore.buffers);
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void {
-        switch (ipcCommand.kind) {
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+        switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const ipcMessage = ipcCommand as IpcBusMessage;
                 const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);
@@ -81,7 +79,6 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const ipcMessage = ipcCommand as IpcBusMessage;
                 const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.pid);

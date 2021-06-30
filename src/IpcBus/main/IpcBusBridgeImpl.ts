@@ -1,6 +1,7 @@
 /// <reference types='electron' />
 
 import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
+import { JSONParserV1 } from 'json-helpers';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -13,7 +14,6 @@ import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMa
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
-import { JSONParserV1 } from 'json-helpers';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -22,10 +22,11 @@ export interface IpcBusBridgeClient {
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void;
-    broadcastArgs(ipcCommand: IpcBusCommand, args: any[]): void;
-    broadcastPacket(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
-    broadcastRawData(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void;
+    broadcastCommand(ipcCommand: IpcBusCommand): void;
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void;
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void;
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void;
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void;
 }
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -122,15 +123,15 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onBridgeChannelChanged(ipcCommand: IpcBusCommand) {
         if (this._socketTransport) {
             ipcCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcCommand.kind) as IpcBusCommand.Kind;
-            this._packetOut.serialize([ipcCommand]);
-            this._socketTransport.broadcastPacket(ipcCommand, this._packetOut);
+            this._socketTransport.broadcastCommand(ipcCommand);
         }
     }
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
-        this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData);
+        // Deactivate isTarget has such tests is done inner
+        /* this._mainTransport.isTarget(ipcMessage) && */ this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData);
         const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
         if (hasSocketChannel) {
             this._socketTransport.broadcastRawData(ipcMessage, rawData);
@@ -138,7 +139,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onRendererArgsReceived(ipcMessage: IpcBusMessage, args: any[]) {
-        this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorArgsReceived(ipcMessage, args);
+        // Deactivate isTarget has such tests is done inner
+        /* this._mainTransport.isTarget(ipcMessage) && */ this._mainTransport.onConnectorArgsReceived(ipcMessage, args);
         const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
         // Prevent serializing for nothing !
         if (hasSocketChannel) {
@@ -179,17 +181,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore) {
-        // If we receive a message from Socket, it would mean the channel has been already checked on socket server side
-        // if (this._useIPCNativeSerialization) {
-        //     // Unserialize only once
-        //     const args = ipcPacketBufferCore.parseArrayAt(1);
-        //     this._mainTransport.onConnectorArgsReceived(ipcCommand, args);
-        //     this._rendererConnector.broadcastArgs(ipcCommand, args);
-        // }
-        // else {
-            this._mainTransport.isTarget(ipcMessage) && this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore);
-            this._rendererConnector.isTarget(ipcMessage) && this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
-        // }
+        // Deactivate isTarget has such tests is done inner
+        /* this._mainTransport.isTarget(ipcMessage) && */ this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore);
+        /* this._rendererConnector.isTarget(ipcMessage) && */ this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
     }
 
     _onSocketClosed() {

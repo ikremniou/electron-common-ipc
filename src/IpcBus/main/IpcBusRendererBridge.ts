@@ -186,7 +186,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._endpoints.delete(key);
     }
 
-    broadcastBuffers(ipcCommand: IpcBusMessage, buffers: Buffer[]): void {
+    broadcastCommand(ipcCommand: IpcBusCommand): void {
+        throw 'not implemented';
+    }
+
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
         throw 'not implemented';
     }
 

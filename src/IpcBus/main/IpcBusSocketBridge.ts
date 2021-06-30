@@ -1,6 +1,8 @@
 /// <reference types='electron' />
 
-import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
+import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer';
+import { JSONParserV1 } from 'json-helpers';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -46,6 +48,12 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return super.close(null, options);
     }
 
+    broadcastCommand(ipcCommand: IpcBusCommand): void {
+        const packetOut = new IpcPacketBuffer();
+        packetOut.JSON = JSONParserV1;
+        packetOut.serialize([ipcCommand]);
+        this._connector.postBuffers(packetOut.buffers);
+    }
 
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void {

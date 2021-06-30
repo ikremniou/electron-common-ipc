@@ -138,8 +138,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (listeners.length === 0) {
             return false;
         }
-        const target = IpcBusUtils.GetTarget(ipcMessage);
-        if (target && target.peerid && (target.peerid !== client.peer.id)) {
+        if (ipcMessage.target && ipcMessage.target.peerid && (ipcMessage.target.peerid !== client.peer.id)) {
             return false;
         }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name}`);

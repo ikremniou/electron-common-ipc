@@ -41,6 +41,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._netBinds['data'] = this._onSocketData.bind(this);
         this._netBinds['end'] = this._onSocketEnd.bind(this);
     }
+
+    get socket(): net.Socket {
+        return this._socket;
+    }
     
     // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {

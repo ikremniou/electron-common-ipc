@@ -85,16 +85,16 @@ export function CreateKeyForEndpoint(endpoint: IpcBusProcess | IpcBusProcess): n
     }
 }
 
-export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
-    if (ipcMessage.target) {
-        return ipcMessage.target;
-    }
-    // if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
-    //     const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-    //     return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-    // }
-    return null;
-}
+// export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
+//     if (ipcMessage.target) {
+//         return ipcMessage.target;
+//     }
+//     // if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
+//     //     const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+//     //     return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
+//     // }
+//     return null;
+// }
 
 export function CreateTargetChannel(peer: IpcBusPeer): string {
     const target = CreateMessageTarget(peer);

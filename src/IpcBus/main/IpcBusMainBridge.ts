@@ -65,19 +65,19 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     //     throw 'not implemented';
     // }
 
-    // broadcastBuffers(ipcCommand: IpcBusCommand, buffers: Buffer[]): void {
+    // broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
     //     throw 'not implemented';
     // }
 
-    // broadcastArgs(ipcCommand: IpcBusCommand, args: any[]): void {
+    // broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
     //     this.onConnectorArgsReceived(ipcCommand, args);
     // }
 
-    // broadcastPacket(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    // broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
     //     this.onConnectorPacketReceived(ipcCommand, ipcPacketBufferCore);
     // }
 
-    // broadcastRawData(ipcCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): void {
+    // broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
     //     this.onConnectorRawDataReceived(ipcCommand, rawData);
     // }
 }
