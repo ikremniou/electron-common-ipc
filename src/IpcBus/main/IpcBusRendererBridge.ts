@@ -69,7 +69,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._onRendererTransportHandshake = this._onRendererTransportHandshake.bind(this);
     }
 
-    getEndpointForWindow(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
+    getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
         let result: Client.IpcBusProcess;
         for (const endpoint of this._endpoints.values()) {
             if (endpoint.wcid === window.webContents.id && endpoint.isMainFrame) {
