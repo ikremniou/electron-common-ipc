@@ -92,7 +92,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if ((this._subscriptions == null) || (client.peer == null)) {
             return;
         }
-        this._subscriptions.addRefCount(channel, client.peer.id, client, count);
+        this._subscriptions.addRef(channel, client.peer.id, client, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
@@ -108,7 +108,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             }
         }
         else {
-            this._subscriptions.releaseKey(client.peer.id);
+            this._subscriptions.remove(client.peer.id);
         }
     }
 }

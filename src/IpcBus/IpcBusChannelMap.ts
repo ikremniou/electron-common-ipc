@@ -122,7 +122,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return false;
     }
 
-    addRefCount(channel: string, key: K, data: T, count: number): number {
+    addRef(channel: string, key: K, data: T, count: number = 1): number {
         Logger.enable && this._info(`AddRef: '${channel}': key = ${key}`);
 
         let connsMap = this._channelsMap.get(channel);
@@ -144,12 +144,8 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return connsMap.size;
     }
 
-    addRef(channel: string, key: K, data: T): number {
-        return this.addRefCount(channel, key, data, 1);
-    }
-
-    private _releaseConnData(channel: string, connData: ChannelConnectionDataRef<T, K>, connsMap: Map<K, ChannelConnectionDataRef<T, K>>, allRef: boolean): number {
-        if (allRef) {
+    private _releaseConnData(channel: string, connData: ChannelConnectionDataRef<T, K>, connsMap: Map<K, ChannelConnectionDataRef<T, K>>, releaseAll: boolean): number {
+        if (releaseAll) {
             connData.releaseAll();
         }
         else {
@@ -166,8 +162,8 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return connsMap.size;
     }
 
-    private _releaseChannel(channel: string, key: K, allRef: boolean): number {
-        Logger.enable && this._info(`Release '${channel}' (${allRef}): key = ${key}`);
+    private _releaseChannel(channel: string, key: K, releaseAll: boolean): number {
+        Logger.enable && this._info(`Release '${channel}' (${releaseAll}): key = ${key}`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -179,7 +175,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
                 Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
                 return 0;
             }
-            return this._releaseConnData(channel, connData, connsMap, allRef);
+            return this._releaseConnData(channel, connData, connsMap, releaseAll);
         }
     }
 
@@ -191,50 +187,28 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return this._releaseChannel(channel, key, true);
     }
 
-    releaseKey(key: K) {
-        Logger.enable && this._info(`removePeer: key = ${key}`);
+    remove(key: K) {
+        Logger.enable && this._info(`remove key = ${key}`);
         this._channelsMap.forEach((connsMap, channel) => {
             const connData = connsMap.get(key);
             this._releaseConnData(channel, connData, connsMap, true);
         });
     }
 
-    removeKey(key: K) {
-        Logger.enable && this._info(`removeKey: key = ${key}`);
-        this._channelsMap.forEach((connsMap, channel) => {
-            const connData = connsMap.get(key);
-            if (connData) {
-                this._releaseConnData(channel, connData, connsMap, true);
-            }
-        });
-    }
-
-    // forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T1>) {
-    //     const connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1>>();
-    //     this._channelsMap.forEach((connsMap, channel) => {
-    //         connsMap.forEach((connData, connKey) => {
-    //             connections.set(connData.conn, connData);
-    //         });
-    //     });
-    //     connections.forEach((connData, connKey) => {
-    //         callback(connData, '');
-    //     });
-    // }
-
     getChannelConns(channel: string): Map<K, ChannelConnectionDataRef<T, K>> {
         return this._channelsMap.get(channel);
     }
 
-    getConns(): ChannelConnectionData<T, K>[] {
-        // @ts-ignore really an edge case for the compiler that has not been implemented
-        const conns: Record<K, ChannelConnectionData<T, K>> = {};
-        this._channelsMap.forEach((connsMap) => {
-            connsMap.forEach((connData) => {
-                conns[connData.key] = connData;
-            });
-        });
-        return Object.values(conns);
-    }
+    // getConns(): ChannelConnectionData<T, K>[] {
+    //     // @ts-ignore really an edge case for the compiler that has not been implemented
+    //     const conns: Record<K, ChannelConnectionData<T, K>> = {};
+    //     this._channelsMap.forEach((connsMap) => {
+    //         connsMap.forEach((connData) => {
+    //             conns[connData.key] = connData;
+    //         });
+    //     });
+    //     return Object.values(conns);
+    // }
 
     forEachChannel(channel: string, callback: ChannelConnectionDataRef.ForEachChannelHandler<T, K>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);

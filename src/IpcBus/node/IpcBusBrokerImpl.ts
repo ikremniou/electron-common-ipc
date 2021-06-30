@@ -184,7 +184,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             if (endpoint.socket === socket) {
                 const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
                 this._endpoints.delete(key);
-                this._subscriptions.removeKey(key);
+                this._subscriptions.remove(key);
             }
         }
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
@@ -276,7 +276,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             }
             case IpcBusCommand.Kind.RemoveListeners: {
                 const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
-                this._subscriptions.removeKey(key);
+                this._subscriptions.remove(key);
                 break;
             }
 

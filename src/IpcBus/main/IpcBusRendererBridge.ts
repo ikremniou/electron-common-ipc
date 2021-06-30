@@ -147,7 +147,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         const key = IpcBusUtils.CreateKeyForEndpoint(handshake.endpoint);
         webContents.once('destroyed', () => {
-            this._subscriptions.removeKey(key);
+            this._subscriptions.remove(key);
         });
 
         return handshake;
@@ -288,7 +288,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
             case IpcBusCommand.Kind.RemoveListeners: {
                 const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
-                this._subscriptions.removeKey(key);
+                this._subscriptions.remove(key);
                 return true;
             }
         }
