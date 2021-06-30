@@ -43,7 +43,7 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface LogCommand {
         kind: IpcBusCommand.Kind;
-        peer: IpcBusProcess;
+        peer: IpcBusPeer;
         channel: string;
         channels?: string[];
         request?: IpcBusCommand.Request;
@@ -52,8 +52,8 @@ export namespace IpcBusCommand {
     /** @internal */
     export interface Log {
         id: string;
-        peer: IpcBusProcess;
-        related_peer?: IpcBusProcess;
+        peer: IpcBusPeer;
+        related_peer?: IpcBusPeer;
         kind: IpcBusCommand.Kind;
         timestamp: number;
         local?: boolean;
