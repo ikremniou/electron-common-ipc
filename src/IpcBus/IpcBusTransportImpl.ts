@@ -263,7 +263,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         //     this._connector.logMessageSend(null, ipcMessage);
         // }
         // Broadcast locally
-        if (this.isTarget(ipcMessage) && this._onMessageReceived(true, ipcMessage, args)) {
+        if (this._onMessageReceived(true, ipcMessage, args)) {
+            // this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
         // If not resolved by local clients
         else {
@@ -304,7 +305,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         //     logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         // }
         // Broadcast locally
-        if (this.isTarget(ipcRequest) && this._onMessageReceived(true, ipcRequest, args)) {
+        if (this._onMessageReceived(true, ipcRequest, args)) {
             // this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
         // If not resolved by local clients
