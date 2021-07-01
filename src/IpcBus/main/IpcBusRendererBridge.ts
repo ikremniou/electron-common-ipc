@@ -196,15 +196,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         throw 'not implemented';
     }
 
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         throw 'not implemented';
     }
 
     // From main or net transport
-    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         const rawData = ipcPacketBufferCore.getRawData() as IpcBusRendererContent;
         // IpcBusRendererContent.PackRawContent(rawData);
-        this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
+        return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
     }
 
     // From renderer transport
@@ -230,14 +230,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
-        this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
+        return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
     }
 
     // From renderer transport
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any) {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any): boolean {
         try {
-            this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
+            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
         }
         catch (err) {
             // maybe an object does not supporting Electron serialization !
@@ -245,7 +245,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._packetOut.serialize([ipcMessage, args]);
             JSONParserV1.uninstall();
             const rawData = this._packetOut.getRawData();
-            this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
+            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
         }
     }
 

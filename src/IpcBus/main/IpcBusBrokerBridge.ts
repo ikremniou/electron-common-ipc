@@ -43,31 +43,31 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         throw 'not implemented';
     }
 
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean {
         throw 'not implemented';
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
         if (rawData.buffer) {
-            this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
         }
         else {
-            this.broadcastBuffers(ipcMessage, rawData.buffers);
+            return this.broadcastBuffers(ipcMessage, rawData.buffers);
         }
     }
 
-    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+        return this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const target = IpcBusUtils.GetTargetProcess(ipcMessage);
         if (target) {
             const endpoint = this._endpoints.get(target.pid);
             if (endpoint) {
                 WriteBuffersToSocket(endpoint.socket, buffers);
-                return;
+                return true;
             }
         }
         if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
@@ -76,6 +76,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
                 WriteBuffersToSocket(connData.data.socket, buffers);
             });
         }
+        return false;
     }
 
     protected _reset(closeServer: boolean) {

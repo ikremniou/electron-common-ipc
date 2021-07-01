@@ -52,28 +52,30 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const connector = this._connector as IpcBusConnectorSocket;
         if (connector.socket) {
             WriteBuffersToSocket(connector.socket, buffers);
         }
+        return false;
     }
 
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean {
         this._connector.postMessage(ipcMessage, args);
+        return false;
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
         if (rawData.buffer) {
-            this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
         }
         else {
-            this.broadcastBuffers(ipcMessage, rawData.buffers);
+            return this.broadcastBuffers(ipcMessage, rawData.buffers);
         }
     }
 
-    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
+    broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+        return this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
