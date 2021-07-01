@@ -21,7 +21,7 @@ import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import * as IpcBusUtils from '../IpcBusUtils';
 
-interface IpcBusEndpointWebContents extends Client.IpcBusPeerProcess {
+interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     webContents: Electron.WebContents;
 }
  
@@ -31,8 +31,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
     private _ipcMain: Electron.IpcMain;
 
-    private _subscriptions: ChannelConnectionMap<IpcBusEndpointWebContents, number>;
-    private _endpoints: Map<number, IpcBusEndpointWebContents>;
+    private _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
+    private _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
     private _packetOut: IpcPacketBuffer;
 
@@ -118,13 +118,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _getTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusPeerProcess): IpcBusConnector.Handshake {
+    private _getTransportHandshake(event: Electron.IpcMainEvent, peerProcess: Client.IpcBusPeerProcess): IpcBusConnector.Handshake {
         const logger = CreateIpcBusLog();
         const webContents = event.sender;
 
         // Inherit from the peer.process and then complete missing information
         const handshake: IpcBusConnector.Handshake = {
-            process: endpoint.process,
+            process: peerProcess.process,
             logLevel: logger.level,
         };
         handshake.process.wcid = webContents.id;
@@ -145,7 +145,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
         handshake.useIPCNativeSerialization = this._bridge.useIPCNativeSerialization;
 
-        const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+        const key = IpcBusUtils.CreateKeyForEndpoint(peerProcess);
         webContents.once('destroyed', () => {
             if (this._endpoints.delete(key)) {
                 this._subscriptions.remove(key);
@@ -155,9 +155,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return handshake;
     }
 
-    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, endpoint: Client.IpcBusPeerProcess): void {
+    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, peerProcess: Client.IpcBusPeerProcess): void {
         const webContents = event.sender;
-        const handshake = this._getTransportHandshake(event, endpoint);
+        const handshake = this._getTransportHandshake(event, peerProcess);
         // We get back to the webContents
         // - to confirm the connection
         // - to provide id/s
@@ -174,7 +174,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _onEndpointHandshake(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand) {
         const webContents = event.sender;
-        const endpoint: IpcBusEndpointWebContents = Object.assign(ipcCommand.peer, { webContents });
+        const endpoint: IpcBusPeerProcessEndpoint = Object.assign(ipcCommand.peer, { webContents });
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
         webContents.once('destroyed', () => {

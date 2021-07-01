@@ -12,7 +12,7 @@ import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 
 import { IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
-interface IpcBusEndpointSocket extends Client.IpcBusPeerProcess {
+interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     socket?: net.Socket;
 }
 
@@ -26,8 +26,8 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
-    protected _subscriptions: ChannelConnectionMap<IpcBusEndpointSocket, number>;
-    protected _endpoints: Map<number, IpcBusEndpointSocket>;
+    protected _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
+    protected _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
@@ -236,7 +236,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     }
 
     private _onEndpointHandshake(socket: net.Socket, ipcCommand: IpcBusCommand) {
-        const endpoint: IpcBusEndpointSocket = { ...ipcCommand.peer, socket };
+        const endpoint: IpcBusPeerProcessEndpoint = { ...ipcCommand.peer, socket };
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
     }
