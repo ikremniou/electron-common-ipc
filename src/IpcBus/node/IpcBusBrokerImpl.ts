@@ -12,7 +12,7 @@ import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 
 import { IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
-interface IpcBusEndpointSocket extends Client.IpcBusProcess {
+interface IpcBusEndpointSocket extends Client.IpcBusPeerProcess {
     socket?: net.Socket;
 }
 
@@ -236,13 +236,13 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     }
 
     private _onEndpointHandshake(socket: net.Socket, ipcCommand: IpcBusCommand) {
-        const endpoint: IpcBusEndpointSocket = { ...ipcCommand.process, socket };
+        const endpoint: IpcBusEndpointSocket = { ...ipcCommand.peer, socket };
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
     }
 
     private _onEndpointShutdown(socket: net.Socket, ipcCommand: IpcBusCommand) {
-        const endpoint = ipcCommand.process;
+        const endpoint = ipcCommand.peer;
         const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
         this._endpoints.delete(key);
         this._subscriptions.remove(key);
@@ -260,23 +260,23 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointSocket = this._endpoints.get(key);
                 this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.release(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelAllListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.releaseAll(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.process);
+                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.remove(key);
                 break;
             }
@@ -286,7 +286,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 const ipcMessage = ipcCommand as IpcBusMessage;
                 const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
-                    const endpoint = this._endpoints.get(target.pid);
+                    const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
                         return;
@@ -308,7 +308,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 const ipcMessage = ipcCommand as IpcBusMessage;
                 const target = IpcBusUtils.GetTargetProcess(ipcMessage);
                 if (target) {
-                    const endpoint = this._endpoints.get(target.pid);
+                    const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
                         return;

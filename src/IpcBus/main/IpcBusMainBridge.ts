@@ -23,7 +23,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            endpoint: this._process,
+            process: this._peerProcess.process,
             logLevel: this._log.level
         }
         return Promise.resolve(handshake);
@@ -46,7 +46,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     
             case IpcBusCommand.Kind.AddChannelListener:
             case IpcBusCommand.Kind.RemoveChannelListener:
-                ipcCommand.process = ipcCommand.process || this._process;
+                ipcCommand.peer = ipcCommand.peer || this._peerProcess;
                 this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
         }

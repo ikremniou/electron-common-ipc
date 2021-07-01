@@ -8,7 +8,7 @@ import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
-        endpoint: Client.IpcBusProcess;
+        process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
         useIPCNativeSerialization?: boolean;
         // useIPCFrameAPI?: boolean;

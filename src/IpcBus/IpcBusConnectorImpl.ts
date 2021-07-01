@@ -10,16 +10,18 @@ import { ConnectCloseState } from './IpcBusUtils';
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
-    protected _process: Client.IpcBusProcess;
+    protected _peerProcess: Client.IpcBusPeerProcess;
     protected _messageCount: number;
     protected _log: IpcBusLogConfig;
 
     protected _connectCloseState: ConnectCloseState<IpcBusConnector.Handshake>;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._process = {
-            type: contextType,
-            pid: process ? process.pid: -1
+        this._peerProcess = {
+            process: {
+                type: contextType,
+                pid: process ? process.pid: -1
+            }
         };
 
         this._connectCloseState = new ConnectCloseState<IpcBusConnector.Handshake>();

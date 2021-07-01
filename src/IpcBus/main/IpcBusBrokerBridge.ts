@@ -64,7 +64,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const target = IpcBusUtils.GetTargetProcess(ipcMessage);
         if (target) {
-            const endpoint = this._endpoints.get(target.pid);
+            const endpoint = this._endpoints.get(target.process.pid);
             if (endpoint) {
                 WriteBuffersToSocket(endpoint.socket, buffers);
                 return true;

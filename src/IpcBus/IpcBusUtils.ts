@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusProcess, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
 import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
@@ -48,7 +48,7 @@ function _GetTargetFromChannel(targetSignature: string, ipcMessage: IpcBusMessag
 
 export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
     if (ipcMessage.target) {
-        return (ipcMessage.target.type === 'main') ? ipcMessage.target : null;
+        return (ipcMessage.target.process.type === 'main') ? ipcMessage.target : null;
     }
     if (checkChannel) {
         return _GetTargetFromChannel(TargetMainSignature, ipcMessage);
@@ -58,7 +58,7 @@ export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean =
 
 export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
     if (ipcMessage.target) {
-        return ((ipcMessage.target.type === 'node') || (ipcMessage.target.type === 'native')) ? ipcMessage.target : null;
+        return ((ipcMessage.target.process.type === 'node') || (ipcMessage.target.process.type === 'native')) ? ipcMessage.target : null;
     }
     if (checkChannel) {
         return _GetTargetFromChannel(TargetProcessSignature, ipcMessage);
@@ -68,7 +68,7 @@ export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolea
 
 export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
     if (ipcMessage.target) {
-        return (ipcMessage.target.type === 'renderer') ? ipcMessage.target : null;
+        return (ipcMessage.target.process.type === 'renderer') ? ipcMessage.target : null;
     }
     if (checkChannel) {
         return _GetTargetFromChannel(TargetRendererSignature, ipcMessage);
@@ -76,12 +76,12 @@ export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boole
     return null;
 }
 
-export function CreateKeyForEndpoint(endpoint: IpcBusProcess | IpcBusProcess): number {
-    if (endpoint.wcid && endpoint.frameid) {
-        return (endpoint.wcid << 8) + endpoint.frameid;
+export function CreateKeyForEndpoint(endpoint: IpcBusPeer | IpcBusPeerProcess): number {
+    if (endpoint.process.wcid && endpoint.process.frameid) {
+        return (endpoint.process.wcid << 8) + endpoint.process.frameid;
     }
     else {
-        return endpoint.pid;
+        return endpoint.process.pid;
     }
 }
 
@@ -119,23 +119,16 @@ export function CreateTargetChannel(peer: IpcBusPeer): string {
     return `${prefix}${CreateUniqId()}`;
 }
 
-export function CreateMessageTarget(target: IpcBusPeer | IpcBusProcess | undefined): IpcBusTarget {
+export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | undefined): IpcBusTarget {
     if (target == null) {
         return undefined;
     }
-    if ((target as any).process) {
+    const messageTarget: IpcBusTarget = { process: target.process };
+    if ((target as any).id) {
         const peer = target as IpcBusPeer;
-        return {
-            ...peer.process,
-            peerid: peer.id
-        };
+        messageTarget.peerid = peer.id;
     }
-    else {
-        const process = target as IpcBusProcess;
-        return {
-            ...process
-        };
-    }
+    return messageTarget;
 }
 
 export function CheckChannel(channel: any): string {

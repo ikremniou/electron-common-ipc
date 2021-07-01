@@ -63,7 +63,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._connectCloseState.connected;
     }
 
-    sendTo(target: Client.IpcBusPeer | Client.IpcBusProcess, channel: string, ...args: any[]): boolean {
+    sendTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, ...args: any[]): boolean {
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.sendMessage(this, target, channel, args);
         return this._connectCloseState.connected;
@@ -74,7 +74,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.requestMessage(this, undefined, channel, timeoutDelay, args);
     }
 
-    requestTo(target: Client.IpcBusPeer | Client.IpcBusProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
         return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
     }

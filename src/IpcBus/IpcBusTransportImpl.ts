@@ -252,7 +252,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    sendMessage(client: IpcBusTransport.Client, target: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, args: any[]): void {
+    sendMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[]): void {
         const ipcMessage: IpcBusMessage = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
@@ -284,7 +284,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         });
     }
 
-    requestMessage(client: IpcBusTransport.Client, target: Client.IpcBusProcess | Client.IpcBusProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = {
             channel,
@@ -335,7 +335,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 return handshake;
             })
             .then((handshake) => {
-                const peer = this.createPeer(handshake.endpoint, options.peerName);
+                const peer = this.createPeer(handshake.process, options.peerName);
                 return peer;
             });
     }

@@ -62,7 +62,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         return this._mainTransport;
     }
 
-    getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusProcess | undefined {
+    getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
         return this._rendererConnector.getWindowTarget(window);
     }
 
@@ -156,10 +156,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[]) {
-        const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
         if (this._useIPCNativeSerialization) {
             if (this._rendererConnector.broadcastArgs(ipcMessage, args) === false) {
                 // Prevent serializing for nothing !
+                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 if (hasSocketChannel) {
                     JSONParserV1.install();
                     this._packetOut.serialize([ipcMessage, args]);
@@ -170,6 +170,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
         else {
             const hasRendererChannel = this._rendererConnector.isTarget(ipcMessage);
+            const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
                 JSONParserV1.install();
