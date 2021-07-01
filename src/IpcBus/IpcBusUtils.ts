@@ -28,16 +28,23 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const TargetSignature = `__target`;
-const TargetMainSignature     = `${TargetSignature}:main_`;
-const TargetProcessSignature  = `${TargetSignature}:proc_`;
-const TargetRendererSignature = `${TargetSignature}:rend_`;
+const TargetSignature = `_target_`;
+const TargetMainSignature     = `${TargetSignature}main_`;
+const TargetProcessSignature  = `${TargetSignature}proc_`;
+const TargetRendererSignature = `${TargetSignature}rend_`;
 
 const TargetSignatureLength = TargetMainSignature.length;
 
-function _GetTargetFromChannel(targetSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | null {
+const TargetSignatures: any = {
+    'node': TargetProcessSignature,
+    'native': TargetProcessSignature,
+    'renderer': TargetRendererSignature,
+    'main': TargetMainSignature
+};
+
+function _GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | null {
     if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0)) {
-        if (ipcMessage.channel.lastIndexOf(targetSignature, 0) !== 0) {
+        if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
             return null;
         }
         const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
@@ -85,38 +92,10 @@ export function CreateKeyForEndpoint(endpoint: IpcBusPeer | IpcBusPeerProcess): 
     }
 }
 
-// export function GetTarget(ipcMessage: IpcBusMessage): IpcBusTarget | null {
-//     if (ipcMessage.target) {
-//         return ipcMessage.target;
-//     }
-//     // if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) == 0) {
-//     //     const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-//     //     return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-//     // }
-//     return null;
-// }
-
 export function CreateTargetChannel(peer: IpcBusPeer): string {
     const target = CreateMessageTarget(peer);
-    let prefix: string;
-    switch (peer.process.type) {
-        case 'native':
-        case 'node':
-            prefix = `${TargetProcessSignature}_${JSON.stringify(target)}${TargetSignature}`;
-            break;
-        case 'renderer':
-            prefix = `${TargetRendererSignature}_${JSON.stringify(target)}${TargetSignature}`;
-            break;
-        case 'main':
-            prefix = `${TargetMainSignature}_${JSON.stringify(target)}${TargetSignature}`;
-            break;
-        case 'worker':
-        case 'undefined':
-        default:
-            prefix = `${peer.process.type}_`;
-            break;
-    }
-    return `${prefix}${CreateUniqId()}`;
+    const targetTypeSignature = TargetSignatures[peer.process.type] || `_no_target_`;
+    return `${targetTypeSignature}${JSON.stringify(target)}${TargetSignature}${CreateUniqId()}`;
 }
 
 export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | undefined): IpcBusTarget {
