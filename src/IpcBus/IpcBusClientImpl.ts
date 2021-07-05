@@ -59,13 +59,13 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, undefined, channel, args);
+        this._transport.postMessage(this, undefined, channel, args);
         return this._connectCloseState.connected;
     }
 
     sendTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, ...args: any[]): boolean {
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, target, channel, args);
+        this._transport.postMessage(this, target, channel, args);
         return this._connectCloseState.connected;
     }
 
@@ -79,9 +79,19 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
     }
 
+    postMessage(channel: string, message: any, transfer?: MessagePort[]): void {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.postMessagePort(this, undefined, channel, message, transfer);
+    }
+
+    postMessageTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, message: any, transfer?: MessagePort[]): void {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.postMessagePort(this, target, channel, message, transfer);
+    }
+
     emit(event: string, ...args: any[]): boolean {
         event = IpcBusUtils.CheckChannel(event);
-        this._transport.sendMessage(this, undefined, event, args);
+        this._transport.postMessage(this, undefined, event, args);
         return this._connectCloseState.connected;
     }
  

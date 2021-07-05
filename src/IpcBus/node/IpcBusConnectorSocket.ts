@@ -244,7 +244,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
+    postMessagePort(ipcMessage: IpcBusMessage, message: string, transfer?: MessagePort[]): void {
+    }
+
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], transfer?: MessagePort[]): void {
         if (this._socketWriter) {
             // ipcMessage.process = this._process;
             this._packetOut.write(this._socketWriter, [ipcMessage, args]);

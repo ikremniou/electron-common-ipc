@@ -33,6 +33,10 @@ export interface PostMessageFunction {
     (ipcMessage: IpcBusMessage, args?: any[]): void;
 }
 
+export interface PostMessagePortFunction {
+    (ipcMessage: IpcBusMessage, message?: any, transfer?: MessagePort[]): void;
+}
+
 /** @internal */
 export interface IpcBusConnector {
     isTarget(ipcMessage: IpcBusMessage): boolean;
@@ -40,6 +44,7 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
+    postMessagePort(ipcBusMessage: IpcBusMessage, message?: any, transfer?: MessagePort[]): void;
     postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 

@@ -25,5 +25,6 @@ export interface IpcBusTransport {
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
     requestMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
-    sendMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[]): void;
+    postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[]): void;
+    postMessagePort(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, message: any, transfer?: MessagePort[]): void;
 }
