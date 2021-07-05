@@ -1,5 +1,5 @@
 import type * as Client from './IpcBusClient';
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector } from './IpcBusConnector';
@@ -13,21 +13,25 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    hasChannel(channel: string): boolean {
-        return this._subscriptions ? this._subscriptions.hasChannel(channel) : false;
+    isTarget(ipcMessage: IpcBusMessage): boolean {
+        if (this._subscriptions && this._subscriptions.hasChannel(ipcMessage.channel)) {
+            return true;
+        }
+        return super.isTarget(ipcMessage);
     }
 
     getChannels(): string[] {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): boolean {
-        const channelConns = this._subscriptions.getChannelConns(ipcBusCommand.channel);
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[]): boolean {
+        const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
-            channelConns.forEach((connData) => {
-                this._onClientMessageReceived(connData.conn, local, ipcBusCommand, args);
-            });
-            return true;
+            for (const entry of channelConns) {
+                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -38,7 +42,6 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             this._subscriptions.client = null;
             this._subscriptions = null;
             this._postCommand({
-                peer: this._peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''
             });
@@ -49,19 +52,17 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return super.connect(client, options)
             .then((peer) => {
                 if (this._subscriptions == null) {
-                    this._subscriptions = new ChannelConnectionMap<IpcBusTransport.Client, string>(this._peer.name);
+                    this._subscriptions = new ChannelConnectionMap<IpcBusTransport.Client, string>('');
 
                     this._subscriptions.client = {
                         channelAdded: (channel) => {
                             this._postCommand({
-                                peer: this._peer,
                                 kind: IpcBusCommand.Kind.AddChannelListener,
                                 channel
                             })
                         },
                         channelRemoved: (channel) => {
                             this._postCommand({
-                                peer: this._peer,
                                 kind: IpcBusCommand.Kind.RemoveChannelListener,
                                 channel
                             });
@@ -92,7 +93,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if ((this._subscriptions == null) || (client.peer == null)) {
             return;
         }
-        this._subscriptions.addRefCount(channel, client.peer.id, client, client.peer, count);
+        this._subscriptions.addRef(channel, client.peer.id, client, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
@@ -101,14 +102,14 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         }
         if (channel) {
             if (all) {
-                this._subscriptions.releaseAll(channel, client.peer.id, client.peer);
+                this._subscriptions.releaseAll(channel, client.peer.id);
             }
             else {
-                this._subscriptions.release(channel, client.peer.id, client.peer);
+                this._subscriptions.release(channel, client.peer.id);
             }
         }
         else {
-            this._subscriptions.removePeer(client.peer);
+            this._subscriptions.remove(client.peer.id);
         }
     }
 }

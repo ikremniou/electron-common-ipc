@@ -1,4 +1,4 @@
-import { IpcBusClient } from './IpcBusClient';
+import type { IpcBusClient } from './IpcBusClient';
 import type { ElectronProcessType } from 'electron-process-type/lib/v2';
 import { ElectronCommonIpcNamespace, PreloadElectronCommonIpcAutomatic } from './renderer/IpcBusRendererPreload';
 

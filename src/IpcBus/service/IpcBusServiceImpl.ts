@@ -77,12 +77,6 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => {
             return this._getServiceStatus();
         });
-        // this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_ADD_LISTENER, (event: string, replyChannel: string) => {
-        //     return this._addListener(event, replyChannel);
-        // });
-        // this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_REMOVE_LISTENER, (event: string, replyChannel: string) => {
-        //     return this._removeListener(event, replyChannel);
-        // });
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
             const methodNames = getInstanceMethodNames(this._exposedInstance);
@@ -96,41 +90,6 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);
         }
     }
-
-    // private _addListener(event: string, replyChannel: string) {
-    //     const eventHandler = this._eventHandlers.get(event);
-    //     if (eventHandler == null) {
-    //         // Register callback
-    //         // TODO
-    //         this._eventHandlers.set(event, new Set([replyChannel]));
-    //     }
-    //     else {
-    //         eventHandler.add(replyChannel);
-    //     }
-    // }
-
-    // private _removeListener(event: string, replyChannel: string) {
-    //     const eventHandler = this._eventHandlers.get(event);
-    //     if (eventHandler == null) {
-    //     }
-    //     else {
-    //         eventHandler.delete(replyChannel);
-    //         if (eventHandler.size === 0) {
-    //             this._eventHandlers.delete(event);
-    //             // Unregister callback
-    //             // TODO
-    //         }
-    //     }
-    // }
-
-    // private _broadcastEmit(event: string, ...args: any[]) {
-    //     const eventHandler = this._eventHandlers.get(event);
-    //     if (eventHandler) {
-    //         eventHandler.forEach((replyChannel) => {
-    //             this._ipcBusClient.send(replyChannel, event, args);
-    //         });
-    //     }
-    // }
 
     private _getServiceStatus(): Service.ServiceStatus {
         const callChannel = ServiceUtils.getServiceCallChannel(this._serviceName);

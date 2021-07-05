@@ -14,13 +14,13 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         super(contextType);
     }
 
-    protected abstract addLog(socket: net.Socket, ipcPacketBufferCore: IpcPacketBufferCore, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract addLog(socket: net.Socket, ipcPacketBufferCore: IpcPacketBufferCore, ipcCommand: IpcBusCommand, args: any[]): void;
 
     onSocketPacket(socket: net.Socket, ipcPacketBufferList: IpcPacketBufferList): void {
-        const ipcBusCommand: IpcBusCommand = ipcPacketBufferList.parseArrayAt(0);
+        const ipcCommand: IpcBusCommand = ipcPacketBufferList.parseArrayAt(0);
         const args = ipcPacketBufferList.parseArrayAt(1);
-        this.addLog(socket, ipcPacketBufferList, ipcBusCommand, args);
+        this.addLog(socket, ipcPacketBufferList, ipcCommand, args);
 
-        super.onSocketCommand(socket, ipcBusCommand, ipcPacketBufferList);
+        super.onSocketCommand(socket, ipcCommand, ipcPacketBufferList);
     }
 }

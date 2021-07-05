@@ -14,16 +14,19 @@ export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worke
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
-    rid?: number;   // Renderer Id
+    rid?: number;   // Routing Id
     wcid?: number;  // WebContent Id
     frameid?: number; // Frame Id
     isMainFrame?: boolean;
 }
 
-export interface IpcBusPeer {
+export interface IpcBusPeerProcess {
+    process: IpcBusProcess;
+}
+
+export interface IpcBusPeer extends IpcBusPeerProcess {
     id: string;
     name: string;
-    process: IpcBusProcess;
 }
 
 export interface IpcBusRequest {
@@ -101,7 +104,9 @@ export interface IpcBusClient extends EventEmitter {
     createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;
+    sendTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
+    requestTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API
     emit(event: string, ...args: any[]): boolean;

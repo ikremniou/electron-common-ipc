@@ -1,4 +1,3 @@
-import type { IpcBusPeer } from './IpcBusClient';
 import { Logger, partialCall } from './IpcBusUtils';
 
 // Structure
@@ -7,81 +6,60 @@ import { Logger, partialCall } from './IpcBusUtils';
 // then list of ref counted peerIds for this transport
 
 /** @internal */
-export interface ChannelConnectionRef<T, K extends string | number> {
+export interface ChannelConnectionData<T, K extends string | number> {
     readonly key: K;
-    readonly conn: T;
+    readonly data: T;
 }
 
 /** @internal */
-export class ChannelConnectionPeers<T, K extends string | number> implements ChannelConnectionRef<T, K> {
+export class ChannelConnectionDataRef<T, K extends string | number> implements ChannelConnectionData<T, K> {
     readonly key: K;
-    readonly conn: T;
-    readonly peerRefCounts: Map<string, ChannelConnectionPeers.PeerRefCount> = new Map<string, ChannelConnectionPeers.PeerRefCount>();
+    readonly data: T;
 
-    constructor(key: K, conn: T, peer: IpcBusPeer, count: number) {
+    private _refCount: number;
+
+    constructor(key: K, data: T, count: number) {
         this.key = key;
-        this.conn = conn;
+        this.data = data;
+        this._refCount = (count == null) ? 1 : count;
+    }
+
+    get refCount(): number {
+        return this._refCount;
+    }
+
+    addRef(count: number): number {
         const refCount = (count == null) ? 1 : count;
-        const peerRefCount = { peer, refCount };
-        this.peerRefCounts.set(peer.id, peerRefCount);
+        this._refCount += refCount;
+        return refCount;
     }
 
-    addPeer(peer: IpcBusPeer, count: number): number {
-        const refCount = (count == null) ? 1 : count;
-        let peerRefCount = this.peerRefCounts.get(peer.id);
-        if (peerRefCount == null) {
-            peerRefCount = { peer, refCount };
-            this.peerRefCounts.set(peer.id, peerRefCount);
-        }
-        else {
-            peerRefCount.refCount += refCount;
-        }
-        return peerRefCount.refCount;
+    release() {
+        return --this._refCount;
     }
 
-    clearPeers() {
-        this.peerRefCounts.clear();
-    }
-
-    removePeer(peer: IpcBusPeer): boolean {
-        return this.peerRefCounts.delete(peer.id);
-    }
-
-    releasePeer(peer: IpcBusPeer) {
-        const peerRefCount = this.peerRefCounts.get(peer.id);
-        if (peerRefCount == null) {
-            return 0;
-            // Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
-        }
-        else {
-            // This connection has subscribed to this channel
-            if (--peerRefCount.refCount <= 0) {
-                // The connection is no more referenced
-                this.peerRefCounts.delete(peer.id);
-                // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
-            }
-            return peerRefCount.refCount;
-        }
+    releaseAll() {
+        this._refCount = 0;
     }
 }
 
 /** @internal */
 export interface ChannelConnectionMapClient<T, K extends string | number> {
-    channelAdded(channel: string, conn: ChannelConnectionRef<T, K>): void;
-    channelRemoved(channel: string, conn: ChannelConnectionRef<T, K>): void;
+    channelAdded(channel: string, conn: ChannelConnectionData<T, K>): void;
+    channelRemoved(channel: string, conn: ChannelConnectionData<T, K>): void;
 }
 
 /** @internal */
 export class ChannelConnectionMap<T, K extends string | number> {
     private _name: string;
-    private _channelsMap: Map<string, Map<K, ChannelConnectionPeers<T, K>>>;
+    private _channelsMap: Map<string, Map<K, ChannelConnectionDataRef<T, K>>>;
 
     public client: ChannelConnectionMapClient<T, K>;
 
     constructor(name: string, client?: ChannelConnectionMapClient<T, K>) {
         this._name = name;
         this.client = client;
-        this._channelsMap = new Map<string, Map<K, ChannelConnectionPeers<T, K>>>();
+        this._channelsMap = new Map<string, Map<K, ChannelConnectionDataRef<T, K>>>();
     }
 
     private _info(str: string) {
@@ -109,26 +87,26 @@ export class ChannelConnectionMap<T, K extends string | number> {
         this._channelsMap.clear();
     }
 
-    addRefs(channels: string[], key: K, conn: T, peer: IpcBusPeer): void {
+    addRefs(channels: string[], key: K, data: T): void {
         for (let i = 0, l = channels.length; i < l; ++i) {
-            this.addRef(channels[i], key, conn, peer);
+            this.addRef(channels[i], key, data);
         }
     }
 
-    releases(channels: string[], key: K, peer: IpcBusPeer): void {
+    releases(channels: string[], key: K): void {
         for (let i = 0, l = channels.length; i < l; ++i) {
-            this.release(channels[i], key, peer);
+            this.release(channels[i], key);
         }
     }
 
-    protected _addChannel(client: ChannelConnectionMapClient<T, K>, channel: string, key: K, conn: T, peer: IpcBusPeer, count: number): Map<K, ChannelConnectionPeers<T, K>> {
-        Logger.enable && this._info(`SetChannel: '${channel}', peerId =  ${peer ? peer.id : 'unknown'}`);
+    protected _addChannel(client: ChannelConnectionMapClient<T, K>, channel: string, key: K, data: T, count: number): Map<K, ChannelConnectionDataRef<T, K>> {
+        Logger.enable && this._info(`SetChannel: '${channel}', key =  ${key}`);
 
-        const connsMap = new Map<K, ChannelConnectionPeers<T, K>>();
+        const connsMap = new Map<K, ChannelConnectionDataRef<T, K>>();
         // This channel has NOT been subscribed yet, add it to the map
         this._channelsMap.set(channel, connsMap);
 
-        const connData = new ChannelConnectionPeers<T, K>(key, conn, peer, count);
+        const connData = new ChannelConnectionDataRef<T, K>(key, data, count);
         connsMap.set(key, connData);
 
         if (client) client.channelAdded(channel, connData);
@@ -136,7 +114,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return connsMap;
     }
 
-    private _removeChannel(client: ChannelConnectionMapClient<T, K>, channel: string, conn: ChannelConnectionRef<T, K>): boolean {
+    private _removeChannel(client: ChannelConnectionMapClient<T, K>, channel: string, conn: ChannelConnectionData<T, K>): boolean {
         if (this._channelsMap.delete(channel)) {
             if (client) client.channelRemoved(channel, conn);
             return true;
@@ -144,77 +122,48 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return false;
     }
 
-    // Channel is supposed to be new
-    pushResponseChannel(channel: string,  key: K, conn: T, peer: IpcBusPeer) {
-        this._addChannel(null, channel, key, conn, peer, 1);
-    }
-
-    popResponseChannel(channel: string): ChannelConnectionRef<T, K> | null {
-        const connsMap = this._channelsMap.get(channel);
-        if (connsMap == null) {
-            return null;
-        }
-        if (connsMap.size !== 1) {
-            throw 'should not happen';
-        }
-        const connData = connsMap.values().next().value;
-        this._removeChannel(null, channel, connData);
-        return connData;
-    }
-
-    addRefCount(channel: string,  key: K, conn: T, peer: IpcBusPeer, count: number): number {
-        Logger.enable && this._info(`AddRef: '${channel}': conn = ${key}, peerId =  ${peer ? peer.id : 'unknown'}`);
+    addRef(channel: string, key: K, data: T, count: number = 1): number {
+        Logger.enable && this._info(`AddRef: '${channel}': key = ${key}`);
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            connsMap = this._addChannel(this.client, channel, key, conn, peer, count);
+            connsMap = this._addChannel(this.client, channel, key, data, count);
         }
         else {
             let connData = connsMap.get(key);
             if (connData == null) {
                 // This channel has NOT been already subscribed by this connection
-                connData = new ChannelConnectionPeers<T, K>(key, conn, peer, count);
+                connData = new ChannelConnectionDataRef<T, K>(key, data, count);
                 connsMap.set(key, connData);
                 // Logger.enable && this._info(`AddRef: connKey = ${conn} is added`);
             }
             else {
-                connData.addPeer(peer, count);
+                connData.addRef(count);
             }
         }
         return connsMap.size;
     }
 
-    addRef(channel: string,  key: K, conn: T, peer: IpcBusPeer): number {
-        return this.addRefCount(channel, key, conn, peer, 1);
-    }
-
-    private _releaseConnData(channel: string, connData: ChannelConnectionPeers<T, K>, connsMap: Map<K, ChannelConnectionPeers<T, K>>, peer: IpcBusPeer, allRef: boolean): number {
-        if (peer == null) {
-            connData.clearPeers();
+    private _releaseConnData(channel: string, connData: ChannelConnectionDataRef<T, K>, connsMap: Map<K, ChannelConnectionDataRef<T, K>>, releaseAll: boolean): number {
+        if (releaseAll) {
+            connData.releaseAll();
         }
         else {
-            if (allRef) {
-                if (connData.removePeer(peer) === false) {
-                    Logger.enable && this._warn(`Release '${channel}': peerId # ${peer ? peer.id : 'unknown'} is unknown`);
-                }
-            }
-            else {
-                connData.releasePeer(peer);
-            }
+            connData.release();
         }
-        if (connData.peerRefCounts.size === 0) {
+        if (connData.refCount === 0) {
             connsMap.delete(connData.key);
             // Logger.enable && this._info(`Release: conn = ${conn} is released`);
             if (connsMap.size === 0) {
                 this._removeChannel(this.client, channel, connData);
             }
         }
-        Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
+        Logger.enable && this._info(`Release '${channel}': count = ${connData.refCount}`);
         return connsMap.size;
     }
 
-    private _releaseChannel(channel: string, key: K, peer: IpcBusPeer, allRef: boolean): number {
-        Logger.enable && this._info(`Release '${channel}' (${allRef}): peerId = ${peer ? peer.id : 'unknown'}`);
+    private _releaseChannel(channel: string, key: K, releaseAll: boolean): number {
+        Logger.enable && this._info(`Release '${channel}' (${releaseAll}): key = ${key}`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -226,89 +175,44 @@ export class ChannelConnectionMap<T, K extends string | number> {
                 Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
                 return 0;
             }
-            return this._releaseConnData(channel, connData, connsMap, peer, allRef);
+            return this._releaseConnData(channel, connData, connsMap, releaseAll);
         }
     }
 
-    release(channel: string, key: K, peer: IpcBusPeer): number {
-        return this._releaseChannel(channel, key, peer, false);
+    release(channel: string, key: K): number {
+        return this._releaseChannel(channel, key, false);
     }
 
-    releaseAll(channel: string, key: K, peer: IpcBusPeer): number {
-        return this._releaseChannel(channel, key, peer, true);
+    releaseAll(channel: string, key: K): number {
+        return this._releaseChannel(channel, key, true);
     }
 
-    removePeer(peer: IpcBusPeer) {
-        Logger.enable && this._info(`removePeer: peer = ${peer}`);
-        // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
-        this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData) => {
-                this._releaseConnData(channel, connData, connsMap, peer, true);
-            });
-        });
-    }
-
-    removeConnection(conn: T) {
-        // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
-        this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData) => {
-                if (connData.conn === conn) {
-                    this._releaseConnData(channel, connData, connsMap, null, true);
-                }
-            });
-        });
-    }
-
-    removeKey(key: K) {
-        Logger.enable && this._info(`removeKey: key = ${key}`);
+    remove(key: K) {
+        Logger.enable && this._info(`remove key = ${key}`);
         this._channelsMap.forEach((connsMap, channel) => {
             const connData = connsMap.get(key);
             if (connData) {
-                this._releaseConnData(channel, connData, connsMap, null, true);
+                this._releaseConnData(channel, connData, connsMap, true);
             }
         });
     }
 
-    // forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T1>) {
-    //     const connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1>>();
-    //     this._channelsMap.forEach((connsMap, channel) => {
-    //         connsMap.forEach((connData, connKey) => {
-    //             connections.set(connData.conn, connData);
-    //         });
-    //     });
-    //     connections.forEach((connData, connKey) => {
-    //         callback(connData, '');
-    //     });
-    // }
-
-    getChannelConns(channel: string): Map<K, ChannelConnectionPeers<T, K>> {
+    getChannelConns(channel: string): Map<K, ChannelConnectionDataRef<T, K>> {
         return this._channelsMap.get(channel);
     }
 
-    getPeers(): IpcBusPeer[] {
-        const peers: Record<string, IpcBusPeer> = {};
-        this._channelsMap.forEach((connsMap) => {
-            connsMap.forEach((connData) => {
-                connData.peerRefCounts.forEach((peerRefCount) => {
-                    peers[peerRefCount.peer.id] = peerRefCount.peer;
-                });
-            });
-        });
-        return Object.values(peers);
-    }
+    // getConns(): ChannelConnectionData<T, K>[] {
+    //     // @ts-ignore really an edge case for the compiler that has not been implemented
+    //     const conns: Record<K, ChannelConnectionData<T, K>> = {};
+    //     this._channelsMap.forEach((connsMap) => {
+    //         connsMap.forEach((connData) => {
+    //             conns[connData.key] = connData;
+    //         });
+    //     });
+    //     return Object.values(conns);
+    // }
 
-    getConns(): ChannelConnectionRef<T, K>[] {
-        // @ts-ignore really an edge case for the compiler that has not been implemented
-        const conns: Record<K, ChannelConnectionRef<T, K>> = {};
-        this._channelsMap.forEach((connsMap) => {
-            connsMap.forEach((connData) => {
-                conns[connData.key] = connData;
-            });
-        });
-        return Object.values(conns);
-    }
-
-    forEachChannel(channel: string, callback: ChannelConnectionPeers.ForEachChannelHandler<T, K>) {
+    forEachChannel(channel: string, callback: ChannelConnectionDataRef.ForEachChannelHandler<T, K>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
@@ -319,7 +223,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
         }
     }
 
-    forEach(callback: ChannelConnectionPeers.ForEachHandler<T, K>) {
+    forEach(callback: ChannelConnectionDataRef.ForEachHandler<T, K>) {
         Logger.enable && this._info('forEach');
         this._channelsMap.forEach((connsMap, channel) => {
             const cb = partialCall(callback, channel);
@@ -329,21 +233,21 @@ export class ChannelConnectionMap<T, K extends string | number> {
 }
 
 /** @internal */
-export namespace ChannelConnectionPeers {
+export namespace ChannelConnectionDataRef {
     /** @internal */
-    export interface PeerRefCount {
-        peer: IpcBusPeer;
+    export interface RefCount<T> {
+        data: T;
         refCount: number;
     }
 
     /** @internal */
     export interface ForEachChannelHandler<T, K extends string | number> {
-        (value: ChannelConnectionRef<T, K>): void;
+        (value: ChannelConnectionData<T, K>): void;
     };
 
     /** @internal */
     export interface ForEachHandler<T, K extends string | number> {
-        (channel: string, value: ChannelConnectionRef<T, K>): void;
+        (channel: string, value: ChannelConnectionData<T, K>): void;
     };
 };
 

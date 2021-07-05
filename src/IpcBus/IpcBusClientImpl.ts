@@ -24,6 +24,14 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._peer;
     }
 
+    createDirectChannel(): string {
+        return this._transport.createDirectChannel(this);
+    }
+ 
+    createResponseChannel(): string {
+        return this._transport.createDirectChannel(this);
+    }
+
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.connect(() => {
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
@@ -48,29 +56,32 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         });
     }
 
-    createDirectChannel(): string {
-        return this._transport.createDirectChannel(this);
-    }
-
-    createResponseChannel(): string {
-        return this._transport.createDirectChannel(this);
-    }
-
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, channel, args);
+        this._transport.sendMessage(this, undefined, channel, args);
+        return this._connectCloseState.connected;
+    }
+
+    sendTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, ...args: any[]): boolean {
+        channel = IpcBusUtils.CheckChannel(channel);
+        this._transport.sendMessage(this, target, channel, args);
         return this._connectCloseState.connected;
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, channel, timeoutDelay, args);
+        return this._transport.requestMessage(this, undefined, channel, timeoutDelay, args);
+    }
+
+    requestTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
     }
 
     emit(event: string, ...args: any[]): boolean {
         event = IpcBusUtils.CheckChannel(event);
-        this._transport.sendMessage(this, event, args);
+        this._transport.sendMessage(this, undefined, event, args);
         return this._connectCloseState.connected;
     }
  

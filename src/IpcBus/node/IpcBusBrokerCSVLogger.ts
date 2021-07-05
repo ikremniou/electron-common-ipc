@@ -43,14 +43,14 @@
 //         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-broker.csv')));
 //     }
 
-//     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void {
+//     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcCommand: IpcBusCommand, args: any[]): void {
 //         ++this._line;
 //         const log: string[] = [
 //             this._line.toString(),
-//             ipcBusCommand.kind,
+//             ipcCommand.kind,
 //             packet.packetSize.toString(),
-//             ipcBusCommand.peer.id,
-//             JSON.stringify(ipcBusCommand.peer.process),
+//             ipcCommand.peer.id,
+//             JSON.stringify(ipcCommand.peer.process),
 //             socket.remotePort ? socket.remotePort.toString() : ''
 //         ];
 //         if (args) {

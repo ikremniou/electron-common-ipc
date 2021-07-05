@@ -25,3 +25,12 @@ export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClie
     const ipcClient = new IpcBusClientImpl(transport);
     return ipcClient;
 }
+
+export function GetWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
+    const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
+    return bridge.getWindowTarget(window);
+}
+
+export function GetProcessTarget(pid: number): Client.IpcBusPeerProcess | undefined {
+    return undefined;
+}

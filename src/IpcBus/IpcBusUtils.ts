@@ -1,7 +1,8 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusProcess } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
+import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -27,52 +28,86 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const DirectWCChannelPrefix = `direct-wc:`;
-const DirectWCChannelPrefixLength = DirectWCChannelPrefix.length;
+const TargetSignature = `_target_`;
+const TargetMainSignature     = `${TargetSignature}main_`;
+const TargetProcessSignature  = `${TargetSignature}proc_`;
+const TargetRendererSignature = `${TargetSignature}rend_`;
 
-// const RegExpWebContents = /(\d+)_(\d+)_(\d)_p([a-zA-Z0-9.-]+)/;
-const RegExpWebContents = /(\d+)_(\d+)_(\d)/;
+const TargetSignatureLength = TargetMainSignature.length;
 
-export interface WebContentsIdentifier {
-    wcid: number;
-    frameid: number;
-    isMainFrame: boolean;
-}
+const TargetSignatures: any = {
+    'node': TargetProcessSignature,
+    'native': TargetProcessSignature,
+    'renderer': TargetRendererSignature,
+    'main': TargetMainSignature
+};
 
-function SerializeProcessTarget(process: IpcBusProcess): string {
-    return `${process.wcid}_${process.frameid}_${process.isMainFrame ? '1' : '0'}`;
-}
-
-export function UnserializeWebContentsIdentifier(str: string): WebContentsIdentifier | null {
-    const tags = str.match(RegExpWebContents);
-    if (tags && tags.length > 3) {
-        return {
-            wcid: Number(tags[1]),
-            frameid: Number(tags[2]),
-            isMainFrame: tags[3] === '1'
+function _GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | null {
+    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0)) {
+        if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
+            return null;
         }
+        const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
+        return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
     }
     return null;
 }
 
-export function IsWebContentsChannel(channel: string): boolean {
-    return (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0);
-}
-
-export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
-    if (channel.lastIndexOf(DirectWCChannelPrefix, 0) === 0) {
-        return UnserializeWebContentsIdentifier(channel.substr(DirectWCChannelPrefixLength));
+export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return (ipcMessage.target.process.type === 'main') ? ipcMessage.target : null;
+    }
+    if (checkChannel) {
+        return _GetTargetFromChannel(TargetMainSignature, ipcMessage);
     }
     return null;
 }
 
-export function CreateDirectProcessChannel(process: IpcBusProcess): string {
-    if (process.wcid) {
-        return `${DirectWCChannelPrefix}${SerializeProcessTarget(process)}`;
+export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return ((ipcMessage.target.process.type === 'node') || (ipcMessage.target.process.type === 'native')) ? ipcMessage.target : null;
+    }
+    if (checkChannel) {
+        return _GetTargetFromChannel(TargetProcessSignature, ipcMessage);
+    }
+    return null;
+}
+
+export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
+    if (ipcMessage.target) {
+        return (ipcMessage.target.process.type === 'renderer') ? ipcMessage.target : null;
+    }
+    if (checkChannel) {
+        return _GetTargetFromChannel(TargetRendererSignature, ipcMessage);
+    }
+    return null;
+}
+
+export function CreateKeyForEndpoint(endpoint: IpcBusPeer | IpcBusPeerProcess): number {
+    if (endpoint.process.wcid && endpoint.process.frameid) {
+        return (endpoint.process.wcid << 8) + endpoint.process.frameid;
     }
     else {
-        return `nodirect:`;
+        return endpoint.process.pid;
     }
+}
+
+export function CreateTargetChannel(peer: IpcBusPeer): string {
+    const target = CreateMessageTarget(peer);
+    const targetTypeSignature = TargetSignatures[peer.process.type] || `_no_target_`;
+    return `${targetTypeSignature}${JSON.stringify(target)}${TargetSignature}${CreateUniqId()}`;
+}
+
+export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | undefined): IpcBusTarget {
+    if (target == null) {
+        return undefined;
+    }
+    const messageTarget: IpcBusTarget = { process: target.process };
+    if ((target as any).id) {
+        const peer = target as IpcBusPeer;
+        messageTarget.peerid = peer.id;
+    }
+    return messageTarget;
 }
 
 export function CheckChannel(channel: any): string {

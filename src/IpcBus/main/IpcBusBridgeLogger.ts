@@ -1,7 +1,7 @@
 import type { IpcPacketBuffer } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
-import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
 import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
@@ -21,35 +21,35 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return this._ipcBusLog.addLog(command, args);
     }
 
-    addLogRawContent(ipcBusCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent): boolean {
-        return this._ipcBusLog.addLogRawContent(ipcBusCommand, IpcBusRendererContent);
+    addLogRawContent(ipcCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent): boolean {
+        return this._ipcBusLog.addLogRawContent(ipcCommand, IpcBusRendererContent);
     }
 
-    addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this._ipcBusLog.addLogPacket(ipcBusCommand, ipcPacketBuffer);
+    addLogPacket(ipcCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
     }
     
-    // _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
-    //     if (this._ipcBusLog.addLog(ipcBusCommand, args)) {
-    //         super._onRendererArgsReceived(ipcBusCommand, args);
+    // _onRendererArgsReceived(ipcCommand: IpcBusCommand, args: any[]) {
+    //     if (this._ipcBusLog.addLog(ipcCommand, args)) {
+    //         super._onRendererArgsReceived(ipcCommand, args);
     //     }
     // }
 
-    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent) {
-        if (this._ipcBusLog.addLogRawContent(ipcBusCommand, IpcBusRendererContent)) {
-            super._onRendererContentReceived(ipcBusCommand, IpcBusRendererContent);
+    _onRendererContentReceived(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent) {
+        if (this._ipcBusLog.addLogRawContent(ipcMessage, IpcBusRendererContent)) {
+            super._onRendererRawDataReceived(ipcMessage, IpcBusRendererContent);
         }
     }
 
-    _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._ipcBusLog.addLog(ipcBusCommand, args)) {
-            super._onMainMessageReceived(ipcBusCommand, args);
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[]) {
+        if (this._ipcBusLog.addLog(ipcMessage, args)) {
+            super._onMainMessageReceived(ipcMessage, args);
         }
     }
 
-    _onSocketMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        if (this._ipcBusLog.addLogPacket(ipcBusCommand, ipcPacketBuffer)) {
-            super._onSocketMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer) {
+        if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
+            super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
         }
     }
 

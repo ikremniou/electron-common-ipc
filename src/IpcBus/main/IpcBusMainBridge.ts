@@ -1,27 +1,29 @@
 /// <reference types='electron' />
 
 import type * as Client from '../IpcBusClient';
-import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 // import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import * as IpcBusUtils from '../IpcBusUtils';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
         super(contextType);
-
         this._bridge = bridge;
-
-        this.postDirectMessage = this.postCommand;
     }
 
+    isTarget(ipcMessage: IpcBusMessage): boolean {
+        return IpcBusUtils.GetTargetMain(ipcMessage) != null;
+    }
+    
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            process: this.process,
+            process: this._peerProcess.process,
             logLevel: this._log.level
         }
         return Promise.resolve(handshake);
@@ -31,42 +33,48 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return Promise.resolve();
     }
 
-    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        // fake body
+    postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void {
+        // ipcBusMessage.process = this._process;
+        this._bridge._onMainMessageReceived(ipcBusMessage, args);
     }
 
-    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        switch (ipcBusCommand.kind) {
+    postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {
+        switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:
                 throw 'IpcBusTransportMultiImpl - should not happen';
     
             case IpcBusCommand.Kind.AddChannelListener:
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._bridge._onBridgeChannelChanged(ipcBusCommand);
-                break;
-
-            default :
-                this._bridge._onMainMessageReceived(ipcBusCommand, args);
+                ipcCommand.peer = ipcCommand.peer || this._peerProcess;
+                this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
         }
-    }
-
-    postBuffers(buffers: Buffer[]) {
-        throw 'not implemented';
     }
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
-    // broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
-    //     throw new Error('Method not implemented.');
+    // broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    //     throw 'not implemented';
     // }
 
-    // broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-    //     throw new Error('Method not implemented.');
+    // broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    //     throw 'not implemented';
     // }
 
-    // broadcastContent(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBufferCore.RawData): void {
-    //     this.onConnectorRawDataReceived(ipcBusCommand, rawData);
+    // broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
+    //     throw 'not implemented';
+    // }
+
+    // broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+    //     this.onConnectorArgsReceived(ipcCommand, args);
+    // }
+
+    // broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    //     this.onConnectorPacketReceived(ipcCommand, ipcPacketBufferCore);
+    // }
+
+    // broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
+    //     this.onConnectorRawDataReceived(ipcCommand, rawData);
     // }
 }

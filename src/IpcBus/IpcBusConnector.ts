@@ -1,6 +1,6 @@
 import type { IpcPacketBufferCore, IpcPacketBuffer } from 'socket-serializer';
 
-import type { IpcBusCommand } from './IpcBusCommand';
+import type { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
 import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 
@@ -16,28 +16,35 @@ export namespace IpcBusConnector {
 
     /** @internal */
     export interface Client {
-        peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-        onConnectorRawDataReceived(ipcBusCommand: IpcBusCommand, rawData: IpcPacketBuffer.RawData): boolean;
-        onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
+        // peer: Client.IpcBusPeer;
+        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
+        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean;
+        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean;
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
 }
 
+export interface PostCommandFunction {
+    (ipcCommand: IpcBusCommand): void;
+}
+
+export interface PostMessageFunction {
+    (ipcMessage: IpcBusMessage, args?: any[]): void;
+}
+
 /** @internal */
 export interface IpcBusConnector {
-    readonly process: Client.IpcBusProcess | null;
+    isTarget(ipcMessage: IpcBusMessage): boolean;
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    postBuffers(buffers: Buffer[]): void;
+    postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
+    postCommand(ipcCommand: IpcBusCommand): void;
 
-    logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log;
-    logLocalMessage(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;
-    logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;
+    // logMessageSend(previousLog: IpcBusMessage.Log, ipcMessage: IpcBusMessage): IpcBusCommand.Log;
+    // logLocalMessage(peer: Client.IpcBusPeer, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;
+    // logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;
 }
 

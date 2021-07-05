@@ -1,3 +1,5 @@
+const lodash_cloneDeep = require( 'lodash.clonedeep');
+
 ProcessConnector = (function () {
     function ProcessConnector() {
         var _type = arguments[0];
@@ -75,7 +77,12 @@ ProcessConnector = (function () {
         };
 
         this.postReceivedMessage = function _postReceivedMessage(event, content) {
-            _ipc.send(buildChannel('receivedMessage'), { event: event, content: content });
+            const clonedEvent = lodash_cloneDeep(event);
+            if (clonedEvent.request) {
+                clonedEvent.request.resolve = undefined;
+                clonedEvent.request.reject = undefined;
+            }
+            _ipc.send(buildChannel('receivedMessage'), { event: clonedEvent, content });
         };
 
         this.OnReceivedMessage = function _OnReceivedMessage(callback) {

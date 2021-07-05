@@ -1,5 +1,5 @@
 import type * as Client from './IpcBusClient';
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusConnector } from './IpcBusConnector';
@@ -12,8 +12,11 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    hasChannel(channel: string): boolean {
-        return (this._client && (this._client.listenerCount(channel) > 0));
+    isTarget(ipcMessage: IpcBusMessage): boolean {
+        if (this._client && (this._client.listenerCount(ipcMessage.channel) > 0)) {
+            return true;
+        }
+        return super.isTarget(ipcMessage);
     }
 
     getChannels(): string[] {
@@ -23,8 +26,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): boolean {
-        return this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[]): boolean {
+        return this._onClientMessageReceived(this._client, local, ipcMessage, args);
     }
 
     onConnectorShutdown() {
@@ -36,7 +39,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         super.onConnectorBeforeShutdown();
         if (this._client) {
             this._postCommand({
-                peer: this._client.peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''
             });
@@ -73,7 +75,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         let refCount = (count == null) ? 1 : count;
         while (refCount-- > 0) {
             this._postCommand({
-                peer: client.peer,
                 kind: IpcBusCommand.Kind.AddChannelListener,
                 channel
             });
@@ -84,14 +85,12 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         if (channel) {
             if (all) {
                 this._postCommand({
-                    peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelAllListeners,
                     channel
                 });
             }
             else {
                 this._postCommand({
-                    peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelListener,
                     channel
                 });
@@ -99,7 +98,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         }
         else {
             this._postCommand({
-                peer: client.peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''
             });

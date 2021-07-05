@@ -1,6 +1,7 @@
 import type { EventEmitter } from 'events';
 
 import type * as Client from './IpcBusClient';
+import type { IpcBusMessage } from './IpcBusCommand';
 
 /** @internal */
 export namespace IpcBusTransport {
@@ -12,19 +13,17 @@ export namespace IpcBusTransport {
 
 /** @internal */
 export interface IpcBusTransport {
-    peer: Client.IpcBusPeer;
-
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     createDirectChannel(client: IpcBusTransport.Client): string;
 
-    hasChannel(channel: string): boolean;
+    isTarget(ipcMessage: IpcBusMessage): boolean;
     getChannels(): string[];
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
-    sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;
+    requestMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
+    sendMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[]): void;
 }

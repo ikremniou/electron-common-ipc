@@ -17,6 +17,8 @@ export * from './IpcBus/log/IpcBusJSONLogger';
 
 export * from './IpcBus/log/IpcBusLog-factory';
 
+export { GetWindowTarget, GetProcessTarget } from './IpcBus/main/IpcBusClientMain-factory';
+
 // Force to execute code
 /** @internal */
 import './IpcBus/IpcBusClient-factory';
