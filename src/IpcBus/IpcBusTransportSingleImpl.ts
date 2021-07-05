@@ -26,8 +26,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[]): boolean {
-        return this._onClientMessageReceived(this._client, local, ipcMessage, args);
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], transfer?: MessagePort[]): boolean {
+        return this._onClientMessageReceived(this._client, local, ipcMessage, args, transfer);
     }
 
     onConnectorShutdown() {

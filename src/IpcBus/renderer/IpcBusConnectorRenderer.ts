@@ -20,6 +20,7 @@ export const IPCBUS_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command.Args';
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
     sendTo(webContentsId: number, channel: string, ...args: any[]): void;
+    postMessage(channel: string, message: any, transfer?: MessagePort[]): void;
 }
 
 // Implementation for renderer process
@@ -156,6 +157,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this.onConnectorShutdown();
             return Promise.resolve();
         });
+    }
+
+    postMessagePort(ipcMessage: IpcBusMessage, message: string, transfer?: MessagePort[]): void {
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
