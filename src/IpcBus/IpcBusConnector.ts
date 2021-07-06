@@ -17,9 +17,9 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Client {
         // peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean;
-        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean;
+        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: Client.IpcBusMessagePort[]): boolean;
+        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]): boolean;
+        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean;
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
@@ -30,11 +30,7 @@ export interface PostCommandFunction {
 }
 
 export interface PostMessageFunction {
-    (ipcMessage: IpcBusMessage, args?: any[]): void;
-}
-
-export interface PostMessagePortFunction {
-    (ipcMessage: IpcBusMessage, message?: any, transfer?: MessagePort[]): void;
+    (ipcMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void;
 }
 
 /** @internal */
@@ -44,7 +40,6 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    postMessagePort(ipcBusMessage: IpcBusMessage, message?: any, transfer?: MessagePort[]): void;
     postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 

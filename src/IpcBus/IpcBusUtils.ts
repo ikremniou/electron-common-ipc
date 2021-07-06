@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess, IpcMessagePortType, IpcBusMessagePort } from './IpcBusClient';
 import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
@@ -108,6 +108,29 @@ export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | und
         messageTarget.peerid = peer.id;
     }
     return messageTarget;
+}
+
+export function CastToMessagePort(port: IpcMessagePortType): IpcBusMessagePort {
+    const unknownPort = port as any;
+    if (unknownPort.addEventListener && !unknownPort.addListener) {
+        unknownPort.on = unknownPort.addListener = unknownPort.addEventListener;
+        unknownPort.off = unknownPort.removeListener = unknownPort.addRemoveListener;
+        unknownPort.once = (event: string, listener: (...args: any[]) => void) => {
+            return unknownPort.addEventListener(event, listener, { once: true });
+        }
+    }
+    else if (!unknownPort.addEventListener && unknownPort.addListener) {
+        unknownPort.addEventListener = (event: string, listener: (...args: any[]) => void, options: any) => {
+            if (typeof options === 'object' && options.once) {
+                return unknownPort.once(event, listener);
+            }
+            else {
+                return unknownPort.addListener(event, listener);
+            }
+        }
+        unknownPort.removeEventListener = unknownPort.addListener;
+    }
+    return unknownPort as IpcBusMessagePort;
 }
 
 export function CheckChannel(channel: any): string {

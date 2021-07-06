@@ -40,10 +40,49 @@ export interface IpcBusRequestResponse {
     err?: string;
 }
 
+interface MessagePortEventMap {
+     'message': MessageEvent;
+     'messageerror': MessageEvent;
+     'close': Function;
+}
+
+export type IpcMessagePortType = Electron.MessagePortMain | MessagePort | IpcBusMessagePort;
+
+// In order to ensure a common interface in Web/Electron/Node.js, we use an 'union' interface for EventTarget, EventEmitter.
+export interface IpcBusMessagePort {
+    // Docs: https://electronjs.org/docs/api/message-port-main
+
+    on<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    once<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    addListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    removeListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+
+    addEventListener<K extends keyof MessagePortEventMap>(type: K, listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener<K extends keyof MessagePortEventMap>(type: K, listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+
+    /**
+     * Disconnects the port, so it is no longer active.
+     */
+    close(): void;
+    /**
+     * Sends a message from the port, and optionally, transfers ownership of objects to
+     * other browsing contexts.
+     */
+    postMessage(message: any, messagePorts?: IpcMessagePortType[]): void;
+    /**
+     * Starts the sending of messages queued on the port. Messages will be queued until
+     * this method is called.
+     */
+    start(): void;
+}
+
 export interface IpcBusEvent {
     channel: string;
     sender: IpcBusPeer;
     request?: IpcBusRequest;
+    ports?: IpcMessagePortType[];
 }
 
 export interface IpcBusListener {
@@ -108,8 +147,8 @@ export interface IpcBusClient extends EventEmitter {
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
     requestTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
-    postMessage(channel: string, message: any, transfer?: MessagePort[]): void;
-    postMessageTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, message: any, transfer?: MessagePort[]): void;
+    postMessage(channel: string, message: any, messagePorts?: IpcMessagePortType[]): void;
+    postMessageTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, message: any, messagePorts?: IpcMessagePortType[]): void;
 
     // EventEmitter API
     emit(event: string, ...args: any[]): boolean;

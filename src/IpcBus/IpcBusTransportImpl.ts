@@ -5,7 +5,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand as IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 
 import type { IpcBusTransport } from './IpcBusTransport';
-import type { IpcBusConnector, PostCommandFunction, PostMessageFunction, PostMessagePortFunction } from './IpcBusConnector';
+import type { IpcBusConnector, PostCommandFunction, PostMessageFunction } from './IpcBusConnector';
 import { JSONParserV1 } from 'json-helpers';
 
 /** @internal */
@@ -84,13 +84,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _postCommand: PostCommandFunction;
     protected _postMessage: PostMessageFunction;
-    protected _postMessagePort: PostMessagePortFunction;
 
     constructor(connector: IpcBusConnector) {
         this._connector = connector;
 
         this._requestFunctions = new Map();
-        this._postMessage = this._postCommand = this._postMessagePort = this._deadMessageHandler as any;
+        this._postMessage = this._postCommand = this._deadMessageHandler as any;
     }
 
     private _deadMessageHandler(ipcCommand: IpcBusCommand, args?: any[]): void {
@@ -131,7 +130,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
-    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcMessage: IpcBusMessage, args?: any[], transfer?: MessagePort[]): boolean {
+    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean {
         const listeners = client.listeners(ipcMessage.channel);
         if (listeners.length === 0) {
             return false;
@@ -148,7 +147,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // if (this._logActivate) {
         //     logGetMessage = this._connector.logMessageGet(client.peer, local, ipcCommand, args);
         // }
-        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcMessage.channel, sender: ipcMessage.peer };
+        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcMessage.channel, sender: ipcMessage.peer, ports: messagePorts };
         if (ipcMessage.request) {
             const settled = (resolve: boolean, argsResponse: any[]) => {
                 // Reset functions as only one response per request is accepted
@@ -210,10 +209,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient~getArgs
-    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean {
+    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                return this._onMessageReceived(false, ipcMessage, args);
+                return this._onMessageReceived(false, ipcMessage, args, messagePorts);
             case IpcBusCommand.Kind.RequestResponse:
                 return this._onResponseReceived(false, ipcMessage, args);
         }
@@ -221,11 +220,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+    onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: Client.IpcBusMessagePort[]): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const args = ipcPacketBufferCore.parseArrayAt(1);
-                return this._onMessageReceived(false, ipcMessage, args);
+                return this._onMessageReceived(false, ipcMessage, args, messagePorts);
             }
             case IpcBusCommand.Kind.RequestResponse:
                 return this._onResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
@@ -234,17 +233,17 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
+    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]): boolean {
         // Prevent to create a huge buffer if not needed, keep working with a set of buffers
         const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
-        return this.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore);
+        return this.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore, messagePorts);
     }
 
     // IpcConnectorClient
     onConnectorShutdown() {
         // Cut connection
-        this._postMessage = this._postCommand = this._postMessagePort = this._deadMessageHandler as any;
+        this._postMessage = this._postCommand = this._deadMessageHandler as any;
         // no messages to send, it is too late
     }
 
@@ -253,7 +252,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[]): void {
+    postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): void {
         const ipcMessage: IpcBusMessage = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
@@ -264,32 +263,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         //     this._connector.logMessageSend(null, ipcMessage);
         // }
         // Broadcast locally
-        if (this._onMessageReceived(true, ipcMessage, args)) {
+        if (this._onMessageReceived(true, ipcMessage, args, ipcPorts)) {
             // this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
         // If not resolved by local clients
         else {
-            this._postMessage(ipcMessage, args);
-        }
-    }
-
-    postMessagePort(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, message: any, transfer?: MessagePort[]): void {
-        const ipcMessage: IpcBusMessage = {
-            kind: IpcBusCommand.Kind.SendMessage,
-            channel,
-            peer: client.peer,
-            target: IpcBusUtils.CreateMessageTarget(target)
-        }
-        // if (this._logActivate) {
-        //     this._connector.logMessageSend(null, ipcMessage);
-        // }
-        // Broadcast locally
-        if (this._onMessageReceived(true, ipcMessage, message, transfer)) {
-            // this._connector.logLocalMessage(client.peer, ipcMessage, args);
-        }
-        // If not resolved by local clients
-        else {
-            this._postMessagePort(ipcMessage, message, transfer);
+            this._postMessage(ipcMessage, args, ipcPorts);
         }
     }
 
@@ -353,7 +332,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 // Connect to ... connector
                 this._postCommand = this._connector.postCommand.bind(this._connector);
                 this._postMessage = this._connector.postMessage.bind(this._connector);
-                this._postMessagePort = this._connector.postMessagePort.bind(this._connector); 
                 return handshake;
             })
             .then((handshake) => {
@@ -379,5 +357,5 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    protected abstract _onMessageReceived(local: boolean, ipcBusMessage: IpcBusMessage, args: any[], transfer?: MessagePort[]): boolean;
+    protected abstract _onMessageReceived(local: boolean, ipcBusMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean;
 }
