@@ -132,7 +132,6 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     abstract shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    abstract postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
-    abstract postMessagePort(ipcBusMessage: IpcBusMessage, message: any, transfer?: MessagePort[]): void;
+    abstract postMessage(ipcBusMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void;
     abstract postCommand(ipcCommand: IpcBusCommand): void;
 }

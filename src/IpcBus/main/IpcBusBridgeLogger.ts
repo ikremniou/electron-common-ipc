@@ -7,7 +7,7 @@ import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
-// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
+// This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     private _ipcBusLog: IpcBusLogMain;

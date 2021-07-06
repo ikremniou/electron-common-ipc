@@ -25,7 +25,7 @@ interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     webContents: Electron.WebContents;
 }
  
-// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
+// This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
@@ -109,7 +109,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._ipcMain.removeListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onRendererTransportHandshake);
+        this._ipcMain.removeListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onRendererMessageRawDataReceived);
         this._ipcMain.removeListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onRendererMessageArgsReceived);
         this._ipcMain.removeListener(IPCBUS_RENDERER_COMMAND, this._onRendererCommandReceived);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
@@ -162,6 +162,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+        // See https://github.com/electron/electron/issues/25119
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
         }
@@ -208,36 +209,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     // From renderer transport
-    private _broadcastData(local: boolean, ipcChannel: string, ipcMessage: IpcBusMessage, data: any): boolean {
-        const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
-        if (target) {
-            const key = IpcBusUtils.CreateKeyForEndpoint(target);
-            const endpoint = this._endpoints.get(key);
-            if (endpoint) {
-                endpoint.webContents.sendToFrame(endpoint.process.frameid, ipcChannel, ipcMessage, data);
-            }
-            return true;
-        }
-        if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
-            const key = local ? IpcBusUtils.CreateKeyForEndpoint(ipcMessage.peer): -1;
-            this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
-                // Prevent echo message
-                if (connData.key !== key) {
-                    connData.data.webContents.sendToFrame(connData.data.process.frameid, ipcChannel, ipcMessage, data);
-                }
-            });
-        }
-        return false;
-    }
-
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
-        return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
-    }
-
-    // From renderer transport
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any): boolean {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
         try {
-            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
+            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args, ipcPorts);
         }
         catch (err) {
             // maybe an object does not supporting Electron serialization !
@@ -245,8 +219,55 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._packetOut.serialize([ipcMessage, args]);
             JSONParserV1.uninstall();
             const rawData = this._packetOut.getRawData();
-            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
+            return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData, ipcPorts);
         }
+    }
+
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, args: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+        return this._broadcastData(false, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData, ipcPorts);
+    }
+
+    // From renderer transport
+    private _broadcastData(local: boolean, ipcChannel: string, ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+        if (ipcPorts) {
+            const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+            if (target) {
+                const key = IpcBusUtils.CreateKeyForEndpoint(target);
+                const endpoint = this._endpoints.get(key);
+                if (endpoint && endpoint.process.isMainFrame) {
+                    endpoint.webContents.postMessage(ipcChannel, [ipcMessage, data], ipcPorts as any);
+                }
+                return true;
+            }
+            const key = local ? IpcBusUtils.CreateKeyForEndpoint(ipcMessage.peer): -1;
+            this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
+                // Prevent echo message
+                if (connData.key !== key) {
+                    connData.data.webContents.postMessage(ipcChannel, [ipcMessage, data], ipcPorts as any);
+                }
+            });
+        }
+        else {
+            const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+            if (target) {
+                const key = IpcBusUtils.CreateKeyForEndpoint(target);
+                const endpoint = this._endpoints.get(key);
+                if (endpoint) {
+                    endpoint.webContents.sendToFrame(endpoint.process.frameid, ipcChannel, ipcMessage, data);
+                }
+                return true;
+            }
+            if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
+                const key = local ? IpcBusUtils.CreateKeyForEndpoint(ipcMessage.peer): -1;
+                this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
+                    // Prevent echo message
+                    if (connData.key !== key) {
+                        connData.data.webContents.sendToFrame(connData.data.process.frameid, ipcChannel, ipcMessage, data);
+                    }
+                });
+            }
+        }
+        return false;
     }
 
     private _onRendererCommandReceived(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {
@@ -283,28 +304,60 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    private _onRendererMessageRawDataReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent) {
-        if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData) === false) {
-            IpcBusRendererContent.FixRawContent(rawData);
-            this._bridge._onRendererRawDataReceived(ipcMessage, rawData);
+    private _onRendererMessageRawDataReceived(event: Electron.IpcMainEvent, message: any, payload: any) {
+        if (event.ports) {
+            const ipcPorts = event.ports ? event.ports.map(IpcBusUtils.CastToMessagePort) : undefined;
+            const [ipcMessage, rawData] = message;
+            if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData, ipcPorts) === false) {
+                IpcBusRendererContent.FixRawContent(payload);
+                this._bridge._onRendererRawDataReceived(message, payload);
+            }
+        }
+        else {
+            if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, message, payload) === false) {
+                IpcBusRendererContent.FixRawContent(payload);
+                this._bridge._onRendererRawDataReceived(message, payload);
+            }
         }
     }
 
-    private _onRendererMessageArgsReceived(event: any, ipcMessage: IpcBusMessage, args: any[]) {
-        try {
-            if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args) === false) {
-                this._bridge._onRendererArgsReceived(ipcMessage, args);
+    private _onRendererMessageArgsReceived(event: Electron.IpcMainEvent, message: any, payload: any) {
+        if (event.ports) {
+            const ipcPorts = event.ports ? event.ports.map(IpcBusUtils.CastToMessagePort) : undefined;
+            const [ipcMessage, args] = message;
+            try {
+                if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args, ipcPorts) === false) {
+                    this._bridge._onRendererArgsReceived(ipcMessage, args);
+                }
+            }
+            catch (err) {
+                // maybe an object does not supporting Electron serialization !
+                JSONParserV1.install();
+                this._packetOut.serialize([ipcMessage, args]);
+                JSONParserV1.uninstall();
+                const rawData = this._packetOut.getRawData();
+                if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData, ipcPorts) === false) {
+                    IpcBusRendererContent.FixRawContent(rawData);
+                    this._bridge._onRendererRawDataReceived(ipcMessage, rawData, ipcPorts);
+                }
             }
         }
-        catch (err) {
-            // maybe an object does not supporting Electron serialization !
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcMessage, args]);
-            JSONParserV1.uninstall();
-            const rawData = this._packetOut.getRawData();
-            if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData) === false) {
-                IpcBusRendererContent.FixRawContent(rawData);
-                this._bridge._onRendererRawDataReceived(ipcMessage, rawData);
+        else {
+            try {
+                if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_ARGS, message, payload) === false) {
+                    this._bridge._onRendererArgsReceived(message, payload);
+                }
+            }
+            catch (err) {
+                // maybe an object does not supporting Electron serialization !
+                JSONParserV1.install();
+                this._packetOut.serialize([message, payload]);
+                JSONParserV1.uninstall();
+                const rawData = this._packetOut.getRawData();
+                if (this._broadcastData(true, IPCBUS_RENDERER_MESSAGE_RAWDATA, message, rawData) === false) {
+                    IpcBusRendererContent.FixRawContent(payload);
+                    this._bridge._onRendererRawDataReceived(message, rawData);
+                }
             }
         }
     }

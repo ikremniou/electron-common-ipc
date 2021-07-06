@@ -24,12 +24,12 @@ export interface IpcBusBridgeClient {
 
     broadcastCommand(ipcCommand: IpcBusCommand): void;
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean;
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean;
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean;
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]): boolean;
 }
 
-// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
+// This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
@@ -129,9 +129,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
-    _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData) {
+    _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]) {
         // Deactivate isTarget has such tests is done inner
-        if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData) === false) {
+        if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             if (hasSocketChannel) {
                 this._socketTransport.broadcastRawData(ipcMessage, rawData);
@@ -139,9 +139,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    _onRendererArgsReceived(ipcMessage: IpcBusMessage, args: any[]) {
+    _onRendererArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]) {
         // Deactivate isTarget has such tests is done inner
-        if (this._mainTransport.onConnectorArgsReceived(ipcMessage, args) === false) {
+        if (this._mainTransport.onConnectorArgsReceived(ipcMessage, args, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             // Prevent serializing for nothing !
             if (hasSocketChannel) {
@@ -155,9 +155,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[]) {
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcBusMessagePort[]) {
         if (this._useIPCNativeSerialization) {
-            if (this._rendererConnector.broadcastArgs(ipcMessage, args) === false) {
+            if (this._rendererConnector.broadcastArgs(ipcMessage, args, messagePorts) === false) {
                 // Prevent serializing for nothing !
                 const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 if (hasSocketChannel) {

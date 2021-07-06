@@ -79,14 +79,16 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
     }
 
-    postMessage(channel: string, message: any, transfer?: MessagePort[]): void {
+    postMessage(channel: string, message: any, messagePorts?: Client.IpcMessagePortType[]): void {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.postMessagePort(this, undefined, channel, message, transfer);
+        const ipcPorts = messagePorts ? messagePorts.map(IpcBusUtils.CastToMessagePort) : undefined;
+        return this._transport.postMessage(this, undefined, channel, [message], ipcPorts);
     }
 
-    postMessageTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, message: any, transfer?: MessagePort[]): void {
+    postMessageTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, message: any, messagePorts?: Client.IpcMessagePortType[]): void {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.postMessagePort(this, target, channel, message, transfer);
+        const ipcPorts = messagePorts ? messagePorts.map(IpcBusUtils.CastToMessagePort) : undefined;
+        return this._transport.postMessage(this, target, channel, [message], ipcPorts);
     }
 
     emit(event: string, ...args: any[]): boolean {
