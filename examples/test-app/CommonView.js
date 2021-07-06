@@ -411,8 +411,10 @@ if (getParameterByName('type') === 'renderer') {
     var perfTests = new PerfTests('renderer');
     ipcBus.connect()
         .then(() => {
+            processTitleElt.textContent = getParameterByName('peerName') + `( ${processId} / ${ipcBus.peer.id} )`;
+            document.title = processTitleElt.textContent;
             console.log('renderer : connected to ipcBus');
-            perfTests.connect(peerName);
+            perfTests.connect(peerName)
         });
 }
 if (getParameterByName('type') === 'node') {

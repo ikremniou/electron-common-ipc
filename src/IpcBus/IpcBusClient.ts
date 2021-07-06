@@ -48,11 +48,16 @@ interface MessagePortEventMap {
 
 export type IpcMessagePortType = Electron.MessagePortMain | MessagePort | IpcBusMessagePort;
 
-// In order to ensure a common interface in Web/Electron/Node.js, we use an 'union' interface for EventTarget, EventEmitter.
+// In order to ensure a common interface in Web/Electron/Node.js, we use an 'union' interface of 
+// - EventTarget
+// - EventEmitter
+// - MessagePort
+// - MessagePortMain
 export interface IpcBusMessagePort {
     // Docs: https://electronjs.org/docs/api/message-port-main
 
     on<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    off<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
     once<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
     addListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
     removeListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
@@ -62,20 +67,10 @@ export interface IpcBusMessagePort {
     removeEventListener<K extends keyof MessagePortEventMap>(type: K, listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
     removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
 
-    /**
-     * Disconnects the port, so it is no longer active.
-     */
-    close(): void;
-    /**
-     * Sends a message from the port, and optionally, transfers ownership of objects to
-     * other browsing contexts.
-     */
-    postMessage(message: any, messagePorts?: IpcMessagePortType[]): void;
-    /**
-     * Starts the sending of messages queued on the port. Messages will be queued until
-     * this method is called.
-     */
     start(): void;
+    close(): void;
+
+    postMessage(message: any, messagePorts?: IpcMessagePortType[]): void;
 }
 
 export interface IpcBusEvent {

@@ -82,6 +82,8 @@ export interface IpcBusMessage extends IpcBusCommandBase {
     peer: IpcBusPeer;
     target?: IpcBusTarget;
 
+    rawData?: boolean;
+
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
 }
