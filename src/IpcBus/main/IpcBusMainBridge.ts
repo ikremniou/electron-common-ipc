@@ -37,10 +37,6 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         this._bridge._onMainMessageReceived(ipcMessage, args);
     }
 
-    postRequestResponse(ipcMessage: IpcBusMessage, args?: any[]): void {
-        this._bridge._onMainMessageReceived(ipcMessage, args);
-    }
-
     postMessage(ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]): void {
         // ipcMessage.process = this._process;
         // Seems to have a bug in Electron, undefined is not supported

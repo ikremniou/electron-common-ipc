@@ -86,13 +86,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _postCommand: PostCommandFunction;
     protected _postMessage: PostMessageFunction;
     protected _postRequestMessage: Function;
-    protected _postRequestResponse: Function;
 
     constructor(connector: IpcBusConnector) {
         this._connector = connector;
 
         this._requestFunctions = new Map();
-        this._postMessage = this._postCommand = this._postRequestMessage = this._postRequestResponse = this._deadMessageHandler as any;
+        this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler as any;
     }
 
     private _deadMessageHandler(ipcCommand: IpcBusCommand, args?: any[]): void {
@@ -176,7 +175,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     // }
                 }
                 else {
-                    this._postRequestResponse(ipcResponse, argsResponse);
+                    this._postRequestMessage(ipcResponse, argsResponse);
                 }
             }
             ipcBusEvent.request = {
@@ -250,7 +249,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient
     onConnectorShutdown() {
         // Cut connection
-        this._postMessage = this._postCommand = this._postRequestMessage = this._postRequestResponse = this._deadMessageHandler as any;
+        this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler as any;
         // no messages to send, it is too late
     }
 
@@ -341,7 +340,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 this._postCommand = this._connector.postCommand.bind(this._connector);
                 this._postMessage = this._connector.postMessage.bind(this._connector);
                 this._postRequestMessage = this._connector.postRequestMessage.bind(this._connector);
-                this._postRequestResponse = this._connector.postRequestResponse.bind(this._connector);
                 return handshake;
             })
             .then((handshake) => {

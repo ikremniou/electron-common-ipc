@@ -146,10 +146,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this.postMessage(ipcMessage, args);
     }
 
-    postRequestResponse(ipcMessage: IpcBusMessage, args?: any[]): void {
-        this.postMessage(ipcMessage, args);
-    }
-
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void {
         try {
             const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
