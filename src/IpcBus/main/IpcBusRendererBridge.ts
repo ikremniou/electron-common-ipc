@@ -217,18 +217,20 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From renderer transport
     private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
-        // Electron issue with empty ports
-        messagePorts = messagePorts || [];
         const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
         if (target) {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
+                // Electron has issue with an "undefined" ports arg
+                messagePorts = messagePorts || [];
                 endpoint.messagePort.postMessage([ipcMessage, data], messagePorts);
             }
             return true;
         }
         if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
+            // Electron has issue with an "undefined" ports arg
+            messagePorts = messagePorts || [];
             const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
             this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
                 // Prevent echo message
