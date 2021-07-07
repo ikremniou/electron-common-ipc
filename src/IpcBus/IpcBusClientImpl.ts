@@ -71,24 +71,22 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, undefined, channel, timeoutDelay, args);
+        return this._transport.postRequestMessage(this, undefined, channel, timeoutDelay, args);
     }
 
     requestTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
+        return this._transport.postRequestMessage(this, target, channel, timeoutDelay, args);
     }
 
     postMessage(channel: string, message: any, messagePorts?: Client.IpcMessagePortType[]): void {
         channel = IpcBusUtils.CheckChannel(channel);
-        const ipcPorts = messagePorts ? messagePorts.map(IpcBusUtils.CastToMessagePort) : undefined;
-        return this._transport.postMessage(this, undefined, channel, [message], ipcPorts);
+        return this._transport.postMessage(this, undefined, channel, [message], messagePorts);
     }
 
     postMessageTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, message: any, messagePorts?: Client.IpcMessagePortType[]): void {
         channel = IpcBusUtils.CheckChannel(channel);
-        const ipcPorts = messagePorts ? messagePorts.map(IpcBusUtils.CastToMessagePort) : undefined;
-        return this._transport.postMessage(this, target, channel, [message], ipcPorts);
+        return this._transport.postMessage(this, target, channel, [message], messagePorts);
     }
 
     override emit(event: string, ...args: any[]): boolean {

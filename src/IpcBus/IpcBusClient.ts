@@ -77,7 +77,7 @@ export interface IpcBusEvent {
     channel: string;
     sender: IpcBusPeer;
     request?: IpcBusRequest;
-    ports?: IpcMessagePortType[];
+    ports?: IpcBusMessagePort[];
 }
 
 export interface IpcBusListener {

@@ -17,9 +17,9 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Client {
         // peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, ipcPorts?: Client.IpcBusMessagePort[]): boolean;
-        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, ipcPorts?: Client.IpcBusMessagePort[]): boolean;
-        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean;
+        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: Client.IpcMessagePortType[]): boolean;
+        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcMessagePortType[]): boolean;
+        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean;
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
@@ -30,7 +30,7 @@ export interface PostCommandFunction {
 }
 
 export interface PostMessageFunction {
-    (ipcMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void;
+    (ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void;
 }
 
 /** @internal */
@@ -40,7 +40,9 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
+    postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void;
+    postRequestResponse(ipcMessage: IpcBusMessage, args?: any[]): void;
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 
     // logMessageSend(previousLog: IpcBusMessage.Log, ipcMessage: IpcBusMessage): IpcBusCommand.Log;

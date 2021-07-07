@@ -1,14 +1,14 @@
 /// <reference types='electron' />
 
 import type { IpcPacketBufferCore } from 'socket-serializer';
-import { IpcPacketBuffer } from 'socket-serializer';
-import { JSONParserV1 } from 'json-helpers';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
+import { CastToMessagePort } from '../IpcBusPostMessage-helpers';
 
 import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
@@ -38,12 +38,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
     private _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
-    private _packetOut: IpcPacketBuffer;
+    protected _serializeMessage: IpcBusUtils.SerializeMessage;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
-        this._packetOut = new IpcPacketBuffer();
-        this._packetOut.JSON = JSONParserV1;
+        this._serializeMessage = new IpcBusUtils.SerializeMessage();
 
         this._ipcMain = electron.ipcMain;
 
@@ -67,9 +66,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
         };
 
-        this._onRendererCommandReceived = this._onRendererCommandReceived.bind(this);
-        this._onRendererTransportHandshake = this._onRendererTransportHandshake.bind(this);
-        this._onRendererMessageReceived = this._onRendererMessageReceived.bind(this);
+        this._onCommandReceived = this._onCommandReceived.bind(this);
+        this._onHandshakeReceived = this._onHandshakeReceived.bind(this);
+        this._onMessageReceived = this._onMessageReceived.bind(this);
     }
 
     getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
@@ -96,20 +95,20 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // To manage re-entrance
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
-        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
 
         return Promise.resolve();
     }
 
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererTransportHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
         return Promise.resolve();
     }
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _onRendererTransportHandshake(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): void {
+    private _onHandshakeReceived(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): void {
         const logger = CreateIpcBusLog();
         const webContents = event.sender;
 
@@ -144,8 +143,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         endpoint.messagePort.start();
         const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
         this._endpoints.set(key, endpoint);
-        endpoint.messagePort.addListener('message', this._onRendererMessageReceived);
-        endpoint.commandPort.addListener('message', this._onRendererCommandReceived);
+        endpoint.messagePort.addListener('message', this._onMessageReceived);
+        endpoint.commandPort.addListener('message', this._onCommandReceived);
         endpoint.messagePort.on('close', () => {
             this._onEndpointShutdown(ipcCommand);
         });
@@ -177,8 +176,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
         const endpoint = this._endpoints.get(key);
         if (endpoint && this._endpoints.delete(key)) {
-            endpoint.messagePort.removeListener('message', this._onRendererMessageReceived);
-            endpoint.commandPort.removeListener('message', this._onRendererCommandReceived);
+            endpoint.messagePort.removeListener('message', this._onMessageReceived);
+            endpoint.commandPort.removeListener('message', this._onCommandReceived);
             endpoint.commandPort.close();
             endpoint.messagePort.close();
             this._subscriptions.remove(key);
@@ -201,33 +200,30 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     // From renderer transport
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
         try {
-            return this._broadcastData(false, ipcMessage, args, ipcPorts);
+            return this._broadcastData(false, ipcMessage, args, messagePorts);
         }
         catch (err) {
             // maybe an object does not supporting Electron serialization !
-            ipcMessage.rawData = true;
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcMessage, args]);
-            JSONParserV1.uninstall();
-            const rawData = this._packetOut.getRawData();
-            return this._broadcastData(false, ipcMessage, rawData, ipcPorts);
+            const packet = this._serializeMessage.serialize(ipcMessage, args);
+            const rawData = packet.getRawData();
+            return this._broadcastData(false, ipcMessage, rawData, messagePorts);
         }
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, args: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
-        return this._broadcastData(false, ipcMessage, rawData, ipcPorts);
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, args: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
+        return this._broadcastData(false, ipcMessage, rawData, messagePorts);
     }
 
     // From renderer transport
-    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
         const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
         if (target) {
             const key = IpcBusUtils.CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
-                endpoint.messagePort.postMessage([ipcMessage, data], ipcPorts as any);
+                endpoint.messagePort.postMessage([ipcMessage, data], messagePorts as any);
             }
             return true;
         }
@@ -236,14 +232,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
                 // Prevent echo message
                 if (connData.key !== key) {
-                    connData.data.messagePort.postMessage([ipcMessage, data], ipcPorts as any);
+                    connData.data.messagePort.postMessage([ipcMessage, data], messagePorts as any);
                 }
             });
         }
         return false;
     }
 
-    private _onRendererCommandReceived(event: Electron.MessageEvent): boolean {
+    private _onCommandReceived(event: Electron.MessageEvent): boolean {
         const ipcCommand = event.data as IpcBusCommand;
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
@@ -278,25 +274,21 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    private _onRendererMessageReceived(event: Electron.MessageEvent): void {
-        const ipcPorts = event.ports ? event.ports.map(IpcBusUtils.CastToMessagePort) : undefined;
+    private _onMessageReceived(event: Electron.MessageEvent): void {
+        const messagePorts = event.ports ? event.ports.map(CastToMessagePort) : undefined;
         const [ipcMessage, data] = event.data;
         try {
-            if (this._broadcastData(true, ipcMessage, data, ipcPorts) === false) {
-                this._bridge._onRendererMessageReceived(ipcMessage, data, ipcPorts);
+            if (this._broadcastData(true, ipcMessage, data, messagePorts) === false) {
+                this._bridge._onRendererMessageReceived(ipcMessage, data, messagePorts);
             }
         }
         catch (err) {
             if (!ipcMessage.rawData) {
-                ipcMessage.rawData = true;
-                // maybe an object does not supporting Electron serialization !
-                JSONParserV1.install();
-                this._packetOut.serialize([ipcMessage, data]);
-                JSONParserV1.uninstall();
-                const rawData = this._packetOut.getRawData();
-                if (this._broadcastData(true, ipcMessage, rawData, ipcPorts) === false) {
+                const packet = this._serializeMessage.serialize(ipcMessage, data);
+                const rawData = packet.getRawData();
+                if (this._broadcastData(true, ipcMessage, rawData, messagePorts) === false) {
                     IpcBusRendererContent.FixRawContent(rawData);
-                    this._bridge._onRendererMessageReceived(ipcMessage, rawData, ipcPorts);
+                    this._bridge._onRendererMessageReceived(ipcMessage, rawData, messagePorts);
                 }
             }
         }
