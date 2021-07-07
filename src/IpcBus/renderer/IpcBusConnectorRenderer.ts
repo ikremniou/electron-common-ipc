@@ -43,6 +43,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     isTarget(ipcMessage: IpcBusMessage): boolean {
         const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
         return (target
+                && (target.process.pid == this._peerProcess.process.pid)
                 && (target.process.wcid == this._peerProcess.process.wcid)
                 && (target.process.frameid == this._peerProcess.process.frameid));
     }
@@ -129,6 +130,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void {
+        // Seems to have a bug in Electron, undefined is not supported
+        ipcPorts = ipcPorts || [];
         try {
             this._messageChannel.port1.postMessage([ipcMessage, args], (ipcPorts as any) as MessagePort[]);
         }
