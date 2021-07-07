@@ -24,9 +24,9 @@ export interface IpcBusBridgeClient {
 
     broadcastCommand(ipcCommand: IpcBusCommand): void;
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean;
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean;
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]): boolean;
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, ipcPorts?: Client.IpcBusMessagePort[]): boolean;
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
@@ -129,55 +129,50 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
-    _onRendererRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcBusMessagePort[]) {
+    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]) {
         // Deactivate isTarget has such tests is done inner
-        if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData, messagePorts) === false) {
-            const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
-            if (hasSocketChannel) {
-                this._socketTransport.broadcastRawData(ipcMessage, rawData);
+        if (ipcMessage.rawData) {
+            if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, data, ipcPorts) === false) {
+                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
+                // Prevent serializing for nothing !
+                if (hasSocketChannel) {
+                    this._socketTransport.broadcastRawData(ipcMessage, data, ipcPorts);
+                }
             }
         }
-    }
-
-    _onRendererArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]) {
-        // Deactivate isTarget has such tests is done inner
-        if (this._mainTransport.onConnectorArgsReceived(ipcMessage, args, messagePorts) === false) {
-            const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
-            // Prevent serializing for nothing !
-            if (hasSocketChannel) {
-                JSONParserV1.install();
-                this._packetOut.serialize([ipcMessage, args]);
-                JSONParserV1.uninstall();
-                this._socketTransport.broadcastPacket(ipcMessage, this._packetOut);
+        else {
+            if (this._mainTransport.onConnectorArgsReceived(ipcMessage, data, ipcPorts) === false) {
+                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
+                // Prevent serializing for nothing !
+                if (hasSocketChannel) {
+                    ipcMessage.rawData = true;
+                    JSONParserV1.install();
+                    this._packetOut.serialize([ipcMessage, data]);
+                    JSONParserV1.uninstall();
+                    this._socketTransport.broadcastPacket(ipcMessage, this._packetOut);
+                }
             }
         }
     }
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcBusMessagePort[]) {
-        if (this._useIPCNativeSerialization) {
-            if (this._rendererConnector.broadcastArgs(ipcMessage, args, messagePorts) === false) {
-                // Prevent serializing for nothing !
-                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
-                if (hasSocketChannel) {
-                    JSONParserV1.install();
-                    this._packetOut.serialize([ipcMessage, args]);
-                    JSONParserV1.uninstall();
-                    this._socketTransport.broadcastPacket(ipcMessage, this._packetOut);
-                }
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]) {
+        if (ipcMessage.rawData) {
+            if (this._rendererConnector.broadcastRawData(ipcMessage, data, ipcPorts) === false) {
+                this._socketTransport.broadcastPacket(ipcMessage, data);
             }
         }
         else {
-            const hasRendererChannel = this._rendererConnector.isTarget(ipcMessage);
-            const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
-            // Prevent serializing for nothing !
-            if (hasRendererChannel || hasSocketChannel) {
-                JSONParserV1.install();
-                this._packetOut.serialize([ipcMessage, args]);
-                JSONParserV1.uninstall();
-                if (!hasRendererChannel || this._rendererConnector.broadcastPacket(ipcMessage, this._packetOut) == false) {
-                    hasSocketChannel && this._socketTransport.broadcastPacket(ipcMessage, this._packetOut);
+            if (this._rendererConnector.broadcastArgs(ipcMessage, data, ipcPorts) === false) {
+                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
+                // Prevent serializing for nothing !
+                if (hasSocketChannel) {
+                    ipcMessage.rawData = true;
+                    JSONParserV1.install();
+                    this._packetOut.serialize([ipcMessage, data]);
+                    JSONParserV1.uninstall();
+                    this._socketTransport.broadcastPacket(ipcMessage, this._packetOut);
                 }
             }
         }

@@ -35,19 +35,19 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     //     }
     // }
 
-    _onRendererContentReceived(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent) {
-        if (this._ipcBusLog.addLogRawContent(ipcMessage, IpcBusRendererContent)) {
-            super._onRendererRawDataReceived(ipcMessage, IpcBusRendererContent);
+    override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]) {
+        if (this._ipcBusLog.addLogRawContent(ipcMessage, data)) {
+            super._onRendererMessageReceived(ipcMessage, data, ipcPorts);
         }
     }
 
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[]) {
-        if (this._ipcBusLog.addLog(ipcMessage, args)) {
-            super._onMainMessageReceived(ipcMessage, args);
+    override _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]) {
+        if (this._ipcBusLog.addLog(ipcMessage, data)) {
+            super._onMainMessageReceived(ipcMessage, data, ipcPorts);
         }
     }
 
-    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer) {
+    override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer, ipcPorts?: Client.IpcBusMessagePort[]) {
         if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
             super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
         }

@@ -79,7 +79,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return false;
     }
 
-    protected _reset(closeServer: boolean) {
+    protected override _reset(closeServer: boolean) {
         super._reset(closeServer);
         this._bridge._onSocketClosed();
     }

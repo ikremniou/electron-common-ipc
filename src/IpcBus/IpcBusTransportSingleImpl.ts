@@ -12,7 +12,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isTarget(ipcMessage: IpcBusMessage): boolean {
+    override isTarget(ipcMessage: IpcBusMessage): boolean {
         if (this._client && (this._client.listenerCount(ipcMessage.channel) > 0)) {
             return true;
         }
@@ -26,16 +26,16 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean {
-        return this._onClientMessageReceived(this._client, local, ipcMessage, args, messagePorts);
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+        return this._onClientMessageReceived(this._client, local, ipcMessage, args, ipcPorts);
     }
 
-    onConnectorShutdown() {
+    override onConnectorShutdown() {
         super.onConnectorShutdown();
         this._client = null;
     }
 
-    onConnectorBeforeShutdown() {
+    override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._client) {
             this._postCommand({
@@ -46,7 +46,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         }
     }
 
-    connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    override connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         if (client && (this._client == null)) {
             this._client = client;
             return super.connect(client, options)
@@ -61,7 +61,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return Promise.reject();
     }
 
-    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    override close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (client && (this._client === client)) {
             this._client = null;
             this.cancelRequest(client);
