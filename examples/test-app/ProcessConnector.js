@@ -78,6 +78,7 @@ ProcessConnector = (function () {
 
         this.postReceivedMessage = function _postReceivedMessage(event, content) {
             const clonedEvent = lodash_cloneDeep(event);
+            clonedEvent.ports = undefined;
             if (clonedEvent.request) {
                 clonedEvent.request.resolve = undefined;
                 clonedEvent.request.reject = undefined;

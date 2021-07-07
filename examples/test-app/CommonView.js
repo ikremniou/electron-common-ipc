@@ -253,9 +253,9 @@ function doSendPortToTopic(event) {
 
 function onIPC_Received(ipcBusEvent, ipcContent) {
     console.log('onIPCBus_received : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
-    if (ipcBusEvent.ports) {
+    if (ipcBusEvent.ports && ipcBusEvent.ports.length) {
         const [port] = ipcBusEvent.ports;
-        port.on('message', (event) => {
+        port.addEventListener('message', (event) => {
             var topicRespElt = document.querySelector('.topicSendPortResponse');
             if (topicRespElt != null) {
                 topicRespElt.style.color = 'black';
@@ -282,7 +282,6 @@ function onIPC_Received(ipcBusEvent, ipcContent) {
 
 function onIPC_EmitReceived(ipcBusEvent, ipcContent1, ipcContent2, ipcContent3) {
     console.log('onIPC_EmitReceived : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
-
 
     var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
     if (topicItemElt != null) {

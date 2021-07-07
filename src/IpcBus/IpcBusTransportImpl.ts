@@ -262,6 +262,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // if (this._logActivate) {
         //     this._connector.logMessageSend(null, ipcMessage);
         // }
+
         // Broadcast locally
         if (this._onMessageReceived(true, ipcMessage, args, ipcPorts)) {
             // this._connector.logLocalMessage(client.peer, ipcMessage, args);
