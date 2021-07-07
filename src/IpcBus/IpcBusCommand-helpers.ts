@@ -6,8 +6,8 @@ import type { IpcBusCommand, IpcBusMessage, IpcBusTarget } from './IpcBusCommand
 import { CreateUniqId } from './IpcBusUtils';
 
 const TargetSignature = `_target_`;
-const TargetMainSignature     = `${TargetSignature}main_`;
-const TargetProcessSignature  = `${TargetSignature}proc_`;
+const TargetMainSignature = `${TargetSignature}main_`;
+const TargetProcessSignature = `${TargetSignature}proc_`;
 const TargetRendererSignature = `${TargetSignature}rend_`;
 
 const TargetSignatureLength = TargetMainSignature.length;
@@ -128,5 +128,122 @@ export class SerializeMessage {
             const rawData = packet.getRawData();
             port.postMessage([ipcMessage, rawData], messagePorts as any);
         }
+    }
+}
+
+export interface IpcInterface {
+    sendTo(webContentsId: number, channel: string, ...args: any[]): void;
+}
+
+export interface PortInterface {
+    postMessage(message: any, messagePorts?: Transferable[]): void;
+}
+
+export class SmartMessageBag {
+    private _packetOut: IpcPacketBuffer;
+    private _ipcMessage: IpcBusMessage;
+    private _data: any;
+    private _rawData: any;
+    private _supportStructureClone: boolean | undefined;
+
+    constructor() {
+        this._packetOut = new IpcPacketBuffer();
+        this._packetOut.JSON = JSONParserV1;
+    }
+
+    set(ipcMessage: IpcBusMessage, data: any) {
+        this._ipcMessage = ipcMessage;
+        this._supportStructureClone = undefined;
+        if (this._ipcMessage.rawData) {
+            this._rawData = data;
+            this._data = null;
+        }
+        else {
+            this._data = data;
+            this._rawData = null;
+        }
+    }
+
+    serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
+        // args does not supporting Electron serialization !
+        if (!ipcMessage.rawData) {
+            ipcMessage.rawData = true;
+            JSONParserV1.install();
+            this._packetOut.serialize([ipcMessage, args]);
+            JSONParserV1.uninstall();
+            return this._packetOut;
+        }
+        return null;
+    }
+
+    writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: any[]) {
+        if (this._rawData) {
+            this._packetOut.write(writer, this._rawData);
+        }
+        else {
+            ipcMessage.rawData = true;
+            this._packetOut.write(writer, [ipcMessage, args]);
+            ipcMessage.rawData = false;
+        }
+    }
+
+    writeCommand(writer: Writer, ipcCommand: IpcBusCommand) {
+        this._packetOut.write(writer, [ipcCommand]);
+    }
+
+    ipcMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
+        if (this._data) {
+            if (this._supportStructureClone === true) {
+                ipc.sendTo(wcid, channel, this._ipcMessage, this._data);
+            }
+            else if (this._supportStructureClone === undefined) {
+                try {
+                    ipc.sendTo(wcid, channel, this._ipcMessage, this._data);
+                    this._supportStructureClone = true;
+                }
+                catch (err) {
+                    this._supportStructureClone = false;
+                }
+            }
+        }
+        this._ipcMessage.rawData = true;
+        if (this._rawData == null) {
+            // maybe an arg does not supporting Electron serialization !
+            JSONParserV1.install();
+            this._packetOut.serialize([this._ipcMessage, this._data]);
+            JSONParserV1.uninstall();
+            this._rawData = this._packetOut.getRawData();
+        }
+        ipc.sendTo(wcid, channel, this._ipcMessage, this._rawData);
+        this._ipcMessage.rawData = false;
+    }
+
+    portMessage(port: PortInterface, messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
+        // Seems to have a bug in Electron, undefined is not supported for messagePorts !
+        messagePorts = messagePorts || [];
+        if (this._data) {
+            if (this._supportStructureClone === true) {
+                port.postMessage([this._ipcMessage, this._data], messagePorts as any);
+            }
+            else if (this._supportStructureClone === undefined) {
+                try {
+                    port.postMessage([this._ipcMessage, this._data], messagePorts as any);
+                    this._supportStructureClone = true;
+                }
+                catch (err) {
+                    this._supportStructureClone = false;
+                }
+            }
+        }
+        this._ipcMessage.rawData = true;
+        if (this._rawData == null) {
+            // maybe an arg does not supporting Electron serialization !
+            JSONParserV1.install();
+            this._packetOut.serialize([this._ipcMessage, this._data]);
+            JSONParserV1.uninstall();
+            this._rawData = this._packetOut.getRawData();
+        }
+        port.postMessage([this._ipcMessage, this._rawData], messagePorts as any);
+        this._ipcMessage.rawData = false;
     }
 }
