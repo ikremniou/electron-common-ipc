@@ -24,9 +24,9 @@ export interface IpcBusBridgeClient {
 
     broadcastCommand(ipcCommand: IpcBusCommand): void;
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean;
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcMessagePortType[]): boolean;
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean;
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean;
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
@@ -129,7 +129,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
-    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]) {
+    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
         // Deactivate isTarget has such tests is done inner
         if (ipcMessage.rawData) {
             if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, data, messagePorts) === false) {
@@ -154,7 +154,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]) {
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
         if (ipcMessage.rawData) {
             if (this._rendererConnector.broadcastRawData(ipcMessage, data, messagePorts) === false) {
                 this._socketTransport.broadcastPacket(ipcMessage, data);

@@ -199,7 +199,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     // From renderer transport
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any, messagePorts?: Electron.MessagePortMain[]): boolean {
         try {
             return this._broadcastData(false, ipcMessage, args, messagePorts);
         }
@@ -211,12 +211,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, args: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, args: any, messagePorts?: Electron.MessagePortMain[]): boolean {
         return this._broadcastData(false, ipcMessage, rawData, messagePorts);
     }
 
     // From renderer transport
-    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
+    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
         // Electron issue with empty ports
         messagePorts = messagePorts || [];
         const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
@@ -224,7 +224,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
-                endpoint.messagePort.postMessage([ipcMessage, data], messagePorts as any);
+                endpoint.messagePort.postMessage([ipcMessage, data], messagePorts);
             }
             return true;
         }
@@ -233,7 +233,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
                 // Prevent echo message
                 if (connData.key !== key) {
-                    connData.data.messagePort.postMessage([ipcMessage, data], messagePorts as any);
+                    connData.data.messagePort.postMessage([ipcMessage, data], messagePorts);
                 }
             });
         }

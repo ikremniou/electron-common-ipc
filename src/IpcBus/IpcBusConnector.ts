@@ -17,9 +17,9 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Client {
         // peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: Client.IpcMessagePortType[]): boolean;
-        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcMessagePortType[]): boolean;
-        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean;
+        onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
+        onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
+        onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
@@ -30,7 +30,7 @@ export interface PostCommandFunction {
 }
 
 export interface PostMessageFunction {
-    (ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void;
+    (ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void;
 }
 
 /** @internal */
@@ -41,7 +41,7 @@ export interface IpcBusConnector {
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void;
-    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void;
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 
     // logMessageSend(previousLog: IpcBusMessage.Log, ipcMessage: IpcBusMessage): IpcBusCommand.Log;

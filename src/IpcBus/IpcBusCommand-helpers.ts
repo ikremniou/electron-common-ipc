@@ -112,11 +112,11 @@ export class SerializeMessage {
         this._packetOut.write(writer, [ipcMessage, args]);
     }
 
-    writeCommand(writer: Writer, ipcCommand: IpcBusCommand, args?: any[]) {
+    writeCommand(writer: Writer, ipcCommand: IpcBusCommand) {
         this._packetOut.write(writer, [ipcCommand]);
     }
 
-    postMessage(port: IpcBusMessagePortPost, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: IpcMessagePortType[]): void {
+    postMessage(port: IpcBusMessagePortPost, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
         // Seems to have a bug in Electron, undefined is not supported for messagePorts !
         messagePorts = messagePorts || [];
         try {

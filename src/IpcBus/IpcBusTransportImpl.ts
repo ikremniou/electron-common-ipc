@@ -30,7 +30,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler as any;
     }
 
-    private _deadMessageHandler(ipcCommand: IpcBusCommand, args?: any[]): void {
+    private _deadMessageHandler(ipcCommand: IpcBusCommand): void {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(`IPCBUS: not managed ${JSON.stringify(ipcCommand, null, 4)}`);
     }
 
@@ -68,7 +68,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
-    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): boolean {
+    protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         const listeners = client.listeners(ipcMessage.channel);
         if (listeners.length === 0) {
             return false;
@@ -152,7 +152,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient~getArgs
-    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean {
+    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
                 return this._onMessageReceived(false, ipcMessage, args, messagePorts);
@@ -163,7 +163,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: Client.IpcMessagePortType[]): boolean {
+    onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 const args = ipcPacketBufferCore.parseArrayAt(1);
@@ -176,7 +176,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Client.IpcMessagePortType[]): boolean {
+    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         // Prevent to create a huge buffer if not needed, keep working with a set of buffers
         const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
@@ -195,7 +195,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.cancelRequest();
     }
 
-    postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[], messagePorts?: Client.IpcMessagePortType[]): void {
+    postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
         const ipcMessage: IpcBusMessage = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
@@ -302,5 +302,5 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    protected abstract _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean;
+    protected abstract _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
 }

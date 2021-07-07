@@ -76,10 +76,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         const [ipcMessage, data] = event.data;
         if (ipcMessage.rawData) {
             IpcBusRendererContent.FixRawContent(data);
-            this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports as any);
+            this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);
         }
         else {
-            this._client.onConnectorArgsReceived(ipcMessage, data, event.ports as any);
+            this._client.onConnectorArgsReceived(ipcMessage, data, event.ports);
         }
     }
 
@@ -105,6 +105,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
                     this.addClient(client);
                     const handshake = event.data as IpcBusConnector.Handshake;
+
+                    // We have to keep the reference untouched as used by client
                     this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
                     this._log.level = handshake.logLevel;
                     this.onConnectorHandshake();
@@ -145,14 +147,15 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this.postMessage(ipcMessage, args);
     }
 
-    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void {
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
         try {
             const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
             if (target && target.process.isMainFrame) {
                 this._ipcWindow.sendTo(target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, ipcMessage, args);
             }
         }
-        catch (err) {}
+        catch (err) {
+        }
         this._serializeMessage.postMessage(this._messageChannel.port1, ipcMessage, args, messagePorts);
     }
 
