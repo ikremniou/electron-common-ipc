@@ -3,6 +3,7 @@
 import { IpcPacketBuffer, IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
@@ -82,7 +83,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         if (this._subscribedChannels.has(ipcMessage.channel)) {
             return true;
         }
-        return IpcBusUtils.GetTargetProcess(ipcMessage) != null;
+        return IpcBusCommandHelpers.GetTargetProcess(ipcMessage) != null;
     }
 
     getChannels(): string[] {

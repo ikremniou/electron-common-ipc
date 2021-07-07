@@ -2,7 +2,8 @@ import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socke
 
 import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
-import { IpcBusCommand as IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
+import * as IpcBusCommandHelpers from './IpcBusCommand-helpers';
+import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import { CastToMessagePort } from './IpcBusPostMessage-helpers';
 
 import type { IpcBusTransport } from './IpcBusTransport';
@@ -159,7 +160,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcMessage.request.id,
                     peer: client.peer,
-                    target: IpcBusUtils.CreateMessageTarget(ipcMessage.peer),
+                    target: IpcBusCommandHelpers.CreateMessageTarget(ipcMessage.peer),
                     request: ipcMessage.request
                 };
                 ipcMessage.request.resolve = resolve;
@@ -263,7 +264,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusUtils.CreateMessageTarget(target)
+            target: IpcBusCommandHelpers.CreateMessageTarget(target)
         }
         // if (this._logActivate) {
         //     this._connector.logMessageSend(null, ipcMessage);
@@ -292,7 +293,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     postRequestMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
-        timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
+        timeoutDelay = IpcBusUtils.CheckTimeout(timeoutDelay);
         const ipcBusMessageRequest: IpcBusCommand.Request = {
             channel,
             id: IpcBusUtils.CreateUniqId()
@@ -304,7 +305,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusUtils.CreateMessageTarget(target),
+            target: IpcBusCommandHelpers.CreateMessageTarget(target),
             request: ipcBusMessageRequest
         }
         // let logSendMessage: IpcBusCommand.Log;
@@ -353,7 +354,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     createDirectChannel(client: IpcBusTransport.Client): string {
-        return IpcBusUtils.CreateTargetChannel(client.peer);
+        return IpcBusCommandHelpers.CreateTargetChannel(client.peer);
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {

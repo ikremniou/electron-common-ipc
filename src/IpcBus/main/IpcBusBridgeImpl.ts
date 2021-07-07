@@ -3,6 +3,7 @@
 import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 import type * as Bridge from './IpcBusBridge';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
@@ -34,7 +35,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusRendererBridge;
-    protected _serializeMessage: IpcBusUtils.SerializeMessage;
+    protected _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
 
     private _useIPCNativeSerialization: boolean;
     // private _useIPCFrameAPI: boolean
@@ -46,7 +47,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
 
-        this._serializeMessage = new IpcBusUtils.SerializeMessage();
+        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
     }
 
     // get useIPCFrameAPI(): boolean {

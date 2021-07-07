@@ -4,9 +4,9 @@ import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from '
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
-import * as IpcBusUtils from '../IpcBusUtils';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -24,7 +24,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         if (this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
-        return IpcBusUtils.GetTargetProcess(ipcMessage) != null;
+        return IpcBusCommandHelpers.GetTargetProcess(ipcMessage) != null;
     }
 
     getChannels(): string[] {
@@ -62,7 +62,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
-        const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+        const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
         if (target) {
             const endpoint = this._endpoints.get(target.process.pid);
             if (endpoint) {

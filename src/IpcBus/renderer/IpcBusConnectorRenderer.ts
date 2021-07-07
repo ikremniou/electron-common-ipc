@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
@@ -40,7 +41,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+        const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
         return (target
                 && (target.process.pid == this._peerProcess.process.pid)
                 && (target.process.wcid == this._peerProcess.process.wcid)
@@ -148,7 +149,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void {
         try {
-            const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
+            const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
             if (target && target.process.isMainFrame) {
                 this._ipcWindow.sendTo(target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, ipcMessage, args);
             }

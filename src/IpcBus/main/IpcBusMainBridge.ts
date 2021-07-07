@@ -7,7 +7,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
@@ -18,7 +18,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        return IpcBusUtils.GetTargetMain(ipcMessage) != null;
+        return IpcBusCommandHelpers.GetTargetMain(ipcMessage) != null;
     }
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {

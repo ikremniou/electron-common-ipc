@@ -1,10 +1,7 @@
 // import * as uuid from 'uuid';
-import { JSONParserV1 } from 'json-helpers';
 import * as shortid from 'shortid';
-import { IpcPacketBuffer } from 'socket-serializer';
 
-import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
-import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
+import type { IpcConnectOptions } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -29,88 +26,7 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const TargetSignature = `_target_`;
-const TargetMainSignature     = `${TargetSignature}main_`;
-const TargetProcessSignature  = `${TargetSignature}proc_`;
-const TargetRendererSignature = `${TargetSignature}rend_`;
-
-const TargetSignatureLength = TargetMainSignature.length;
-
-const TargetSignatures: any = {
-    'node': TargetProcessSignature,
-    'native': TargetProcessSignature,
-    'renderer': TargetRendererSignature,
-    'main': TargetMainSignature
-};
-
-function _GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | null {
-    if (ipcMessage.channel && (ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0)) {
-        if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
-            return null;
-        }
-        const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
-        return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
-    }
-    return null;
-}
-
-export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
-    if (ipcMessage.target) {
-        return (ipcMessage.target.process.type === 'main') ? ipcMessage.target : null;
-    }
-    if (checkChannel) {
-        return _GetTargetFromChannel(TargetMainSignature, ipcMessage);
-    }
-    return null;
-}
-
-export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
-    if (ipcMessage.target) {
-        return ((ipcMessage.target.process.type === 'node') || (ipcMessage.target.process.type === 'native')) ? ipcMessage.target : null;
-    }
-    if (checkChannel) {
-        return _GetTargetFromChannel(TargetProcessSignature, ipcMessage);
-    }
-    return null;
-}
-
-export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
-    if (ipcMessage.target) {
-        return (ipcMessage.target.process.type === 'renderer') ? ipcMessage.target : null;
-    }
-    if (checkChannel) {
-        return _GetTargetFromChannel(TargetRendererSignature, ipcMessage);
-    }
-    return null;
-}
-
-export function CreateKeyForEndpoint(endpoint: IpcBusPeer | IpcBusPeerProcess): number {
-    if (endpoint.process.wcid && endpoint.process.frameid) {
-        return (endpoint.process.wcid << 8) + endpoint.process.frameid;
-    }
-    else {
-        return endpoint.process.pid;
-    }
-}
-
-export function CreateTargetChannel(peer: IpcBusPeer): string {
-    const target = CreateMessageTarget(peer);
-    const targetTypeSignature = TargetSignatures[peer.process.type] || `_no_target_`;
-    return `${targetTypeSignature}${JSON.stringify(target)}${TargetSignature}${CreateUniqId()}`;
-}
-
-export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | undefined): IpcBusTarget {
-    if (target == null) {
-        return undefined;
-    }
-    const messageTarget: IpcBusTarget = { process: target.process };
-    if ((target as any).id) {
-        const peer = target as IpcBusPeer;
-        messageTarget.peerid = peer.id;
-    }
-    return messageTarget;
-}
-
+/** @internal */
 export function CheckChannel(channel: any): string {
     switch (typeof channel) {
         case 'string':
@@ -130,7 +46,8 @@ export function CheckChannel(channel: any): string {
     return channel;
 }
 
-export function checkTimeout(val: any): number {
+/** @internal */
+export function CheckTimeout(val: any): number {
     const parseVal = parseFloat(val);
     if (parseVal == val) {
         return parseVal;
@@ -140,6 +57,7 @@ export function checkTimeout(val: any): number {
     }
 }
 
+/** @internal */
 export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | string | number, arg2?: T | string, arg3?: T): T | null {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
@@ -180,10 +98,12 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
 //     return shortid.generate();
 // }
 shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#&')
+/** @internal */
 export function CreateUniqId(): string {
     return shortid.generate();
 }
 
+/** @internal */
 export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) => number) {
     let left = 0;  // inclusive
     let right = array.length;  // exclusive
@@ -232,7 +152,6 @@ export function ActivateIpcBusTrace(enable: boolean): void {
 export function ActivateServiceTrace(enable: boolean): void {
     Logger.service = enable;
 }
-
 
 export class ConnectCloseState<T> {
     protected _waitForConnected: Promise<T>;
@@ -290,26 +209,5 @@ export class ConnectCloseState<T> {
         // this._t = null;
         this._waitForClosed = Promise.resolve();
         this._connected = false;
-    }
-}
-
-export class SerializeMessage {
-    private _packetOut: IpcPacketBuffer;
-
-    constructor() {
-        this._packetOut = new IpcPacketBuffer();
-        this._packetOut.JSON = JSONParserV1;
-    }
-
-    serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
-        // maybe an arg does not supporting Electron serialization !
-        if (!ipcMessage.rawData) {
-            ipcMessage.rawData = true;
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcMessage, args]);
-            JSONParserV1.uninstall();
-            return this._packetOut;
-        }
-        return null;
     }
 }

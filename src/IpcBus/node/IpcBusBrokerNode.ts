@@ -6,7 +6,7 @@ import { JSONParserV1 } from 'json-helpers';
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { ChannelsRefCount } from '../IpcBusChannelMap';
-import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
@@ -35,8 +35,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         if (this._subscribedChannels.has(ipcMessage.channel)) {
             return true;
         }
-        return (IpcBusUtils.GetTargetMain(ipcMessage) != null) 
-               || (IpcBusUtils.GetTargetRenderer(ipcMessage) != null)
+        return (IpcBusCommandHelpers.GetTargetMain(ipcMessage) != null) 
+               || (IpcBusCommandHelpers.GetTargetRenderer(ipcMessage) != null)
     }
     
     protected override onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcCommand: IpcBusCommand) {
