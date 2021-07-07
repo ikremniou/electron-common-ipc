@@ -1,6 +1,6 @@
 import type { IpcMessagePortType, IpcBusMessagePort } from './IpcBusClient';
 import type { IpcBusMessage } from './IpcBusCommand';
-import { SerializeMessage } from './IpcBusUtils';
+import * as IpcBusCommandHelpers from './IpcBusCommand-helpers';
 
 export function CastToMessagePort(port: IpcMessagePortType): IpcBusMessagePort {
     const unknownPort = port as any;
@@ -25,7 +25,7 @@ export function CastToMessagePort(port: IpcMessagePortType): IpcBusMessagePort {
     return unknownPort as IpcBusMessagePort;
 }
 
-export class SerializeMessagePort extends SerializeMessage {
+export class SerializeMessagePort extends IpcBusCommandHelpers.SerializeMessage {
 
     post(port: IpcMessagePortType, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: IpcMessagePortType[]): void {
         // Seems to have a bug in Electron, undefined is not supported

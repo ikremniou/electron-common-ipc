@@ -4,6 +4,7 @@ import type { IpcPacketBufferList } from 'socket-serializer';
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
@@ -182,7 +183,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         // Broadcast peers destruction ?
         for (const endpoint of this._endpoints.values()) {
             if (endpoint.socket === socket) {
-                const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
                 this._endpoints.delete(key);
                 this._subscriptions.remove(key);
             }
@@ -237,13 +238,13 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     private _onEndpointHandshake(socket: net.Socket, ipcCommand: IpcBusCommand) {
         const endpoint: IpcBusPeerProcessEndpoint = { ...ipcCommand.peer, socket };
-        const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
     }
 
     private _onEndpointShutdown(socket: net.Socket, ipcCommand: IpcBusCommand) {
         const endpoint = ipcCommand.peer;
-        const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
         this._endpoints.delete(key);
         this._subscriptions.remove(key);
     }
@@ -260,23 +261,23 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointSocket = this._endpoints.get(key);
                 this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.release(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelAllListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.releaseAll(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.remove(key);
                 break;
             }
@@ -284,7 +285,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+                const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
@@ -306,7 +307,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+                const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {

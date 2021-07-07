@@ -4,6 +4,7 @@ import * as net from 'net';
 import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 
 import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
@@ -99,7 +100,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+        const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
         return (target
                 && (target.process.pid == this._peerProcess.process.pid));
     }
