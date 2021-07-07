@@ -33,9 +33,9 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return Promise.resolve();
     }
 
-    postMessage(ipcBusMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void {
+    postMessage(ipcBusMessage: IpcBusMessage, data: any, ipcPorts?: Client.IpcBusMessagePort[]): void {
         // ipcBusMessage.process = this._process;
-        this._bridge._onMainMessageReceived(ipcBusMessage, args, ipcPorts);
+        this._bridge._onMainMessageReceived(ipcBusMessage, data, ipcPorts);
     }
 
     postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {

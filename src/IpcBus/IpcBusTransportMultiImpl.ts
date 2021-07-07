@@ -13,7 +13,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isTarget(ipcMessage: IpcBusMessage): boolean {
+    override isTarget(ipcMessage: IpcBusMessage): boolean {
         if (this._subscriptions && this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
@@ -24,11 +24,11 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
             for (const entry of channelConns) {
-                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, messagePorts)) {
+                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, ipcPorts)) {
                     return true;
                 }
             }
@@ -36,7 +36,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return false;
     }
 
-    onConnectorBeforeShutdown() {
+    override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._subscriptions) {
             this._subscriptions.client = null;
@@ -48,7 +48,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         }
     }
 
-    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    override connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.connect(client, options)
             .then((peer) => {
                 if (this._subscriptions == null) {
@@ -76,7 +76,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             });
     }
 
-    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    override close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
             this.cancelRequest(client);
             this.removeChannel(client);

@@ -78,7 +78,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         return this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
-    isTarget(ipcMessage: IpcBusMessage): boolean {
+    override isTarget(ipcMessage: IpcBusMessage): boolean {
         if (this._subscribedChannels.has(ipcMessage.channel)) {
             return true;
         }
@@ -97,11 +97,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         // call when closing the transport
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcBusMessagePort[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean {
         throw 'not implemented';
     }
 
-    onConnectorPacketReceived(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+    override onConnectorPacketReceived(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.BrokerAddChannelListener:
                 this._subscribedChannels.addRef(ipcCommand.channel);
@@ -122,15 +122,15 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         return true;
     }
 
-    onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
+    override onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
         throw 'not implemented';
     }
 
-    onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean {
+    override onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean {
         throw 'not implemented';
     }
 
-    onConnectorShutdown(): void {
+    override onConnectorShutdown(): void {
         super.onConnectorShutdown();
         this._subscribedChannels.clear();
         this._bridge._onSocketClosed();

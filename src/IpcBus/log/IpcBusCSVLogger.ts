@@ -49,7 +49,7 @@ export class CSVLogger extends JSONLoggerBase {
         this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
     }
 
-    writeLog(jsonLog: JSONLog): void {
+    override writeLog(jsonLog: JSONLog): void {
         const csvJsonLog = jsonLog as any;
         csvJsonLog.local = jsonLog.local ? 'local' : '';
         csvJsonLog.request = jsonLog.responseChannel ? `${jsonLog.responseChannel} => ${jsonLog.responseStatus}` : '';

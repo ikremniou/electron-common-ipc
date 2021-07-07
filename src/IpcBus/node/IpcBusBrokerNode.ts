@@ -26,7 +26,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         this._subscribedChannels = new ChannelsRefCount();
     }
 
-    protected _reset(closeServer: boolean) {
+    protected override _reset(closeServer: boolean) {
         this.onBridgeClosed();
         super._reset(closeServer);
     }
@@ -39,7 +39,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
                || (IpcBusUtils.GetTargetRenderer(ipcMessage) != null)
     }
     
-    protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcCommand: IpcBusCommand) {
+    protected override onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcCommand: IpcBusCommand) {
         if (this._socketWriter == null) {
             this._socketWriter = new SocketWriter(socketClient.socket);
 
@@ -62,7 +62,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected onBridgeClosed(socket?: net.Socket) {
+    protected override onBridgeClosed(socket?: net.Socket) {
         if (this._socketWriter && ((socket == null) || (socket === this._socketWriter.socket))) {
             this._subscriptions.client = null;
             this._socketWriter = null;
@@ -70,15 +70,15 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected onBridgeAddChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
+    protected override onBridgeAddChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
         this._subscribedChannels.addRef(ipcCommand.channel);
     }
 
-    protected onBridgeRemoveChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
+    protected override onBridgeRemoveChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
         this._subscribedChannels.release(ipcCommand.channel);
     }
 
-    protected broadcastToBridgeAddChannel(channel: string) {
+    protected override broadcastToBridgeAddChannel(channel: string) {
         const ipcCommand: IpcBusCommand = {
             kind: IpcBusCommand.Kind.BrokerAddChannelListener,
             channel
@@ -86,7 +86,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         this._packetOut.write(this._socketWriter, [ipcCommand]);
     }
 
-    protected broadcastToBridgeRemoveChannel(channel: string) {
+    protected override broadcastToBridgeRemoveChannel(channel: string) {
         const ipcCommand: IpcBusCommand = {
             kind: IpcBusCommand.Kind.BrokerRemoveChannelListener,
             channel

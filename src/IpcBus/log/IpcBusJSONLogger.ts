@@ -110,7 +110,7 @@ export class JSONLogger extends JSONLoggerBase {
         });
     }
 
-    writeLog(jsonLog: JSONLog): void {
+    override writeLog(jsonLog: JSONLog): void {
         this._winstonLogger.info(jsonLog.order.toString(), jsonLog);
     }
 }
