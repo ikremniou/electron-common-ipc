@@ -52,6 +52,20 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._connector.postCommand(ipcCommand);
     }
 
+    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean {
+        this._connector.postMessage(ipcMessage, args);
+        return false;
+    }
+
+    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
+        if (rawData.buffer) {
+            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+        }
+        else {
+            return this.broadcastBuffers(ipcMessage, rawData.buffers);
+        }
+    }
+
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const connector = this._connector as IpcBusConnectorSocket;
@@ -59,20 +73,6 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
             WriteBuffersToSocket(connector.socket, buffers);
         }
         return false;
-    }
-
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean {
-        this._connector.postMessage(ipcMessage, args);
-        return false;
-    }
-
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
-        if (rawData.buffer) {
-            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
-        }
-        else {
-            return this.broadcastBuffers(ipcMessage, rawData.buffers);
-        }
     }
 
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
@@ -98,7 +98,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         // call when closing the transport
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         throw 'not implemented';
     }
 

@@ -24,7 +24,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
             for (const entry of channelConns) {
