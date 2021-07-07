@@ -97,7 +97,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         // call when closing the transport
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPorts?: Client.IpcBusMessagePort[]): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: Client.IpcMessagePortType[]): boolean {
         throw 'not implemented';
     }
 

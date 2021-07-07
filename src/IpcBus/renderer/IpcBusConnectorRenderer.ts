@@ -1,18 +1,17 @@
 import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
-import { IpcPacketBuffer } from 'socket-serializer';
-import { JSONParserV1 } from 'json-helpers';
-
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
+import { CastToMessagePort, SerializeMessagePort } from '../IpcBusPostMessage-helpers';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
+export const IPCBUS_TRANSPORT_RENDERER_TO_RENDERER = 'ECIPC:IpcBusRenderer:RendererToRenderer';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
@@ -24,7 +23,7 @@ export interface IpcWindow extends EventEmitter {
 /** @internal */
 export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
-    private _packetOut: IpcPacketBuffer;
+    private _postMessageSender: SerializeMessagePort;
     private _messageChannel: MessageChannel;
     private _commandChannel: MessageChannel;
 
@@ -33,11 +32,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._peerProcess.process.isMainFrame = isMainFrame;
-        this._packetOut = new IpcPacketBuffer();
-        this._packetOut.JSON = JSONParserV1;
+        this._postMessageSender = new SerializeMessagePort();
 
-        this.onMessageReceived = this.onMessageReceived.bind(this);
-        this.onCommandReceived = this.onCommandReceived.bind(this);
+        this.onPortMessageReceived = this.onPortMessageReceived.bind(this);
+        this.onPortCommandReceived = this.onPortCommandReceived.bind(this);
+        this.onIPCMessageReceived = this.onIPCMessageReceived.bind(this);
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
@@ -51,29 +50,41 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._messageChannel) {
-            this._messageChannel.port1.removeEventListener('message', this.onMessageReceived);
+            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, this.onIPCMessageReceived);
+
+            this._messageChannel.port1.removeEventListener('message', this.onPortMessageReceived);
             this._messageChannel.port1.close();
             this._messageChannel = null;
 
-            this._commandChannel.port1.removeEventListener('message', this.onCommandReceived);
+            this._commandChannel.port1.removeEventListener('message', this.onPortCommandReceived);
             this._commandChannel.port1.close();
             this._commandChannel = null;
         }
     }
 
-    protected onMessageReceived(event?: MessageEvent) {
-        const ipcPorts = event.ports ? event.ports.map(IpcBusUtils.CastToMessagePort): undefined;
-        const [ipcMessage, data] = event.data;
+    protected onIPCMessageReceived(event: Electron.IpcRendererEvent, ipcMessage: IpcBusMessage, data: any) {
         if (ipcMessage.rawData) {
             IpcBusRendererContent.FixRawContent(data);
-            this._client.onConnectorRawDataReceived(ipcMessage, data, ipcPorts);
+            this._client.onConnectorRawDataReceived(ipcMessage, data);
         }
         else {
-            this._client.onConnectorArgsReceived(ipcMessage, data, ipcPorts);
+            this._client.onConnectorArgsReceived(ipcMessage, data);
         }
     }
 
-    protected onCommandReceived(event?: MessageEvent) {
+    protected onPortMessageReceived(event?: MessageEvent) {
+        const messagePorts = event.ports ? event.ports.map(CastToMessagePort): undefined;
+        const [ipcMessage, data] = event.data;
+        if (ipcMessage.rawData) {
+            IpcBusRendererContent.FixRawContent(data);
+            this._client.onConnectorRawDataReceived(ipcMessage, data, messagePorts);
+        }
+        else {
+            this._client.onConnectorArgsReceived(ipcMessage, data, messagePorts);
+        }
+    }
+
+    protected onPortCommandReceived(event?: MessageEvent) {
         // const ipcCommand = event.data as IpcBusCommand;
     }
 
@@ -85,10 +96,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 let timer: NodeJS.Timer;
                 const onHandshake = (event: MessageEvent) => {
                     clearTimeout(timer);
-                    this._commandChannel.port1.addEventListener('message', this.onCommandReceived);
+                    this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, this.onIPCMessageReceived);
+
+                    this._commandChannel.port1.addEventListener('message', this.onPortCommandReceived);
                     this._commandChannel.port1.removeEventListener('message', onHandshake);
                 
-                    this._messageChannel.port1.addEventListener('message', this.onMessageReceived);
+                    this._messageChannel.port1.addEventListener('message', this.onPortMessageReceived);
                     this._messageChannel.port1.start();
 
                     this.addClient(client);
@@ -129,21 +142,23 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcMessage: IpcBusMessage, args?: any[], ipcPorts?: Client.IpcBusMessagePort[]): void {
-        // Seems to have a bug in Electron, undefined is not supported
-        ipcPorts = ipcPorts || [];
+    postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
+        this.postMessage(ipcMessage, args);
+    }
+
+    postRequestResponse(ipcMessage: IpcBusMessage, args?: any[]): void {
+        this.postMessage(ipcMessage, args);
+    }
+
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: Client.IpcMessagePortType[]): void {
         try {
-            this._messageChannel.port1.postMessage([ipcMessage, args], (ipcPorts as any) as MessagePort[]);
+            const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
+            if (target && target.process.isMainFrame) {
+                this._ipcWindow.sendTo(target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, ipcMessage, args);
+            }
         }
-        catch (err) {
-            // maybe an arg does not supporting Electron serialization !
-            ipcMessage.rawData = true;
-            JSONParserV1.install();
-            this._packetOut.serialize([ipcMessage, args]);
-            JSONParserV1.uninstall();
-            const rawData = this._packetOut.getRawData();
-            this._messageChannel.port1.postMessage([ipcMessage, rawData], (ipcPorts as any) as MessagePort[]);
-        }
+        catch (err) {}
+        this._postMessageSender.post(this._messageChannel.port1, ipcMessage, args, messagePorts);
     }
 
     // We keep ipcCommand in plain text, once again to have master handling it easily

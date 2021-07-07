@@ -1,7 +1,9 @@
 // import * as uuid from 'uuid';
+import { JSONParserV1 } from 'json-helpers';
 import * as shortid from 'shortid';
+import { IpcPacketBuffer } from 'socket-serializer';
 
-import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess, IpcMessagePortType, IpcBusMessagePort } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
 import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
@@ -14,7 +16,6 @@ export type Arr = readonly unknown[];
 export function partialCall<T extends Arr, U extends Arr, R>(f: (...args: [...T, ...U]) => R, ...headArgs: T) {
     return (...tailArgs: U) => f(...headArgs, ...tailArgs)
 }
-
 
 // https://nodejs.org/api/net.html#net_ipc_support
 function CleanPipeName(str: string) {
@@ -108,29 +109,6 @@ export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | und
         messageTarget.peerid = peer.id;
     }
     return messageTarget;
-}
-
-export function CastToMessagePort(port: IpcMessagePortType): IpcBusMessagePort {
-    const unknownPort = port as any;
-    if (unknownPort.addEventListener && !unknownPort.addListener) {
-        unknownPort.on = unknownPort.addListener = unknownPort.addEventListener;
-        unknownPort.off = unknownPort.removeListener = unknownPort.addRemoveListener;
-        unknownPort.once = (event: string, listener: (...args: any[]) => void) => {
-            return unknownPort.addEventListener(event, listener, { once: true });
-        }
-    }
-    else if (!unknownPort.addEventListener && unknownPort.addListener) {
-        unknownPort.addEventListener = (event: string, listener: (...args: any[]) => void, options: any) => {
-            if (typeof options === 'object' && options.once) {
-                return unknownPort.once(event, listener);
-            }
-            else {
-                return unknownPort.addListener(event, listener);
-            }
-        }
-        unknownPort.removeEventListener = unknownPort.addListener;
-    }
-    return unknownPort as IpcBusMessagePort;
 }
 
 export function CheckChannel(channel: any): string {
@@ -315,3 +293,23 @@ export class ConnectCloseState<T> {
     }
 }
 
+export class SerializeMessage {
+    private _packetOut: IpcPacketBuffer;
+
+    constructor() {
+        this._packetOut = new IpcPacketBuffer();
+        this._packetOut.JSON = JSONParserV1;
+    }
+
+    serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
+        // maybe an arg does not supporting Electron serialization !
+        if (!ipcMessage.rawData) {
+            ipcMessage.rawData = true;
+            JSONParserV1.install();
+            this._packetOut.serialize([ipcMessage, args]);
+            JSONParserV1.uninstall();
+            return this._packetOut;
+        }
+        return null;
+    }
+}
