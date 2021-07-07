@@ -7,7 +7,6 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { CastToMessagePort, SerializeMessagePort } from '../IpcBusPostMessage-helpers';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
 
@@ -24,7 +23,7 @@ export interface IpcWindow extends EventEmitter {
 /** @internal */
 export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
-    private _postMessageSender: SerializeMessagePort;
+    private _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
     private _messageChannel: MessageChannel;
     private _commandChannel: MessageChannel;
 
@@ -33,7 +32,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._peerProcess.process.isMainFrame = isMainFrame;
-        this._postMessageSender = new SerializeMessagePort();
+        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
 
         this.onPortMessageReceived = this.onPortMessageReceived.bind(this);
         this.onPortCommandReceived = this.onPortCommandReceived.bind(this);
@@ -74,14 +73,13 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     protected onPortMessageReceived(event?: MessageEvent) {
-        const messagePorts = event.ports ? event.ports.map(CastToMessagePort): undefined;
         const [ipcMessage, data] = event.data;
         if (ipcMessage.rawData) {
             IpcBusRendererContent.FixRawContent(data);
-            this._client.onConnectorRawDataReceived(ipcMessage, data, messagePorts);
+            this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports as any);
         }
         else {
-            this._client.onConnectorArgsReceived(ipcMessage, data, messagePorts);
+            this._client.onConnectorArgsReceived(ipcMessage, data, event.ports as any);
         }
     }
 
@@ -155,7 +153,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             }
         }
         catch (err) {}
-        this._postMessageSender.post(this._messageChannel.port1, ipcMessage, args, messagePorts);
+        this._serializeMessage.postMessage(this._messageChannel.port1, ipcMessage, args, messagePorts);
     }
 
     // We keep ipcCommand in plain text, once again to have master handling it easily

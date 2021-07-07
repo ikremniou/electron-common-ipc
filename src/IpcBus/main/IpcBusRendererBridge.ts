@@ -8,7 +8,6 @@ import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
-import { CastToMessagePort } from '../IpcBusPostMessage-helpers';
 
 import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
@@ -218,6 +217,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From renderer transport
     private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Client.IpcMessagePortType[]): boolean {
+        // Electron issue with empty ports
+        messagePorts = messagePorts || [];
         const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
         if (target) {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
@@ -275,20 +276,19 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onMessageReceived(event: Electron.MessageEvent): void {
-        const messagePorts = event.ports ? event.ports.map(CastToMessagePort) : undefined;
         const [ipcMessage, data] = event.data;
         try {
-            if (this._broadcastData(true, ipcMessage, data, messagePorts) === false) {
-                this._bridge._onRendererMessageReceived(ipcMessage, data, messagePorts);
+            if (this._broadcastData(true, ipcMessage, data, event.ports) === false) {
+                this._bridge._onRendererMessageReceived(ipcMessage, data, event.ports);
             }
         }
         catch (err) {
             if (!ipcMessage.rawData) {
                 const packet = this._serializeMessage.serialize(ipcMessage, data);
                 const rawData = packet.getRawData();
-                if (this._broadcastData(true, ipcMessage, rawData, messagePorts) === false) {
+                if (this._broadcastData(true, ipcMessage, rawData, event.ports) === false) {
                     IpcBusRendererContent.FixRawContent(rawData);
-                    this._bridge._onRendererMessageReceived(ipcMessage, rawData, messagePorts);
+                    this._bridge._onRendererMessageReceived(ipcMessage, rawData, event.ports);
                 }
             }
         }

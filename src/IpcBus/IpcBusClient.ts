@@ -48,12 +48,16 @@ interface MessagePortEventMap {
 
 export type IpcMessagePortType = Electron.MessagePortMain | MessagePort | IpcBusMessagePort;
 
+export interface IpcBusMessagePortPost {
+    postMessage(message: any, messagePorts?: Transferable[]): void;
+}
+
 // In order to ensure a common interface in Web/Electron/Node.js, we use an 'union' interface of 
 // - EventTarget
 // - EventEmitter
 // - MessagePort
 // - MessagePortMain
-export interface IpcBusMessagePort {
+export interface IpcBusMessagePort extends IpcBusMessagePortPost {
     // Docs: https://electronjs.org/docs/api/message-port-main
 
     on<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
@@ -69,8 +73,6 @@ export interface IpcBusMessagePort {
 
     start(): void;
     close(): void;
-
-    postMessage(message: any, messagePorts?: IpcMessagePortType[]): void;
 }
 
 export interface IpcBusEvent {

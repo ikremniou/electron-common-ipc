@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
@@ -22,8 +22,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socketWriter: Writer;
 
     private _packetIn: IpcPacketBufferList;
-    private _packetOut: IpcPacketWriter;
 
+    private _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
@@ -33,8 +33,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
         this._packetIn.JSON = JSONParserV1;
-        this._packetOut = new IpcPacketWriter();
-        this._packetOut.JSON = JSONParserV1;
+        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
@@ -248,21 +247,21 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
         if (this._socketWriter) {
             // ipcMessage.process = this._process;
-            this._packetOut.write(this._socketWriter, [ipcMessage, args]);
+            this._serializeMessage.writeMessage(this._socketWriter, ipcMessage, args);
         }
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[], epcPorts?: Client.IpcBusMessagePort[]): void {
         if (this._socketWriter) {
             // ipcMessage.process = this._process;
-            this._packetOut.write(this._socketWriter, [ipcMessage, args]);
+            this._serializeMessage.writeMessage(this._socketWriter, ipcMessage, args);
         }
     }
 
     postCommand(ipcCommand: IpcBusCommand): void {
         if (this._socketWriter) {
             ipcCommand.peer = ipcCommand.peer || this._peerProcess;
-            this._packetOut.write(this._socketWriter, [ipcCommand]);
+            this._serializeMessage.writeCommand(this._socketWriter, ipcCommand);
         }
     }
 }

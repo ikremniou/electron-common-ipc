@@ -1,8 +1,8 @@
 import { JSONParserV1 } from 'json-helpers';
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, Writer } from 'socket-serializer';
 
-import type { IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
-import type { IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
+import type { IpcBusMessagePortPost, IpcBusPeer, IpcBusPeerProcess, IpcMessagePortType } from './IpcBusClient';
+import type { IpcBusCommand, IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 import { CreateUniqId } from './IpcBusUtils';
 
 const TargetSignature = `_target_`;
@@ -96,7 +96,7 @@ export class SerializeMessage {
     }
 
     serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
-        // maybe an arg does not supporting Electron serialization !
+        // args does not supporting Electron serialization !
         if (!ipcMessage.rawData) {
             ipcMessage.rawData = true;
             JSONParserV1.install();
@@ -105,5 +105,28 @@ export class SerializeMessage {
             return this._packetOut;
         }
         return null;
+    }
+
+    writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: any[]) {
+        ipcMessage.rawData = true;
+        this._packetOut.write(writer, [ipcMessage, args]);
+    }
+
+    writeCommand(writer: Writer, ipcCommand: IpcBusCommand, args?: any[]) {
+        this._packetOut.write(writer, [ipcCommand]);
+    }
+
+    postMessage(port: IpcBusMessagePortPost, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: IpcMessagePortType[]): void {
+        // Seems to have a bug in Electron, undefined is not supported for messagePorts !
+        messagePorts = messagePorts || [];
+        try {
+            port.postMessage([ipcMessage, args], messagePorts as any);
+        }
+        catch (err) {
+            // maybe an arg does not supporting Electron serialization !
+            const packet = this.serialize(ipcMessage, args);
+            const rawData = packet.getRawData();
+            port.postMessage([ipcMessage, rawData], messagePorts as any);
+        }
     }
 }
