@@ -1,3 +1,5 @@
+import type { IpcPacketBufferCore } from 'socket-serializer';
+
 import type * as Client from './IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type { IpcBusTransport } from './IpcBusTransport';
@@ -26,7 +28,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+        args = args || ipcPacketBufferCore.parseArrayAt(1);
         return this._onClientMessageReceived(this._client, local, ipcMessage, args, messagePorts);
     }
 

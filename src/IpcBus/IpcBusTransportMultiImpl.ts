@@ -1,3 +1,5 @@
+import type { IpcPacketBufferCore } from 'socket-serializer';
+
 import type * as Client from './IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
@@ -24,9 +26,10 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
+            args = args || ipcPacketBufferCore.parseArrayAt(1);
             for (const entry of channelConns) {
                 if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, messagePorts)) {
                     return true;
