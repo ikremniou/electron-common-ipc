@@ -1,6 +1,6 @@
 import type * as net from 'net';
 
-import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import type { IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
@@ -43,18 +43,16 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         throw 'not implemented';
     }
 
-    broadcastData(ipcMessage: IpcBusMessage, args: any[]): boolean {
-        throw 'not implemented';
-    }
-
     broadcastData(ipcMessage: IpcBusMessage, data: any): boolean {
-        if (data.buffer) {
-            return this.broadcastBuffers(ipcMessage, [data.buffer]);
+        if (ipcMessage.rawData) {
+            if (data.buffer) {
+                return this.broadcastBuffers(ipcMessage, [data.buffer]);
+            }
+            else {
+                return this.broadcastBuffers(ipcMessage, data.buffers);
+            }
         }
-        else if (data.buffers) {
-            return this.broadcastBuffers(ipcMessage, data.buffers);
-        }
-        throw 'not implemented';
+        throw 'not supported';
     }
 
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
@@ -62,7 +60,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
+    protected broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
         if (target) {
             const endpoint = this._endpoints.get(target.process.pid);

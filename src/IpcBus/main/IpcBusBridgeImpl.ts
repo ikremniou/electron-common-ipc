@@ -1,6 +1,6 @@
 /// <reference types='electron' />
 
-import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';

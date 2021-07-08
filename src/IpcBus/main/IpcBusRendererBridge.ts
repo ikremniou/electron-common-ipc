@@ -5,7 +5,6 @@ import type { IpcPacketBuffer } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
-import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
 
@@ -198,22 +197,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From main or net transport
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
-        const rawData = ipcPacketBufferCore.getRawData() as IpcBusRendererContent;
-        // IpcBusRendererContent.PackRawContent(rawData);
+        const rawData = ipcPacketBufferCore.getRawData() as IpcPacketBuffer.RawData;
         return this._broadcastData(false, ipcMessage, rawData);
     }
 
     // From renderer transport
-    broadcastData(ipcMessage: IpcBusMessage, args: any, messagePorts?: Electron.MessagePortMain[]): boolean {
-        return this._broadcastData(false, ipcMessage, args, messagePorts);
-    }
-
-    broadcastData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
-        return this._broadcastData(false, ipcMessage, rawData, messagePorts);
+    broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean {
+        return this._broadcastData(false, ipcMessage, data, messagePorts);
     }
 
     // From renderer transport
-    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
+    private _broadcastData(local: boolean, ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean {
         const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
         if (target) {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
