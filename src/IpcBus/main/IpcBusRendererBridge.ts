@@ -131,7 +131,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.useIPCNativeSerialization = this._bridge.useIPCNativeSerialization;
 
         const endpoint: IpcBusPeerProcessEndpoint = Object.assign(ipcCommand.peer, { 
             commandPort: event.ports[0],
@@ -176,7 +175,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
         const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
         const endpoint = this._endpoints.get(key);
-        if (endpoint && this._endpoints.delete(key)) {
+        if (endpoint) {
+            this._endpoints.delete(key);
             this._subscriptions.remove(key);
 
             endpoint.messagePort.close();

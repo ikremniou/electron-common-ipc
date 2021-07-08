@@ -4,8 +4,6 @@ export namespace IpcBusBridge {
     export interface ConnectOptions extends IpcConnectOptions {
         // 'false' by default
         server?: boolean;
-        // 'true' by default
-        useIPCNativeSerialization?: boolean;
     }
     export interface ConnectFunction {
         (options: ConnectOptions): Promise<void>;
