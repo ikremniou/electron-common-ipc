@@ -52,22 +52,23 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._connector.postCommand(ipcCommand);
     }
 
-    broadcastData(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean {
-        this._connector.postMessage(ipcMessage, args);
-        return false;
-    }
-
-    broadcastData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
-        if (rawData.buffer) {
-            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+    broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
+        if (ipcMessage.rawData) {
+            if (data.buffer) {
+                return this._broadcastBuffers(ipcMessage, [data.buffer]);
+            }
+            else {
+                return this._broadcastBuffers(ipcMessage, data.buffers);
+            }
         }
         else {
-            return this.broadcastBuffers(ipcMessage, rawData.buffers);
+            this._connector.postMessage(ipcMessage, data, messagePorts);
+            return false;
         }
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
+    protected _broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
         const connector = this._connector as IpcBusConnectorSocket;
         if (connector.socket) {
             WriteBuffersToSocket(connector.socket, buffers);
@@ -76,7 +77,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
-        return this.broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
+        return this._broadcastBuffers(ipcMessage, ipcPacketBufferCore.buffers);
     }
 
     override isTarget(ipcMessage: IpcBusMessage): boolean {
