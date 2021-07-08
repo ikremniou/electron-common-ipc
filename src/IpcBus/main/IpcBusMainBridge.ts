@@ -72,7 +72,7 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     //     throw 'not implemented';
     // }
 
-    // broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
+    // broadcastData(ipcMessage: IpcBusMessage, args: any[]): void {
     //     this.onConnectorArgsReceived(ipcCommand, args);
     // }
 
@@ -80,7 +80,7 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     //     this.onConnectorPacketReceived(ipcCommand, ipcPacketBufferCore);
     // }
 
-    // broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
+    // broadcastData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
     //     this.onConnectorRawDataReceived(ipcCommand, rawData);
     // }
 }

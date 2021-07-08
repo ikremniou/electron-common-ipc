@@ -23,10 +23,8 @@ export interface IpcBusBridgeClient {
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     broadcastCommand(ipcCommand: IpcBusCommand): void;
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean;
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean;
+    broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean;
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
@@ -136,7 +134,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 // Prevent serializing for nothing !
                 if (hasSocketChannel) {
-                    this._socketTransport.broadcastRawData(ipcMessage, data, messagePorts);
+                    this._socketTransport.broadcastData(ipcMessage, data, messagePorts);
                 }
             }
         }
@@ -155,16 +153,13 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
-        if (ipcMessage.rawData) {
-            if (this._rendererConnector.broadcastRawData(ipcMessage, data, messagePorts) === false) {
-                this._socketTransport.broadcastPacket(ipcMessage, data);
-            }
-        }
-        else {
-            if (this._rendererConnector.broadcastArgs(ipcMessage, data, messagePorts) === false) {
-                const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
-                // Prevent serializing for nothing !
-                if (hasSocketChannel) {
+        if (this._rendererConnector.broadcastData(ipcMessage, data, messagePorts) === false) {
+            const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
+            if (hasSocketChannel) {
+                if (ipcMessage.rawData) {
+                    this._socketTransport.broadcastPacket(ipcMessage, data);
+                }
+                else {
                     const packet = this._serializeMessage.serialize(ipcMessage, data);
                     this._socketTransport.broadcastPacket(ipcMessage, packet);
                 }

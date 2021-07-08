@@ -52,12 +52,12 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._connector.postCommand(ipcCommand);
     }
 
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): boolean {
         this._connector.postMessage(ipcMessage, args);
         return false;
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
         if (rawData.buffer) {
             return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
         }

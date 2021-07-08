@@ -43,17 +43,18 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         throw 'not implemented';
     }
 
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, args: any[]): boolean {
         throw 'not implemented';
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
-        if (rawData.buffer) {
-            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+    broadcastData(ipcMessage: IpcBusMessage, data: any): boolean {
+        if (data.buffer) {
+            return this.broadcastBuffers(ipcMessage, [data.buffer]);
         }
-        else {
-            return this.broadcastBuffers(ipcMessage, rawData.buffers);
+        else if (data.buffers) {
+            return this.broadcastBuffers(ipcMessage, data.buffers);
         }
+        throw 'not implemented';
     }
 
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {

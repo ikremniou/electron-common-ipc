@@ -204,11 +204,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     // From renderer transport
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any, messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, args: any, messagePorts?: Electron.MessagePortMain[]): boolean {
         return this._broadcastData(false, ipcMessage, args, messagePorts);
     }
 
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData, messagePorts?: Electron.MessagePortMain[]): boolean {
         return this._broadcastData(false, ipcMessage, rawData, messagePorts);
     }
 
