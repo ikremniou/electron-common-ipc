@@ -193,11 +193,7 @@ export class SmartMessageBag {
 
     ipcMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
         if (this._data) {
-            if (this._supportStructureClone === true) {
-                ipc.sendTo(wcid, channel, this._ipcMessage, this._data);
-                return;
-            }
-            else if (this._supportStructureClone === undefined) {
+            if (this._supportStructureClone !== false) {
                 try {
                     ipc.sendTo(wcid, channel, this._ipcMessage, this._data);
                     this._supportStructureClone = true;
@@ -224,11 +220,7 @@ export class SmartMessageBag {
         // Seems to have a bug in Electron, undefined is not supported for messagePorts !
         messagePorts = messagePorts || [];
         if (this._data) {
-            if (this._supportStructureClone === true) {
-                port.postMessage([this._ipcMessage, this._data], messagePorts as any);
-                return;
-            }
-            else if (this._supportStructureClone === undefined) {
+            if (this._supportStructureClone !== false) {
                 try {
                     port.postMessage([this._ipcMessage, this._data], messagePorts as any);
                     this._supportStructureClone = true;

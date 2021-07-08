@@ -152,14 +152,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
         this._messageBag.set(ipcMessage, args);
         if (messagePorts == null) {
-            try {
-                const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
-                if (target && target.process.isMainFrame) {
-                    this._messageBag.ipcMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER);
-                    return;
-                }
-            }
-            catch (err) {
+            const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
+            if (target && target.process.isMainFrame) {
+                this._messageBag.ipcMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER);
+                return;
             }
         }
         this._messageBag.portMessage(this._messageChannel.port1, messagePorts);
