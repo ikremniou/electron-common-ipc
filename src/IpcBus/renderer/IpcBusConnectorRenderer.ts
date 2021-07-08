@@ -64,6 +64,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     protected onIPCMessageReceived(event: Electron.IpcRendererEvent, ipcMessage: IpcBusMessage, data: any) {
         if (ipcMessage.rawData) {
+            // Electron IPC "corrupts" Buffer to a Uint8Array
             IpcBusRendererContent.FixRawContent(data);
             this._client.onConnectorRawDataReceived(ipcMessage, data);
         }
@@ -75,6 +76,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected onPortMessageReceived(event?: MessageEvent) {
         const [ipcMessage, data] = event.data;
         if (ipcMessage.rawData) {
+            // Electron IPC "corrupts" Buffer to a Uint8Array
             IpcBusRendererContent.FixRawContent(data);
             this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);
         }
