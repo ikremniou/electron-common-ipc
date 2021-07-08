@@ -36,25 +36,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _rendererConnector: IpcBusRendererBridge;
     protected _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
 
-    private _useIPCNativeSerialization: boolean;
-    // private _useIPCFrameAPI: boolean
-
     constructor(contextType: Client.IpcBusProcessType) {
-        this._useIPCNativeSerialization = true;
-        // this._useIPCFrameAPI = true;
         const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
 
         this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
-    }
-
-    // get useIPCFrameAPI(): boolean {
-    //     return this._useIPCFrameAPI;
-    // }
-
-    get useIPCNativeSerialization(): boolean {
-        return this._useIPCNativeSerialization;
     }
 
     get mainTransport(): IpcBusTransport {
@@ -69,7 +56,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         // To manage re-entrance
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        this._useIPCNativeSerialization = options.useIPCNativeSerialization ?? true;
         return this._rendererConnector.broadcastConnect(options)
         .then(() => {
             if (this._socketTransport == null) {

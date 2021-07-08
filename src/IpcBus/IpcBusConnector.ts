@@ -10,8 +10,6 @@ export namespace IpcBusConnector {
     export interface Handshake {
         process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
-        useIPCNativeSerialization?: boolean;
-        // useIPCFrameAPI?: boolean;
     }
 
     /** @internal */
