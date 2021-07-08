@@ -32,6 +32,11 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     protected onConnectorBeforeShutdown() {
         this._client && this._client.onConnectorBeforeShutdown();
+        const shutdownCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.Shutdown,
+            channel: ''
+        };
+        this.postCommand(shutdownCommand);
     }
 
     protected onConnectorHandshake() {
@@ -43,11 +48,6 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     protected onConnectorShutdown() {
-        const shutdownCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.Shutdown,
-            channel: ''
-        };
-        this.postCommand(shutdownCommand);
         this._connectCloseState.shutdown();
         this._client && this._client.onConnectorShutdown();
         this.removeClient();
