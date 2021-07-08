@@ -14,6 +14,7 @@ import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMa
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -128,8 +129,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
-        // Deactivate isTarget has such tests is done inner
         if (ipcMessage.rawData) {
+            // Electron IPC "corrupts" Buffer to a Uint8Array
+            IpcBusRendererContent.FixRawContent(data);
             if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, data, messagePorts) === false) {
                 const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 // Prevent serializing for nothing !
