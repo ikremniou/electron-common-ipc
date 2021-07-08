@@ -23,7 +23,7 @@ export interface IpcWindow extends EventEmitter {
 /** @internal */
 export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
-    private _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
+    private _messageBag: IpcBusCommandHelpers.SmartMessageBag;
     private _messageChannel: MessageChannel;
     private _commandChannel: MessageChannel;
 
@@ -32,7 +32,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._peerProcess.process.isMainFrame = isMainFrame;
-        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
+        this._messageBag = new IpcBusCommandHelpers.SmartMessageBag();
 
         this.onPortMessageReceived = this.onPortMessageReceived.bind(this);
         this.onPortCommandReceived = this.onPortCommandReceived.bind(this);
@@ -148,18 +148,19 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
+        this._messageBag.set(ipcMessage, args);
         if (messagePorts == null) {
             try {
                 const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
                 if (target && target.process.isMainFrame) {
-                    this._ipcWindow.sendTo(target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER, ipcMessage, args);
+                    this._messageBag.ipcMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_TO_RENDERER);
                     return;
                 }
             }
             catch (err) {
             }
         }
-        this._serializeMessage.postMessage(this._messageChannel.port1, ipcMessage, args, messagePorts);
+        this._messageBag.portMessage(this._messageChannel.port1, messagePorts);
     }
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
