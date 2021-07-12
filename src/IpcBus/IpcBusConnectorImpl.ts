@@ -30,6 +30,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._messageCount = 0;
     }
 
+    get peer() {
+        return this._peerProcess;
+    }
+
     protected onConnectorBeforeShutdown() {
         this._client && this._client.onConnectorBeforeShutdown();
         const shutdownCommand: IpcBusCommand = {
@@ -126,6 +130,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         // }
     //     return null;
     // }
+
+    onCommandReceived(ipcCommand: IpcBusCommand): void {
+        this._client.onCommandReceived(ipcCommand);
+    }
 
     abstract isTarget(ipcMessage: IpcBusMessage): boolean;
 
