@@ -208,16 +208,18 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         if (this._mainTransport.onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore) === false) {
-            this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
+            return this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
         }
+        return true;
     }
 
-    _onSocketRequestResponseReceived(ipcResponse: IpcBusMessage, ipcPacketBufferCore?: IpcPacketBufferCore): void {
+    _onSocketRequestResponseReceived(ipcResponse: IpcBusMessage, ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         if (this._mainTransport.onRequestResponseReceived(false, ipcResponse, undefined, ipcPacketBufferCore) === false) {
-            this._rendererConnector.broadcastPacket(ipcResponse, ipcPacketBufferCore);
+            return this._rendererConnector.broadcastPacket(ipcResponse, ipcPacketBufferCore);
         }
+        return true;
     }
    
     _onSocketClosed() {

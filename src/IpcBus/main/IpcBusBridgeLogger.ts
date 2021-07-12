@@ -47,10 +47,18 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         }
     }
 
-    override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer) {
+    override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
-            super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
+            return super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
         }
+        return true;
+    }
+
+    override _onSocketRequestResponseReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
+            return super._onSocketRequestResponseReceived(ipcMessage, ipcPacketBuffer);
+        }
+        return true;
     }
 
 }
