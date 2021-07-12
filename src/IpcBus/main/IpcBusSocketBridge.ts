@@ -88,26 +88,24 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         return IpcBusCommandHelpers.GetTargetProcess(ipcMessage) != null;
     }
 
-    getChannels(): string[] {
+    override getChannels(): string[] {
         return this._subscribedChannels.getChannels();
     }
 
-    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
+    override addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
         throw 'not implemented';
     }
 
-    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
+    override removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
         // call when closing the transport
     }
 
     override onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
-        this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
-        return true;
+        return this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
     }
 
     override onRequestResponseReceived(local: boolean, ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
-        this._bridge._onSocketRequestResponseReceived(ipcResponse, ipcPacketBufferCore);
-        return true;
+        return this._bridge._onSocketRequestResponseReceived(ipcResponse, ipcPacketBufferCore);
     }
 
     override onCommandReceived(ipcCommand: IpcBusCommand): void {
