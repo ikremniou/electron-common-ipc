@@ -108,9 +108,11 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                         id: ipcCommand.channel,
                         queryState
                     }
-                } as any)
+                } as any);
+                return;
             }
         }
+        super.onCommandReceived(ipcCommand);
     }
 
     /// IpcBusTrandport API

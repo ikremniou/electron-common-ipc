@@ -1,6 +1,6 @@
 /// <reference types='electron' />
 
-import { IpcPacketBuffer, IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
+import { IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
@@ -101,10 +101,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     override onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
-        throw 'not implemented';
+        this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
+        return true;
     }
 
-    override onConnectorPacketReceived(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+    override onCommandReceived(ipcCommand: IpcBusCommand): void {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscribedChannels.addRef(ipcCommand.channel);
@@ -117,26 +118,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
             case IpcBusCommand.Kind.QueryStateResponse:
                 this._bridge._onSocketCommandReceived(ipcCommand);
                 break;
-
-            case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestResponse: {
-                const ipcMessage = ipcCommand as IpcBusMessage;
-                this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
-                break;
-            }
-
-            default:
-                break;
         }
-        return true;
-    }
-
-    override onConnectorRawDataReceived(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
-        throw 'not implemented';
-    }
-
-    override onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[]): boolean {
-        throw 'not implemented';
     }
 
     override onConnectorShutdown(): void {

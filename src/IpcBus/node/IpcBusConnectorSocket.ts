@@ -110,9 +110,11 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         id: ipcCommand.channel,
                         queryState
                     }
-                } as any)
+                } as any);
+                return;
             }
         }
+        super.onCommandReceived(ipcCommand);
     }
 
     protected _reset(endSocket: boolean) {
