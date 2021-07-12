@@ -37,8 +37,8 @@ export interface QueryStatePeerProcesses {
 
 /** @internal */
 export interface QueryStateBase {
-    type: 'transport'
-            | 'connector' | 'connector-renderer' | 'connector-socket' | 'connector-socket-bridge'
+    type: 'transport' | 'transport-socket-bridge'
+            | 'connector' | 'connector-renderer' | 'connector-socket'
             | 'renderer-bridge'
             | 'broker-bridge' | 'broker'
 }
@@ -49,6 +49,7 @@ export interface QueryStateResponse {
     queryState: QueryStateBase
 }
 
+/** @internal */
 export interface QueryStateTransport extends QueryStateBase {
     peers: QueryStatePeers;
     channels: QueryStateChannels;
@@ -60,21 +61,22 @@ export interface QueryStateConnector extends QueryStateTransport {
 }
 
 /** @internal */
-export interface QueryStateRendererBridge extends QueryStateBase {
+export interface QueryStateSocketBridge extends QueryStateTransport {
+    type: 'transport-socket-bridge',
+}
+
+/** @internal */
+export interface QueryStateBridge extends QueryStateBase {
+    peers: QueryStatePeerProcesses;
+    channels: QueryStateChannels;
+}
+
+/** @internal */
+export interface QueryStateRendererBridge extends QueryStateBridge {
     type: 'renderer-bridge',
-    channels: QueryStateChannels;
-    peers: QueryStatePeerProcesses;
 }
 
 /** @internal */
-export interface QueryStateSocketBrige extends QueryStateConnector {
-    type: 'connector-socket-bridge',
-    channels: QueryStateChannels;
-}
-
-/** @internal */
-export interface QueryStateBroker extends QueryStateBase {
+export interface QueryStateBroker extends QueryStateBridge {
     type: 'broker' | 'broker-bridge',
-    channels: QueryStateChannels;
-    peers: QueryStatePeerProcesses;
 }

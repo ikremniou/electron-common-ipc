@@ -10,7 +10,7 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelsRefCount } from '../IpcBusChannelMap';
-import type { QueryStateChannels, QueryStatePeers, QueryStateSocketBrige, QueryStateTransport } from '../IpcBusQueryState';
+import type { QueryStateChannels, QueryStatePeers, QueryStateSocketBridge, QueryStateTransport } from '../IpcBusQueryState';
 import type { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 
 import type { IpcBusBridgeClient, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
@@ -145,9 +145,8 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
             processChannelJSON.refCount += refCount;
         }
 
-        const results: QueryStateSocketBrige = {
-            type: 'connector-socket-bridge',
-            process: this._connector.peer,
+        const results: QueryStateSocketBridge = {
+            type: 'transport-socket-bridge',
             channels: processChannelsJSON,
             peers: peersJSON
         };

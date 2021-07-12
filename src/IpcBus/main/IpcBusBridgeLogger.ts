@@ -29,12 +29,6 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
     }
     
-    // _onRendererArgsReceived(ipcCommand: IpcBusCommand, args: any[]) {
-    //     if (this._ipcBusLog.addLog(ipcCommand, args)) {
-    //         super._onRendererArgsReceived(ipcCommand, args);
-    //     }
-    // }
-
     override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
         if (this._ipcBusLog.addLogRawContent(ipcMessage, data)) {
             super._onRendererMessageReceived(ipcMessage, data, messagePorts);
