@@ -25,7 +25,7 @@ export interface IpcBusPeerProcess {
 }
 
 export interface IpcBusPeer extends IpcBusPeerProcess {
-    id: string;
+    readonly id: string;
     name: string;
 }
 
@@ -35,9 +35,9 @@ export interface IpcBusRequest {
 }
 
 export interface IpcBusRequestResponse {
-    event: IpcBusEvent;
-    payload?: any;
-    err?: string;
+    readonly event: IpcBusEvent;
+    readonly payload?: any;
+    readonly err?: string;
 }
 
 interface MessagePortEventMap {
@@ -76,10 +76,10 @@ export interface IpcBusMessagePort extends IpcBusMessagePortPost {
 }
 
 export interface IpcBusEvent {
-    channel: string;
-    sender: IpcBusPeer;
-    request?: IpcBusRequest;
+    readonly channel: string;
+    readonly sender: IpcBusPeer;
     ports?: IpcBusMessagePort[];
+    request?: IpcBusRequest;
 }
 
 export interface IpcBusListener {

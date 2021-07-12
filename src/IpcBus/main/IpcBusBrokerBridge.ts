@@ -40,7 +40,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
-        throw 'not implemented';
+        throw 'TODO';
     }
 
     broadcastData(ipcMessage: IpcBusMessage, data: any): boolean {
@@ -83,11 +83,15 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this._bridge._onSocketClosed();
     }
 
-    protected broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+    protected override broadcastCommandToBridge(ipcCommand: IpcBusCommand): void {
+        this._bridge._onSocketCommandReceived(ipcCommand);
+    }
+
+    protected override broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
         this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
     }
 
-    protected broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+    protected override broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
         this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
     }
 }

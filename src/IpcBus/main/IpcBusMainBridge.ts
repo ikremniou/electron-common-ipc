@@ -55,6 +55,11 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
                 ipcCommand.peer = ipcCommand.peer || this._peerProcess;
                 this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
+
+            case IpcBusCommand.Kind.QueryState:
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this._bridge._onMainCommandReceived(ipcCommand);
+                break;
         }
     }
 }

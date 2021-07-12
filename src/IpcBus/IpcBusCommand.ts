@@ -25,9 +25,6 @@ export namespace IpcBusCommand {
         BridgeAddChannelListener    = 'BILICA',
         BridgeRemoveChannelListener = 'BILICR',
 
-        BrokerAddChannelListener    = 'BOICA',
-        BrokerRemoveChannelListener = 'BOICR',
-
         QueryState = 'QUST',
         QueryStateResponse = 'QUSTR',
 

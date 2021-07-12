@@ -15,6 +15,7 @@ import type { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
+import type { QueryStateBase, QueryStateResponse } from '../IpcBusQueryState';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -26,6 +27,8 @@ export interface IpcBusBridgeClient {
     broadcastCommand(ipcCommand: IpcBusCommand): void;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
     broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean;
+
+    queryState(): QueryStateBase;
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
@@ -96,6 +99,24 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         });
     }
 
+    postQueryState() {
+        const ipcQueryState: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.QueryState,
+            channel: 'titi'
+        };
+        const rendererQueryState = this._rendererConnector.queryState();
+        console.log(`QueryState: ${JSON.stringify(rendererQueryState)}`);
+        this._rendererConnector.broadcastCommand(ipcQueryState);
+        const mainQueryState = this._mainTransport.queryState();
+        console.log(`QueryState: ${JSON.stringify(mainQueryState)}`);
+        this._mainTransport.onCommandReceived(ipcQueryState);
+        if (this._socketTransport) {
+            const socketQueryState = this._socketTransport.queryState();
+            console.log(`QueryState: ${JSON.stringify(socketQueryState)}`);
+            this._socketTransport.broadcastCommand(ipcQueryState);
+        }
+    }
+
     getChannels(): string[] {
         const rendererChannels = this._rendererConnector.getChannels();
         const mainChannels = this._mainTransport.getChannels();
@@ -114,6 +135,16 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
+    _onRendererCommandReceived(ipcCommand: IpcBusCommand) {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryStateResponse: {
+                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
+                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                break;
+            }
+        }
+    }
+
     _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
         if (ipcMessage.rawData) {
             // Electron IPC "corrupts" Buffer to a Uint8Array
@@ -140,6 +171,16 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
+    _onMainCommandReceived(ipcCommand: IpcBusCommand) {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryStateResponse: {
+                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
+                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                break;
+            }
+        }
+    }
+
     _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
         if (this._rendererConnector.broadcastData(ipcMessage, data, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
@@ -157,6 +198,16 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
+    _onSocketCommandReceived(ipcCommand: IpcBusCommand) {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryStateResponse: {
+                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
+                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                break;
+            }
+        }
+    }
+
     _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore) {
         // Deactivate isTarget has such tests is done inner
         if (this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore) === false) {

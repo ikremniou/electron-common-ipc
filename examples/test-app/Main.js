@@ -105,10 +105,9 @@ var MainProcess = (function () {
         processMainFromView.on('new-process', doNewProcess);
         processMainFromView.on('new-renderer', doNewRenderer);
         processMainFromView.on('new-perf', doNewPerfView);
+        processMainFromView.on('query-state', doQueryState);
         processMainFromView.on('start-performance-tests', doPerformanceTests)
         processMainFromView.on('save-performance-tests', savePerformanceTests);
-        
-        processMainFromView.on('queryState', doQueryState);
 
         console.log('<MAIN> ProcessConnect ready');
 
@@ -233,18 +232,19 @@ var MainProcess = (function () {
         }
 
         function doQueryState() {
-            if (ipcBroker) {
-                var queryState = ipcBroker.queryState();
-                mainWindow.webContents.send('get-queryState', queryState);
-            }
-            if (ipcBrokerProcess) {
-                ipcBrokerProcess.once('message', (msgJSON) => {
-                    var queryState = msgJSON.result;
-                    mainWindow.webContents.send('get-queryState', queryState);
-                });
-                ipcBrokerProcess.send(JSON.stringify({action: 'queryState'}));
+            ipcBridge.postQueryState();
+            // if (ipcBroker) {
+            //     var queryState = ipcBroker.queryState();
+            //     mainWindow.webContents.send('get-queryState', queryState);
+            // }
+            // if (ipcBrokerProcess) {
+            //     ipcBrokerProcess.once('message', (msgJSON) => {
+            //         var queryState = msgJSON.result;
+            //         mainWindow.webContents.send('get-queryState', queryState);
+            //     });
+            //     ipcBrokerProcess.send(JSON.stringify({action: 'queryState'}));
                 
-            }
+            // }
         }
 
         function onIPCElectron_ReceivedMessage(ipcBusEvent, ipcContent) {
