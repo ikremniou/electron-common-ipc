@@ -105,6 +105,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         return true;
     }
 
+    override onRequestResponseReceived(local: boolean, ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
+        this._bridge._onSocketRequestResponseReceived(ipcResponse, ipcPacketBufferCore);
+        return true;
+    }
+
     override onCommandReceived(ipcCommand: IpcBusCommand): void {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
