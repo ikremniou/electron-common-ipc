@@ -6,6 +6,23 @@ import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
 import { ConnectCloseState } from './IpcBusUtils';
 
+export function CreateProcessId(process: Client.IpcBusProcess): string {
+    let name = `${process.type}`;
+    if (process.wcid) {
+        name += `-${process.wcid}`;
+    }
+    if (process.frameid) {
+        name += `-f${process.frameid}`;
+    }
+    if (process.rid && (process.rid !== process.wcid)) {
+        name += `-r${process.rid}`;
+    }
+    if (process.pid) {
+        name += `-p${process.pid}`;
+    }
+    return name;
+}
+
 // Implementation for renderer process
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {

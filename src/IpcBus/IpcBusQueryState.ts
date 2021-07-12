@@ -23,18 +23,6 @@ export interface QueryStatePeers {
 }
 
 /** @internal */
-export interface QueryStateTransport {
-    peers: QueryStatePeers;
-    channels: QueryStateChannels;
-}
-
-/** @internal */
-export interface QueryStateConnector extends QueryStateTransport {
-    type: 'connector' | 'connector-renderer' | 'connector-socket' | 'connector-socket-bridge',
-    process: Client.IpcBusPeerProcess;
-}
-
-/** @internal */
 export interface QueryStatePeerProcess {
     peer: Client.IpcBusPeerProcess;
     channels: QueryStateChannels
@@ -45,24 +33,48 @@ export interface QueryStatePeerProcesses {
     [key: string]: QueryStatePeerProcess;
 }
 
+
+
 /** @internal */
-export interface QueryStateRendererBrige {
-    channels: QueryStateChannels
+export interface QueryStateBase {
+    type: 'transport'
+            | 'connector' | 'connector-renderer' | 'connector-socket' | 'connector-socket-bridge'
+            | 'renderer-bridge'
+            | 'broker-bridge' | 'broker'
+}
+
+/** @internal */
+export interface QueryStateResponse {
+    id: string;
+    queryState: QueryStateBase
+}
+
+export interface QueryStateTransport extends QueryStateBase {
+    peers: QueryStatePeers;
+    channels: QueryStateChannels;
+}
+
+/** @internal */
+export interface QueryStateConnector extends QueryStateTransport {
+    process: Client.IpcBusPeerProcess;
+}
+
+/** @internal */
+export interface QueryStateRendererBridge extends QueryStateBase {
+    type: 'renderer-bridge',
+    channels: QueryStateChannels;
+    peers: QueryStatePeerProcesses;
 }
 
 /** @internal */
 export interface QueryStateSocketBrige extends QueryStateConnector {
     type: 'connector-socket-bridge',
+    channels: QueryStateChannels;
 }
 
 /** @internal */
-export interface QueryStateBrokerBrige {
-    channels: QueryStateChannels
-}
-
-/** @internal */
-export interface QueryStateBroker {
-    origin: 'broker',
+export interface QueryStateBroker extends QueryStateBase {
+    type: 'broker' | 'broker-bridge',
     channels: QueryStateChannels;
     peers: QueryStatePeerProcesses;
 }

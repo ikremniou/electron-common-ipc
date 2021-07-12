@@ -12,7 +12,8 @@ import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 
 import { IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
-import type { QueryStateBroker, QueryStateChannels, QueryStatePeerProcesses } from '../IpcBusQueryState';
+import type { QueryStateBase, QueryStateBroker, QueryStateChannels, QueryStatePeerProcesses } from '../IpcBusQueryState';
+import { CreateProcessId } from '../IpcBusConnectorImpl';
 
 interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     socket?: net.Socket;
@@ -247,7 +248,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this._subscriptions.remove(key);
     }
 
-    queryState(): QueryStateBroker {
+    queryState(): QueryStateBase {
         const peersJSON: QueryStatePeerProcesses = {};
         const processChannelsJSON: QueryStateChannels = {};
 
@@ -261,21 +262,22 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             const channelConns = this._subscriptions.getChannelConns(channel);
             channelConns.forEach((clientRef) => {
                 processChannelJSON.refCount += clientRef.refCount;
-            //     const peer = clientRef.data;
-            //     const peerJSON = peersJSON[peer.id] = peersJSON[peer.id] || {
-            //         peer,
-            //         channels: {}
-            //     };
-            //     const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
-            //         name: channel,
-            //         refCount: 0
-            //     };
-            //     peerChannelJSON.refCount += clientRef.refCount;
-            })
+                const peer = clientRef.data;
+                const peerid = CreateProcessId(peer.process);
+                const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
+                    peer,
+                    channels: {}
+                };
+                const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
+                    name: channel,
+                    refCount: 0
+                };
+                peerChannelJSON.refCount += clientRef.refCount;
+            });
         }
 
         const results: QueryStateBroker = {
-            origin: 'broker',
+            type: 'broker',
             channels: processChannelsJSON,
             peers: peersJSON
         };
@@ -323,12 +325,16 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     }
                 });
                 const queryState = this.queryState();
-                // this._postCommand({
-                //     kind: IpcBusCommand.Kind.QueryStateResponse,
-                //     queryState
-                // } as any)
+                this.broadcastCommandToBridge({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    queryState
+                } as any)
                 break;
             }
+
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this.broadcastCommandToBridge(ipcCommand);
+                break;
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage: {
@@ -410,12 +416,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected onBridgeRemoveChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
     }
 
-    protected broadcastToBridgeAddChannel(channel: string) {
-    }
-
-    protected broadcastToBridgeRemoveChannel(channel: string) {
-    }
-
+    protected abstract broadcastCommandToBridge(ipcCommand: IpcBusCommand): void;
     protected abstract broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
     protected abstract broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
 }

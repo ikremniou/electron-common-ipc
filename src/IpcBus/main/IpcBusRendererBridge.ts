@@ -7,12 +7,13 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
-
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
+import type { QueryStateBase, QueryStateChannels, QueryStatePeerProcesses, QueryStatePeers, QueryStateRendererBridge } from '../IpcBusQueryState';
 import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
-import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
+import { CreateProcessId } from '../IpcBusConnectorImpl';
 
 let electron: any;
 try {
@@ -188,7 +189,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
-        throw 'not implemented';
+        this._endpoints.forEach((endpoint) => {
+            endpoint.messagePort.postMessage(ipcCommand);
+        });
     }
 
     broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
@@ -265,9 +268,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
             }
 
-            case IpcBusCommand.Kind.QueryState: {
+            case IpcBusCommand.Kind.QueryState:
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this._bridge._onRendererCommandReceived(ipcCommand);
                 return true;
-            }
         }
         return false;
     }
@@ -278,5 +282,40 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._bridge._onRendererMessageReceived(ipcMessage, data, event.ports);
         }
     }
-}
+
+    queryState(): QueryStateBase {
+        const peersJSON: QueryStatePeerProcesses = {};
+        const processChannelsJSON: QueryStateChannels = {};
+
+        const channels = this._subscriptions.getChannels();
+        for (let i = 0; i < channels.length; ++i) {
+            const channel = channels[i];
+            const processChannelJSON = processChannelsJSON[channel] = {
+                name: channel,
+                refCount: 0
+            }
+            const channelConns = this._subscriptions.getChannelConns(channel);
+            channelConns.forEach((clientRef) => {
+                processChannelJSON.refCount += clientRef.refCount;
+                const peer = clientRef.data;
+                const peerid = CreateProcessId(peer.process);
+                const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
+                    peer,
+                    channels: {}
+                };
+                const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
+                    name: channel,
+                    refCount: 0
+                };
+                peerChannelJSON.refCount += clientRef.refCount;
+            })
+        }
+
+        const results: QueryStateRendererBridge = {
+            type: 'renderer-bridge',
+            channels: processChannelsJSON,
+            peers: peersJSON
+        };
+        return results;
+    }}
 

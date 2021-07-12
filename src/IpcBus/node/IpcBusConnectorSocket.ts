@@ -106,7 +106,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                 }
                 this.postCommand({
                     kind: IpcBusCommand.Kind.QueryStateResponse,
-                    queryState
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
                 } as any)
             }
         }

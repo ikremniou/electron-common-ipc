@@ -106,16 +106,17 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
 
     override onConnectorPacketReceived(ipcCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcCommand.kind) {
-            case IpcBusCommand.Kind.BrokerAddChannelListener:
+            case IpcBusCommand.Kind.AddChannelListener:
                 this._subscribedChannels.addRef(ipcCommand.channel);
                 break;
-            case IpcBusCommand.Kind.BrokerRemoveChannelListener:
+            case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscribedChannels.release(ipcCommand.channel);
                 break;
 
-            case IpcBusCommand.Kind.QueryState: {
+            case IpcBusCommand.Kind.QueryState:
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this._bridge._onSocketCommandReceived(ipcCommand);
                 break;
-            }
 
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestResponse: {
@@ -144,7 +145,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._bridge._onSocketClosed();
     }
 
-    queryState(): QueryStateTransport {
+    override queryState(): QueryStateTransport {
         const peersJSON: QueryStatePeers = {};
         const processChannelsJSON: QueryStateChannels = {};
 

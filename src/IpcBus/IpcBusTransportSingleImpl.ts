@@ -134,6 +134,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         }
 
         const results: QueryStateTransport = {
+            type: 'transport',
             channels: processChannelsJSON,
             peers: peersJSON
         }

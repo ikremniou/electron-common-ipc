@@ -145,6 +145,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         }
 
         const results: QueryStateTransport = {
+            type: 'transport',
             channels: processChannelsJSON,
             peers: peersJSON
         };
