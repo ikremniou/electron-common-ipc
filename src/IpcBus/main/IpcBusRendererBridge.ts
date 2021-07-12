@@ -8,7 +8,7 @@ import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
-import type { QueryStateBase, QueryStateChannels, QueryStatePeerProcesses, QueryStatePeers, QueryStateRendererBridge } from '../IpcBusQueryState';
+import type { QueryStateBase, QueryStateChannels, QueryStatePeerProcesses, QueryStateRendererBridge } from '../IpcBusQueryState';
 import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
