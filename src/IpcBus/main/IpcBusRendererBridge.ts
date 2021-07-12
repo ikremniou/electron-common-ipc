@@ -264,6 +264,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.remove(key);
                 return true;
             }
+
+            case IpcBusCommand.Kind.QueryState: {
+                return true;
+            }
         }
         return false;
     }
