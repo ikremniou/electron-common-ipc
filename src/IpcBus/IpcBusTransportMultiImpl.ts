@@ -6,6 +6,7 @@ import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector } from './IpcBusConnector';
 import { ChannelConnectionMap } from './IpcBusChannelMap';
+import type { QueryStateTransport, QueryStateChannels, QueryStatePeers } from './IpcBusQueryState';
 
 /** @internal */
 export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
@@ -26,7 +27,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+    onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
             args = args || ipcPacketBufferCore.parseArrayAt(1);
@@ -114,5 +115,39 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         else {
             this._subscriptions.remove(client.peer.id);
         }
+    }
+
+    queryState(): QueryStateTransport {
+        const peersJSON: QueryStatePeers = {};
+        const processChannelsJSON: QueryStateChannels = {};
+
+        const channels = this._subscriptions.getChannels();
+        for (let i = 0; i < channels.length; ++i) {
+            const channel = channels[i];
+            const processChannelJSON = processChannelsJSON[channel] = {
+                name: channel,
+                refCount: 0
+            }
+            const channelConns = this._subscriptions.getChannelConns(channel);
+            channelConns.forEach((clientRef) => {
+                processChannelJSON.refCount += clientRef.refCount;
+                const peer = clientRef.data.peer;
+                const peerJSON = peersJSON[peer.id] = peersJSON[peer.id] || {
+                    peer,
+                    channels: {}
+                };
+                const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
+                    name: channel,
+                    refCount: 0
+                };
+                peerChannelJSON.refCount += clientRef.refCount;
+            })
+        }
+
+        const results: QueryStateTransport = {
+            channels: processChannelsJSON,
+            peers: peersJSON
+        };
+        return results;
     }
 }

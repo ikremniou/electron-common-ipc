@@ -10,6 +10,7 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelsRefCount } from '../IpcBusChannelMap';
+import type { QueryStateChannels, QueryStatePeers, QueryStateSocketBrige, QueryStateTransport } from '../IpcBusQueryState';
 import type { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 
 import type { IpcBusBridgeClient, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
@@ -99,7 +100,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         // call when closing the transport
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+    override onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         throw 'not implemented';
     }
 
@@ -112,12 +113,17 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
                 this._subscribedChannels.release(ipcCommand.channel);
                 break;
 
+            case IpcBusCommand.Kind.QueryState: {
+                break;
+            }
+
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
                 this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
                 break;
             }
+
             default:
                 break;
         }
@@ -136,6 +142,30 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         super.onConnectorShutdown();
         this._subscribedChannels.clear();
         this._bridge._onSocketClosed();
+    }
+
+    queryState(): QueryStateTransport {
+        const peersJSON: QueryStatePeers = {};
+        const processChannelsJSON: QueryStateChannels = {};
+
+        const channels = this._subscribedChannels.getChannels();
+        for (let i = 0; i < channels.length; ++i) {
+            const channel = channels[i];
+            const processChannelJSON = processChannelsJSON[channel] = {
+                name: channel,
+                refCount: 0
+            }
+            const refCount = this._subscribedChannels.get(channel);
+            processChannelJSON.refCount += refCount;
+        }
+
+        const results: QueryStateSocketBrige = {
+            type: 'connector-socket-bridge',
+            process: this._connector.peer,
+            channels: processChannelsJSON,
+            peers: peersJSON
+        };
+        return results;
     }
 }
 

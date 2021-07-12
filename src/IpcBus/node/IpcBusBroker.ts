@@ -25,5 +25,4 @@ export namespace IpcBusBroker {
 export interface IpcBusBroker {
     connect: IpcBusBroker.ConnectFunction;
     close: IpcBusBroker.CloseFunction;
-    queryState(): Object;
 }

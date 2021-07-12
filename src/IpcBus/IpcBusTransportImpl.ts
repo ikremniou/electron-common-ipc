@@ -9,6 +9,7 @@ import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector, PostCommandFunction, PostMessageFunction } from './IpcBusConnector';
 import { JSONParserV1 } from 'json-helpers';
 import { CastToMessagePort, DeferredRequestPromise } from './IpcBusTransport-helpers';
+import type { QueryStateTransport } from './IpcBusQueryState';
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
@@ -105,7 +106,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 // } 
                 messageHandled = true;
                 if (local) {
-                    this._onResponseReceived(true, ipcResponse, argsResponse);
+                    this.onRequestResponseReceived(true, ipcResponse, argsResponse);
                     // if (this._onResponseReceived(true, ipcResponse, argsResponse) && logGetMessage) {
                     //     this._connector.logLocalMessage(client.peer, ipcResponse, argsResponse);
                     // }
@@ -136,7 +137,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return messageHandled;
     }
 
-    protected _onResponseReceived(local: boolean, ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
+    onRequestResponseReceived(local: boolean, ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         const deferredRequest = this._requestFunctions.get(ipcResponse.channel);
         if (deferredRequest) {
             this._requestFunctions.delete(ipcResponse.request.id);
@@ -155,9 +156,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     onConnectorArgsReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                return this._onMessageReceived(false, ipcMessage, args, undefined, messagePorts);
+                return this.onMessageReceived(false, ipcMessage, args, undefined, messagePorts);
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcMessage, args, undefined);
+                return this.onRequestResponseReceived(false, ipcMessage, args, undefined);
         }
         return false;
     }
@@ -166,9 +167,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     onConnectorPacketReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                return this._onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
+                return this.onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
+                return this.onRequestResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
         }
         return false;
     }
@@ -180,9 +181,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         ipcPacketBufferCore.JSON = JSONParserV1;
         switch (ipcMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
-                return this._onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
+                return this.onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
+                return this.onRequestResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
         }
         return false;
     }
@@ -211,7 +212,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // }
 
         // Broadcast locally
-        if (this._onMessageReceived(true, ipcMessage, args, undefined, messagePorts)) {
+        if (this.onMessageReceived(true, ipcMessage, args, undefined, messagePorts)) {
             // this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
         // If not resolved by local clients
@@ -253,7 +254,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         //     logSendMessage = this._connector.logMessageSend(null, ipcMessage);
         // }
         // Broadcast locally
-        if (this._onMessageReceived(true, ipcRequest, args, undefined)) {
+        if (this.onMessageReceived(true, ipcRequest, args, undefined)) {
             // this._connector.logLocalMessage(client.peer, ipcMessage, args);
         }
         // If not resolved by local clients
@@ -301,10 +302,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connector.isTarget(ipcMessage);
     }
 
+    onCommandReceived(ipcCommand: IpcBusCommand): void {
+    }
+
     abstract getChannels(): string[];
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
+    abstract queryState(): QueryStateTransport;
 
-    protected abstract _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
+    abstract onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean;
 }

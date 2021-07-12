@@ -7,10 +7,12 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 
-import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
+import { IpcBusCommand, IpcBusCommandBase } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { JSONParserV1 } from 'json-helpers';
+import type { QueryStateConnector } from '../IpcBusQueryState';
 
 // Implementation for Node process
 /** @internal */
@@ -76,11 +78,37 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
-                const ipcMessage: IpcBusMessage = this._packetIn.parseArrayAt(0);
-                this._client.onConnectorPacketReceived(ipcMessage, this._packetIn);
+                const ipcCommandBase: IpcBusCommandBase = this._packetIn.parseArrayAt(0);
+                switch (ipcCommandBase.kind) {
+                    case IpcBusCommand.Kind.SendMessage:
+                        this._client.onMessageReceived(false, ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
+                        break;
+                    case IpcBusCommand.Kind.RequestResponse:
+                        this._client.onRequestResponseReceived(false, ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
+                        break;
+                    default: 
+                        this.onCommandReceived(ipcCommandBase as IpcBusCommand);
+                        break;
+                }
             } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();
+        }
+    }
+
+    override onCommandReceived(ipcCommand: IpcBusCommand): void {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryState: {
+                const queryState: QueryStateConnector = {
+                    type: 'connector-socket',
+                    process: this._peerProcess,
+                    ...this._client.queryState()
+                }
+                this.postCommand({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    queryState
+                } as any)
+            }
         }
     }
 

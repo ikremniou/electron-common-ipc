@@ -28,6 +28,9 @@ export namespace IpcBusCommand {
         BrokerAddChannelListener    = 'BOICA',
         BrokerRemoveChannelListener = 'BOICR',
 
+        QueryState = 'QUST',
+        QueryStateResponse = 'QUSTR',
+
         // Message
         SendMessage                 = 'MES',
         RequestResponse             = 'RQR',

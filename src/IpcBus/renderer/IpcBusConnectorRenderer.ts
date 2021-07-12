@@ -1,14 +1,18 @@
+/// <reference types='electron' />
+
 import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
-import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
+import { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
+import type { QueryStateConnector } from '../IpcBusQueryState';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
 export const IPCBUS_TRANSPORT_RENDERER_TO_RENDERER = 'ECIPC:IpcBusRenderer:RendererToRenderer';
@@ -86,7 +90,24 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     protected onPortCommandReceived(event?: MessageEvent) {
-        // const ipcCommand = event.data as IpcBusCommand;
+        const ipcCommand = event.data as IpcBusCommand;
+        this.onCommandReceived(ipcCommand);
+    }
+
+    override onCommandReceived(ipcCommand: IpcBusCommand): void {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryState: {
+                const queryState: QueryStateConnector = {
+                    type: 'connector-renderer',
+                    process: this._peerProcess,
+                    ...this._client.queryState()
+                }
+                this.postCommand({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    queryState
+                } as any)
+            }
+        }
     }
 
     /// IpcBusTrandport API
