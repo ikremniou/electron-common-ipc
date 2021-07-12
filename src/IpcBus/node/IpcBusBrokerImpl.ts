@@ -327,7 +327,10 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 const queryState = this.queryState();
                 this.broadcastCommandToBridge({
                     kind: IpcBusCommand.Kind.QueryStateResponse,
-                    queryState
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
                 } as any)
                 break;
             }

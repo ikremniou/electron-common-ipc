@@ -190,7 +190,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
         this._endpoints.forEach((endpoint) => {
-            endpoint.messagePort.postMessage(ipcCommand);
+            endpoint.commandPort.postMessage(ipcCommand);
         });
     }
 

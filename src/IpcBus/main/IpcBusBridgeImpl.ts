@@ -209,7 +209,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore) {
-        // Deactivate isTarget has such tests is done inner
         if (this._mainTransport.onConnectorPacketReceived(ipcMessage, ipcPacketBufferCore) === false) {
             this._rendererConnector.broadcastPacket(ipcMessage, ipcPacketBufferCore);
         }
