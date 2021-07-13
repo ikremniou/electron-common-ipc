@@ -1,6 +1,6 @@
 const chai = require('chai');
 const assert = chai.assert;
-const shortid = require('shortid');
+const nanoid = require('nanoid');
 
 describe('map travel', () => {
     const size = 10000;
@@ -36,8 +36,8 @@ describe('map access object vs number', () => {
     const mapNumber = new Map();
     const mapObject = new Map();
     for (let i = 0; i < 100000; ++i) {
-        mapNumber.set(shortid.generate(), 1);
-        mapObject.set(shortid.generate(), { refCount: 1 });
+        mapNumber.set(nanoid.nanoid(), 1);
+        mapObject.set(nanoid.nanoid(), { refCount: 1 });
     }
 
     it(`addRef - object`, () => {
