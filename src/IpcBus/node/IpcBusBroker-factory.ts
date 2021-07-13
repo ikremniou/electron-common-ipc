@@ -10,12 +10,12 @@ export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker 
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType}`);
     switch (electronProcessType) {
         case 'main': {
-            const newModule = require('./IpcBusBroker-new-main');
+            const newModule = require('./IpcBusBroker-factory-main');
             ipcBusBroker = newModule.NewIpcBusBroker(electronProcessType);
             break;
         }
         case 'node': {
-            const newModule = require('./IpcBusBroker-new-node');
+            const newModule = require('./IpcBusBroker-factory-node');
             ipcBusBroker = newModule.NewIpcBusBroker(electronProcessType);
             break;
         }

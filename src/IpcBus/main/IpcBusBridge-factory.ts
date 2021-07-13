@@ -11,7 +11,7 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusBridge process type = ${electronProcessType}`);
         switch (electronProcessType) {
             case 'main': {
-                const newModule = require('./IpcBusBridge-new-main');
+                const newModule = require('./IpcBusBridge-factory-main');
                 g_bridge = newModule.NewIpcBusBridge(electronProcessType);
                 break;
             }
