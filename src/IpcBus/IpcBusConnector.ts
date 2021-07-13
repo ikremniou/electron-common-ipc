@@ -3,7 +3,6 @@ import type { IpcPacketBufferCore, IpcPacketBuffer } from 'socket-serializer';
 import type { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
 import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
-import type { QueryStateTransport } from './IpcBusQueryState';
 
 /** @internal */
 export namespace IpcBusConnector {
@@ -25,9 +24,6 @@ export namespace IpcBusConnector {
 
         onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
-
-
-        queryState(): QueryStateTransport;
     }
 }
 

@@ -147,6 +147,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
 
         const results: QueryStateSocketBridge = {
             type: 'transport-socket-bridge',
+            process: this._connector.peer.process,
             channels: processChannelsJSON,
             peers: peersJSON
         };

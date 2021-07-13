@@ -48,24 +48,27 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected generateName(peer: Client.IpcBusPeer, name?: string): string {
         if (name == null) {
             // static part
-            name = `${peer.process.type}`;
-            if (peer.process.wcid) {
-                name += `-${peer.process.wcid}`;
-            }
-            if (peer.process.frameid) {
-                name += `-f${peer.process.frameid}`;
-            }
-            if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
-                name += `-r${peer.process.rid}`;
-            }
-            if (peer.process.pid) {
-                name += `-p${peer.process.pid}`;
-            }
+            name = IpcBusUtils.CreateProcessID(peer.process);
             // dynamic part
             ++IpcBusTransportImpl.s_clientNumber;
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
+    }
+
+    onCommandReceived(ipcCommand: IpcBusCommand): void {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryState: {
+                const queryState = this.queryState();
+                this._postCommand({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
+                } as any);
+            }
+        }
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -300,9 +303,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
         return this._connector.isTarget(ipcMessage);
-    }
-
-    onCommandReceived(ipcCommand: IpcBusCommand): void {
     }
 
     abstract getChannels(): string[];

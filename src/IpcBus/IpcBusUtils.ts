@@ -1,12 +1,30 @@
 // import * as uuid from 'uuid';
 import * as shortid from 'shortid';
 
-import type { IpcConnectOptions } from './IpcBusClient';
+import type { IpcBusProcess, IpcConnectOptions } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
+
+export function CreateProcessID(ipcProcess: IpcBusProcess) {
+    // static part
+    let name = `${ipcProcess.type}`;
+    if (ipcProcess.wcid) {
+        name += `-${ipcProcess.wcid}`;
+    }
+    if (ipcProcess.frameid) {
+        name += `-f${ipcProcess.frameid}`;
+    }
+    if (ipcProcess.rid && (ipcProcess.rid !== ipcProcess.wcid)) {
+        name += `-r${ipcProcess.rid}`;
+    }
+    if (ipcProcess.pid) {
+        name += `-p${ipcProcess.pid}`;
+    }
+    return name;
+}
 
 
 export type Arr = readonly unknown[];

@@ -21,7 +21,8 @@ interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
 
 /** @internal */
 export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
-    // protected _ipcBusBrokerClient: Client.IpcBusClient;
+    protected _contextType: Client.IpcBusProcessType;
+
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -33,6 +34,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
     constructor(contextType: Client.IpcBusProcessType) {
+        this._contextType = contextType;
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
         this._endpoints = new Map();
 
@@ -278,6 +280,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
         const results: QueryStateBroker = {
             type: 'broker',
+            process: { type: this._contextType, pid: process.pid },
             channels: processChannelsJSON,
             peers: peersJSON
         };
