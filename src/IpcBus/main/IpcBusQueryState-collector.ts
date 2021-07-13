@@ -52,6 +52,6 @@ export class IpcBusQueryStateManager {
         else {
             processEntry.push(queryStateResponse.queryState);
         }
-        console.log(`QueryState: ${JSON.stringify(queryStateResponse)}`);
+        console.log(`QueryState: ${JSON.stringify(queryStateResponse, null, 4)}`);
     }
 }
