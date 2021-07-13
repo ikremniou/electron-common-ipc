@@ -44,7 +44,6 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void;
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void;
     postCommand(ipcCommand: IpcBusCommand): void;
 

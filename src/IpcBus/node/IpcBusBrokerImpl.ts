@@ -350,8 +350,8 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
-                        return;
                     }
+                    return;
                 }
                 this._subscriptions.forEachChannel(ipcCommand.channel, (connData) => {
                     // Prevent echo message
@@ -372,11 +372,11 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
-                        return;
                     }
+                    return;
                 }
                 // Response if not for a socket client, forward to main bridge
-                this.broadcastToBridge(socket, ipcMessage, ipcPacketBufferList);
+                this.broadcastToBridgeRequestResponse(socket, ipcMessage, ipcPacketBufferList);
                 break;
             }
 
@@ -424,5 +424,5 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected abstract broadcastCommandToBridge(ipcCommand: IpcBusCommand): void;
     protected abstract broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
-    protected abstract broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
+    protected abstract broadcastToBridgeRequestResponse(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
 }
