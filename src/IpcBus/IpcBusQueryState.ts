@@ -58,14 +58,16 @@ export interface QueryStateTransport extends QueryStateBase {
 }
 
 /** @internal */
+export interface QueryStateSocketBridge extends QueryStateTransport {
+    type: 'transport-socket-bridge',
+}
+
+
+/** @internal */
 export interface QueryStateConnector extends QueryStateBase {
     peerProcess: Client.IpcBusPeerProcess;
 }
 
-/** @internal */
-export interface QueryStateSocketBridge extends QueryStateTransport {
-    type: 'transport-socket-bridge',
-}
 
 /** @internal */
 export interface QueryStateBridge extends QueryStateBase {

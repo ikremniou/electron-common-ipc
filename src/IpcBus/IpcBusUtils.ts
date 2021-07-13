@@ -1,5 +1,4 @@
-// import * as uuid from 'uuid';
-import * as shortid from 'shortid';
+import * as nanoid from 'nanoid/non-secure';
 
 import type { IpcBusProcess, IpcConnectOptions } from './IpcBusClient';
 
@@ -115,10 +114,10 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
 //     // return uuid.v1();
 //     return shortid.generate();
 // }
-shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#&')
+const nanoidGenerator = nanoid.customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&(){}[]<>~', 10)
 /** @internal */
 export function CreateUniqId(): string {
-    return shortid.generate();
+    return nanoidGenerator();
 }
 
 /** @internal */
