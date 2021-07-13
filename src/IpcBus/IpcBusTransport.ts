@@ -2,6 +2,7 @@ import type { EventEmitter } from 'events';
 
 import type * as Client from './IpcBusClient';
 import type { IpcBusMessage } from './IpcBusCommand';
+import type { QueryStateTransport } from './IpcBusQueryState';
 
 /** @internal */
 export namespace IpcBusTransport {
@@ -26,4 +27,6 @@ export interface IpcBusTransport {
 
     postRequestMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
     postMessage(client: IpcBusTransport.Client, target: Client.IpcBusPeer | Client.IpcBusPeerProcess | undefined, channel: string, args: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void;
+
+    queryState(): QueryStateTransport;
 }

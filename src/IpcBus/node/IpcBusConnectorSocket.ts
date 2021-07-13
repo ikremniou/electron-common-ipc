@@ -101,8 +101,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
             case IpcBusCommand.Kind.QueryState: {
                 const queryState: QueryStateConnector = {
                     type: 'connector-socket',
-                    process: this._peerProcess,
-                    ...this._client.queryState()
+                    process: this._peerProcess.process,
+                    peerProcess: this._peerProcess,
                 }
                 this.postCommand({
                     kind: IpcBusCommand.Kind.QueryStateResponse,
@@ -111,7 +111,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         queryState
                     }
                 } as any);
-                return;
+                break;
             }
         }
         super.onCommandReceived(ipcCommand);

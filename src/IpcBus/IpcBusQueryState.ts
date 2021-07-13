@@ -40,7 +40,8 @@ export interface QueryStateBase {
     type: 'transport' | 'transport-socket-bridge'
             | 'connector' | 'connector-renderer' | 'connector-socket'
             | 'renderer-bridge'
-            | 'broker-bridge' | 'broker'
+            | 'broker-bridge' | 'broker',
+    process: Client.IpcBusProcess;
 }
 
 /** @internal */
@@ -51,13 +52,14 @@ export interface QueryStateResponse {
 
 /** @internal */
 export interface QueryStateTransport extends QueryStateBase {
+    type: 'transport' | 'transport-socket-bridge'
     peers: QueryStatePeers;
     channels: QueryStateChannels;
 }
 
 /** @internal */
-export interface QueryStateConnector extends QueryStateTransport {
-    process: Client.IpcBusPeerProcess;
+export interface QueryStateConnector extends QueryStateBase {
+    peerProcess: Client.IpcBusPeerProcess;
 }
 
 /** @internal */

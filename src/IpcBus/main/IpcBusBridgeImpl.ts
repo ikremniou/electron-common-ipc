@@ -16,6 +16,7 @@ import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import type { QueryStateBase, QueryStateResponse } from '../IpcBusQueryState';
+import { IpcBusQueryStateManager } from './IpcBusQueryState-collector';
 
 export interface IpcBusBridgeClient {
     getChannels(): string[];
@@ -39,16 +40,28 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _rendererConnector: IpcBusRendererBridge;
     protected _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
 
+    protected _queryStateManager: IpcBusQueryStateManager;
+
     constructor(contextType: Client.IpcBusProcessType) {
         const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
-        this._rendererConnector = new IpcBusRendererBridge(this);
+        this._rendererConnector = new IpcBusRendererBridge(contextType, this);
 
         this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
+
+        this._queryStateManager = new IpcBusQueryStateManager(this);
     }
 
     get mainTransport(): IpcBusTransport {
         return this._mainTransport;
+    }
+
+    get rendererTransport(): IpcBusRendererBridge {
+        return this._rendererConnector;
+    }
+
+    get socketTransport(): IpcBusBridgeClient {
+        return this._rendererConnector;
     }
 
     getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
@@ -99,22 +112,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         });
     }
 
-    postQueryState() {
-        const ipcQueryState: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.QueryState,
-            channel: 'titi'
-        };
-        const rendererQueryState = this._rendererConnector.queryState();
-        console.log(`QueryState: ${JSON.stringify(rendererQueryState)}`);
-        this._rendererConnector.broadcastCommand(ipcQueryState);
-        const mainQueryState = this._mainTransport.queryState();
-        console.log(`QueryState: ${JSON.stringify(mainQueryState)}`);
-        this._mainTransport.onCommandReceived(ipcQueryState);
-        if (this._socketTransport) {
-            const socketQueryState = this._socketTransport.queryState();
-            console.log(`QueryState: ${JSON.stringify(socketQueryState)}`);
-            this._socketTransport.broadcastCommand(ipcQueryState);
-        }
+    startQueryState() {
+        this._queryStateManager.start();
     }
 
     getChannels(): string[] {
@@ -138,8 +137,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onRendererCommandReceived(ipcCommand: IpcBusCommand) {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.QueryStateResponse: {
-                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
-                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                const queryStateResponse = (ipcCommand as any).data as QueryStateResponse;
+                this._queryStateManager.collect(queryStateResponse);
                 break;
             }
         }
@@ -174,8 +173,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onMainCommandReceived(ipcCommand: IpcBusCommand) {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.QueryStateResponse: {
-                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
-                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                const queryStateResponse = (ipcCommand as any).data as QueryStateResponse;
+                this._queryStateManager.collect(queryStateResponse);
                 break;
             }
         }
@@ -201,8 +200,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onSocketCommandReceived(ipcCommand: IpcBusCommand) {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.QueryStateResponse: {
-                const queryStatResponse = (ipcCommand as any).data as QueryStateResponse;
-                console.log(`QueryState: ${JSON.stringify(queryStatResponse)}`);
+                const queryStateResponse = (ipcCommand as any).data as QueryStateResponse;
+                this._queryStateManager.collect(queryStateResponse);
                 break;
             }
         }

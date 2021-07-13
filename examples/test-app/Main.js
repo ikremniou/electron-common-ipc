@@ -232,7 +232,7 @@ var MainProcess = (function () {
         }
 
         function doQueryState() {
-            ipcBridge.postQueryState();
+            ipcBridge.startQueryState();
             // if (ipcBroker) {
             //     var queryState = ipcBroker.queryState();
             //     mainWindow.webContents.send('get-queryState', queryState);

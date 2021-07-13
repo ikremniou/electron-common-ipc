@@ -31,6 +31,8 @@ interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
+    private _contextType: Client.IpcBusProcessType;
+
     private _bridge: IpcBusBridgeImpl;
     private _ipcMain: Electron.IpcMain;
     
@@ -39,7 +41,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     protected _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
 
-    constructor(bridge: IpcBusBridgeImpl) {
+    constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
+        this._contextType = contextType;
+    
         this._bridge = bridge;
         this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
 
@@ -313,6 +317,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         const results: QueryStateRendererBridge = {
             type: 'renderer-bridge',
+            process: { type: this._contextType, pid: process.pid },
             channels: processChannelsJSON,
             peers: peersJSON
         };
