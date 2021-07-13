@@ -171,10 +171,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    postRequestMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
-        this.postMessage(ipcMessage, args);
-    }
-
     postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
         this._messageBag.set(ipcMessage, args);
         if (messagePorts == null) {

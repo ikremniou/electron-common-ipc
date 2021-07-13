@@ -50,7 +50,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
-        this._connector.postCommand(ipcCommand);
+        this._postCommand(ipcCommand);
     }
 
     broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
@@ -63,7 +63,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
             }
         }
         else {
-            this._connector.postMessage(ipcMessage, data, messagePorts);
+            this._postMessage(ipcMessage, data, messagePorts);
             return false;
         }
     }

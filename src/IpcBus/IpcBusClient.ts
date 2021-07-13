@@ -153,11 +153,11 @@ export interface IpcBusClient extends EventEmitter {
     addListener(channel: string, listener: IpcBusListener): this;
     removeListener(channel: string, listener: IpcBusListener): this;
     removeAllListeners(channel?: string): this;
+
     on(channel: string, listener: IpcBusListener): this;
     once(channel: string, listener: IpcBusListener): this;
     off(channel: string, listener: IpcBusListener): this;
 
-    // EventEmitter API - Added in Node 6...
     prependListener(channel: string, listener: IpcBusListener): this;
     prependOnceListener(channel: string, listener: IpcBusListener): this;
 }

@@ -87,8 +87,8 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this._bridge._onSocketCommandReceived(ipcCommand);
     }
 
-    protected override broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
-        this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
+    protected override broadcastToBridgeRequestResponse(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onSocketRequestResponseReceived(ipcMessage, ipcPacketBufferList);
     }
 
     protected override broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {

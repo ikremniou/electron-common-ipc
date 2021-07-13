@@ -100,7 +100,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected override broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+    protected override broadcastToBridgeRequestResponse(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._socketWriter) {
             WriteBuffersToSocket(this._socketWriter.socket, ipcPacketBufferList.buffers);
         }

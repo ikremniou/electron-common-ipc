@@ -67,6 +67,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         queryState
                     }
                 } as any);
+                break;
             }
         }
     }
@@ -284,7 +285,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 // Connect to ... connector
                 this._postCommand = this._connector.postCommand.bind(this._connector);
                 this._postMessage = this._connector.postMessage.bind(this._connector);
-                this._postRequestMessage = this._connector.postRequestMessage.bind(this._connector);
+                this._postRequestMessage = this._connector.postMessage.bind(this._connector);
                 return handshake;
             })
             .then((handshake) => {
