@@ -1,7 +1,7 @@
 import { JSONParserV1 } from 'json-helpers';
 import { IpcPacketBuffer, Writer } from 'socket-serializer';
 
-import type { IpcBusMessagePortPost, IpcBusPeer, IpcBusPeerProcess, IpcMessagePortType } from './IpcBusClient';
+import type { IpcBusPeer, IpcBusPeerProcess, IpcMessagePortType } from './IpcBusClient';
 import type { IpcBusCommand, IpcBusMessage, IpcBusTarget } from './IpcBusCommand';
 import { CreateUniqId } from './IpcBusUtils';
 
@@ -75,16 +75,18 @@ export function CreateTargetChannel(peer: IpcBusPeer): string {
     return `${targetTypeSignature}${JSON.stringify(target)}${TargetSignature}${CreateUniqId()}`;
 }
 
+// target is tested prior to this function call
 export function CreateMessageTarget(target: IpcBusPeer | IpcBusPeerProcess | undefined): IpcBusTarget {
-    if (target == null) {
-        return undefined;
-    }
-    const messageTarget: IpcBusTarget = { process: target.process };
+    // if (target == null) {
+    //     return undefined;
+    // }
     if ((target as any).id) {
         const peer = target as IpcBusPeer;
-        messageTarget.peerid = peer.id;
+        return { process: target.process, peerid: peer.id };
     }
-    return messageTarget;
+    else {
+        return { process: target.process };
+    }
 }
 
 export class SerializeMessage {
@@ -116,19 +118,19 @@ export class SerializeMessage {
         this._packetOut.write(writer, [ipcCommand]);
     }
 
-    postMessage(port: IpcBusMessagePortPost, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
-        // Seems to have a bug in Electron, undefined is not supported for messagePorts !
-        messagePorts = messagePorts || [];
-        try {
-            port.postMessage([ipcMessage, args], messagePorts as any);
-        }
-        catch (err) {
-            // maybe an arg does not supporting Electron serialization !
-            const packet = this.serialize(ipcMessage, args);
-            const rawData = packet.getRawData();
-            port.postMessage([ipcMessage, rawData], messagePorts as any);
-        }
-    }
+    // postMessage(port: IpcBusMessagePortPost, ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
+    //     // Seems to have a bug in Electron, undefined is not supported for messagePorts !
+    //     // messagePorts = messagePorts || [];
+    //     try {
+    //         port.postMessage([ipcMessage, args], messagePorts as any);
+    //     }
+    //     catch (err) {
+    //         // maybe an arg does not supporting Electron serialization !
+    //         const packet = this.serialize(ipcMessage, args);
+    //         const rawData = packet.getRawData();
+    //         port.postMessage([ipcMessage, rawData], messagePorts as any);
+    //     }
+    // }
 }
 
 export interface IpcInterface {
@@ -218,7 +220,7 @@ export class SmartMessageBag {
 
     portMessage(port: PortInterface, messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
         // Seems to have a bug in Electron, undefined is not supported for messagePorts !
-        messagePorts = messagePorts || [];
+        // messagePorts = messagePorts || [];
         if (this._data) {
             if (this._supportStructureClone !== false) {
                 try {

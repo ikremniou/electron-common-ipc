@@ -7,6 +7,7 @@ export const IPC_BUS_TIMEOUT = 2000;// 20000;
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
 
+/** @internal */
 export function CreateProcessID(ipcProcess: IpcBusProcess) {
     // static part
     let name = `${ipcProcess.type}`;
@@ -26,7 +27,9 @@ export function CreateProcessID(ipcProcess: IpcBusProcess) {
 }
 
 
+/** @internal */
 export type Arr = readonly unknown[];
+/** @internal */
 export function partialCall<T extends Arr, U extends Arr, R>(f: (...args: [...T, ...U]) => R, ...headArgs: T) {
     return (...tailArgs: U) => f(...headArgs, ...tailArgs)
 }
