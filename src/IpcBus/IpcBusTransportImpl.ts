@@ -131,7 +131,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             };
         }
         else {
-            if (messagePorts) {
+            if (messagePorts && messagePorts.length) {
                 ipcBusEvent.ports = messagePorts.map(CastToMessagePort);
             }
         }
@@ -209,7 +209,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusCommandHelpers.CreateMessageTarget(target)
+            target: target && IpcBusCommandHelpers.CreateMessageTarget(target)
         }
         // if (this._logActivate) {
         //     this._connector.logMessageSend(null, ipcMessage);
@@ -250,7 +250,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
-            target: IpcBusCommandHelpers.CreateMessageTarget(target),
+            target: target && IpcBusCommandHelpers.CreateMessageTarget(target),
             request: ipcBusMessageRequest
         }
         // let logSendMessage: IpcBusCommand.Log;

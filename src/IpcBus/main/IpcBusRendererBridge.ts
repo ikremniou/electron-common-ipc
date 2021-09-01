@@ -39,13 +39,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
     private _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
-    protected _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
-
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
         this._contextType = contextType;
     
         this._bridge = bridge;
-        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
 
         this._ipcMain = electron.ipcMain;
 
@@ -220,22 +217,25 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
-                // Electron has issue with a "undefined" ports arg
+                // Electron Main has issue with a "undefined" ports arg
                 messagePorts = messagePorts || [];
                 endpoint.messagePort.postMessage([ipcMessage, data], messagePorts);
             }
             return true;
         }
         if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
-            // Electron has issue with a "undefined" ports arg
-            messagePorts = messagePorts || [];
-            const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
-            this._subscriptions.forEachChannel(ipcMessage.channel, (connData) => {
-                // Prevent echo message
-                if (connData.key !== key) {
-                    connData.data.messagePort.postMessage([ipcMessage, data], messagePorts);
+            const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
+            if (channelConns) {
+                // Electron Main has issue with a "undefined" ports arg
+                messagePorts = messagePorts || [];
+                const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
+                for (const entry of channelConns) {
+                    // Prevent echo message
+                    if (entry[1].key !== key) {
+                        entry[1].data.messagePort.postMessage([ipcMessage, data], messagePorts);
+                    }
                 }
-            });
+            }
         }
         return false;
     }

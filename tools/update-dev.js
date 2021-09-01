@@ -2,6 +2,8 @@ const path = require('path');
 // https://github.com/pillys/copy-dir
 const fse = require('fs-extra');
 
+const force = process.argv.find(arg => arg === '--force');
+
 function LongestCommonPrefix(arr) {
     // sort() method arranges array elements alphabetically
     const sortArr = arr.sort();
@@ -12,14 +14,14 @@ function LongestCommonPrefix(arr) {
     // Get the last array element length minus one
     const arrLastElem = sortArr[sortArr.length - 1];
 
-    // Get first array element length
-    const arrFirstElemLength = arrFirstElem.length;
+    /* find the minimum length from first and last string */
+    const end = Math.min(arrFirstElem.length, arrLastElem.length);
 
     // while "i" is less than the length of the first array element AND
     // the first array element character position matches the last array character position
     // increment "i" by one
     let i = 0;
-    while (i < arrFirstElemLength && arrFirstElem.charAt(i) === arrLastElem.charAt(i)) {
+    while (i < end && arrFirstElem[i] === arrLastElem[i]) {
         ++i;
     }
 
@@ -40,6 +42,7 @@ function CreateToDirs() {
     toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'build', 'src', 'node_modules'));
     toDirs.push(path.join(DesktopFrameworkDir, 'workspace', 'build', 'app', 'node_modules'));
     toDirs.push(path.join(EikonOnElectronDir, 'node_modules'));
+    // toDirs.push(path.join(EikonOnElectronDir, 'build', 'node_modules'));
     return toDirs;
 }
 
@@ -48,17 +51,19 @@ function CopyDir(libraryName, fromDir, toDirs) {
     const package_json = fse.readJSONSync(package_json_filename);
     const libraryOutdir = path.dirname(package_json.main);
     const commonDir = LongestCommonPrefix(toDirs);
-    toDirs.forEach((topDir) => {
-        console.log(`copying to ${libraryName} to \"${topDir.substr(commonDir.length)}\"`);
-        if (fse.existsSync(path.join(topDir, libraryName))) {
+    toDirs.forEach((toDir) => {
+        console.log(`copying ${libraryName} to \"${toDir.substr(commonDir.length)}\"`);
+        const library_dirname = path.join(toDir, libraryName);
+        if (force || fse.existsSync(library_dirname)) {
+            fse.ensureDirSync(library_dirname);
             try {
-                fse.copyFileSync(package_json_filename, path.join(topDir, libraryName, 'package.json'));
+                fse.copyFileSync(package_json_filename, path.join(library_dirname, 'package.json'));
             }
             catch (err) {
                 console.error(err.message);
             }
             try {
-                fse.copySync(path.join(fromDir, libraryName, libraryOutdir), path.join(topDir, libraryName, libraryOutdir), {
+                fse.copySync(path.join(fromDir, libraryName, libraryOutdir), path.join(library_dirname, libraryOutdir), {
                     overwrite: true,
                     preserveTimestamps: true
                 });

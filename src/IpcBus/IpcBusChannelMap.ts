@@ -100,7 +100,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
     }
 
     protected _addChannel(client: ChannelConnectionMapClient<T, K>, channel: string, key: K, data: T, count: number): Map<K, ChannelConnectionDataRef<T, K>> {
-        Logger.enable && this._info(`SetChannel: '${channel}', key =  ${key}`);
+        Logger.enable && this._info(`Create Channel: '${channel}', key =  ${key}`);
 
         const connsMap = new Map<K, ChannelConnectionDataRef<T, K>>();
         // This channel has NOT been subscribed yet, add it to the map
@@ -115,6 +115,8 @@ export class ChannelConnectionMap<T, K extends string | number> {
     }
 
     private _removeChannel(client: ChannelConnectionMapClient<T, K>, channel: string, conn: ChannelConnectionData<T, K>): boolean {
+        Logger.enable && this._info(`Delete Channel: '${channel}'`);
+
         if (this._channelsMap.delete(channel)) {
             if (client) client.channelRemoved(channel, conn);
             return true;

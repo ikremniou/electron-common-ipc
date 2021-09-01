@@ -30,6 +30,16 @@ describe('map travel', () => {
         }
         console.timeEnd('for of');
     });
+
+    it(`for of #2`, () => {
+        console.time('for of #2');
+        for (let entry of map) {
+            const j = Number(entry[1]);
+            j;
+            entry[0];
+        }
+        console.timeEnd('for of #2');
+    });
 });
 
 describe('map access object vs number', () => {
