@@ -4,6 +4,7 @@ import type { IpcPacketBufferList } from 'socket-serializer';
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
@@ -11,6 +12,8 @@ import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 
 import { IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
+import type { QueryStateBase, QueryStateBroker, QueryStateChannels, QueryStatePeerProcesses } from '../IpcBusQueryState';
+import { CreateProcessId } from '../IpcBusConnectorImpl';
 
 interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     socket?: net.Socket;
@@ -18,7 +21,8 @@ interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
 
 /** @internal */
 export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
-    // protected _ipcBusBrokerClient: Client.IpcBusClient;
+    protected _contextType: Client.IpcBusProcessType;
+
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -30,6 +34,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
     constructor(contextType: Client.IpcBusProcessType) {
+        this._contextType = contextType;
         this._subscriptions = new ChannelConnectionMap('IPCBus:Broker');
         this._endpoints = new Map();
 
@@ -39,12 +44,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         this._netBinds['close'] = this._onServerClose.bind(this);
         this._netBinds['connection'] = this._onServerConnection.bind(this);
 
-        // this._onQueryState = this._onQueryState.bind(this);
         this._socketClients = new Map();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
-
-        // this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 
     protected _reset(closeServer: boolean) {
@@ -182,7 +184,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         // Broadcast peers destruction ?
         for (const endpoint of this._endpoints.values()) {
             if (endpoint.socket === socket) {
-                const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
                 this._endpoints.delete(key);
                 this._subscriptions.remove(key);
             }
@@ -237,19 +239,56 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     private _onEndpointHandshake(socket: net.Socket, ipcCommand: IpcBusCommand) {
         const endpoint: IpcBusPeerProcessEndpoint = { ...ipcCommand.peer, socket };
-        const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
     }
 
     private _onEndpointShutdown(socket: net.Socket, ipcCommand: IpcBusCommand) {
         const endpoint = ipcCommand.peer;
-        const key = IpcBusUtils.CreateKeyForEndpoint(endpoint);
+        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
         this._endpoints.delete(key);
         this._subscriptions.remove(key);
     }
 
+    queryState(): QueryStateBase {
+        const peersJSON: QueryStatePeerProcesses = {};
+        const processChannelsJSON: QueryStateChannels = {};
+
+        const channels = this._subscriptions.getChannels();
+        for (let i = 0; i < channels.length; ++i) {
+            const channel = channels[i];
+            const processChannelJSON = processChannelsJSON[channel] = {
+                name: channel,
+                refCount: 0
+            }
+            const channelConns = this._subscriptions.getChannelConns(channel);
+            channelConns.forEach((clientRef) => {
+                processChannelJSON.refCount += clientRef.refCount;
+                const peer = clientRef.data;
+                const peerid = CreateProcessId(peer.process);
+                const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
+                    peer,
+                    channels: {}
+                };
+                const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
+                    name: channel,
+                    refCount: 0
+                };
+                peerChannelJSON.refCount += clientRef.refCount;
+            });
+        }
+
+        const results: QueryStateBroker = {
+            type: 'broker',
+            process: { type: this._contextType, pid: process.pid },
+            channels: processChannelsJSON,
+            peers: peersJSON
+        };
+        return results;
+    }
+
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
-    onSocketCommand(socket: net.Socket, ipcCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
+    onSocketData(socket: net.Socket, ipcCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
                 this._onEndpointHandshake(socket, ipcCommand);
@@ -260,37 +299,59 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointSocket = this._endpoints.get(key);
                 this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.release(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelAllListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.releaseAll(ipcCommand.channel, key);
                 break;
             }
             case IpcBusCommand.Kind.RemoveListeners: {
-                const key = IpcBusUtils.CreateKeyForEndpoint(ipcCommand.peer);
+                const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.remove(key);
                 break;
             }
 
+            case IpcBusCommand.Kind.QueryState: {
+                this._subscriptions.forEachChannel(ipcCommand.channel, (connData) => {
+                    // Prevent echo message
+                    if (connData.data.socket !== socket) {
+                        WriteBuffersToSocket(connData.data.socket, ipcPacketBufferList.buffers);
+                    }
+                });
+                const queryState = this.queryState();
+                this.broadcastCommandToBridge({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
+                } as any)
+                break;
+            }
+
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this.broadcastCommandToBridge(ipcCommand);
+                break;
+
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+                const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
-                        return;
                     }
+                    return;
                 }
                 this._subscriptions.forEachChannel(ipcCommand.channel, (connData) => {
                     // Prevent echo message
@@ -306,16 +367,16 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
-                const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+                const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
                 if (target) {
                     const endpoint = this._endpoints.get(target.process.pid);
                     if (endpoint) {
                         WriteBuffersToSocket(endpoint.socket, ipcPacketBufferList.buffers);
-                        return;
                     }
+                    return;
                 }
                 // Response if not for a socket client, forward to main bridge
-                this.broadcastToBridge(socket, ipcMessage, ipcPacketBufferList);
+                this.broadcastToBridgeRequestResponse(socket, ipcMessage, ipcPacketBufferList);
                 break;
             }
 
@@ -349,10 +410,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         }
     }
 
-    queryState(): Object {
-        return null;
-    }
-    
     protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcCommand: IpcBusCommand) {
     }
 
@@ -365,12 +422,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected onBridgeRemoveChannel(socket: net.Socket, ipcCommand: IpcBusCommand) {
     }
 
-    protected broadcastToBridgeAddChannel(channel: string) {
-    }
-
-    protected broadcastToBridgeRemoveChannel(channel: string) {
-    }
-
+    protected abstract broadcastCommandToBridge(ipcCommand: IpcBusCommand): void;
     protected abstract broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
-    protected abstract broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
+    protected abstract broadcastToBridgeRequestResponse(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList): void;
 }

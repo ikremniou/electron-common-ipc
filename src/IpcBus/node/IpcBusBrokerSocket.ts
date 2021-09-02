@@ -7,7 +7,7 @@ import type { IpcBusCommand } from '../IpcBusCommand';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 export interface IpcBusBrokerSocketClient {
-    onSocketCommand(socket: net.Socket, ipcCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
+    onSocketData(socket: net.Socket, ipcCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
     onSocketEnd(socket: net.Socket): void;
@@ -72,7 +72,7 @@ export class IpcBusBrokerSocket {
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
                 const ipcCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-                this._client.onSocketCommand(this._socket, ipcCommand, this._packetIn);
+                this._client.onSocketData(this._socket, ipcCommand, this._packetIn);
             } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();

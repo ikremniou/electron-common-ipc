@@ -1,15 +1,18 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
 
-import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
+import { IpcBusCommand, IpcBusCommandBase } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { JSONParserV1 } from 'json-helpers';
+import type { QueryStateConnector } from '../IpcBusQueryState';
 
 // Implementation for Node process
 /** @internal */
@@ -21,8 +24,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socketWriter: Writer;
 
     private _packetIn: IpcPacketBufferList;
-    private _packetOut: IpcPacketWriter;
 
+    private _serializeMessage: IpcBusCommandHelpers.SerializeMessage;
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
@@ -32,8 +35,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
         this._packetIn.JSON = JSONParserV1;
-        this._packetOut = new IpcPacketWriter();
-        this._packetOut.JSON = JSONParserV1;
+        this._serializeMessage = new IpcBusCommandHelpers.SerializeMessage();
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
@@ -76,12 +78,43 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader.appendBuffer(buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
-                const ipcMessage: IpcBusMessage = this._packetIn.parseArrayAt(0);
-                this._client.onConnectorPacketReceived(ipcMessage, this._packetIn);
+                const ipcCommandBase: IpcBusCommandBase = this._packetIn.parseArrayAt(0);
+                switch (ipcCommandBase.kind) {
+                    case IpcBusCommand.Kind.SendMessage:
+                        this._client.onMessageReceived(false, ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
+                        break;
+                    case IpcBusCommand.Kind.RequestResponse:
+                        this._client.onRequestResponseReceived(false, ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
+                        break;
+                    default: 
+                        this.onCommandReceived(ipcCommandBase as IpcBusCommand);
+                        break;
+                }
             } while (this._packetIn.decodeFromReader(this._bufferListReader));
             // Remove read buffer
             this._bufferListReader.reduce();
         }
+    }
+
+    override onCommandReceived(ipcCommand: IpcBusCommand): void {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryState: {
+                const queryState: QueryStateConnector = {
+                    type: 'connector-socket',
+                    process: this._peerProcess.process,
+                    peerProcess: this._peerProcess,
+                }
+                this.postCommand({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
+                } as any);
+                break;
+            }
+        }
+        super.onCommandReceived(ipcCommand);
     }
 
     protected _reset(endSocket: boolean) {
@@ -99,7 +132,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+        const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
         return (target
                 && (target.process.pid == this._peerProcess.process.pid));
     }
@@ -244,17 +277,17 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], epcPorts?: Client.IpcBusMessagePort[]): void {
         if (this._socketWriter) {
             // ipcMessage.process = this._process;
-            this._packetOut.write(this._socketWriter, [ipcMessage, args]);
+            this._serializeMessage.writeMessage(this._socketWriter, ipcMessage, args);
         }
     }
 
     postCommand(ipcCommand: IpcBusCommand): void {
         if (this._socketWriter) {
             ipcCommand.peer = ipcCommand.peer || this._peerProcess;
-            this._packetOut.write(this._socketWriter, [ipcCommand]);
+            this._serializeMessage.writeCommand(this._socketWriter, ipcCommand);
         }
     }
 }

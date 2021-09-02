@@ -29,8 +29,7 @@ function doOpenPerfView(event) {
 
 function doQueryBrokerState() {
 //    processToMaster.send('queryState');
-    ipcBus.request(ipcBus.IPCBUS_CHANNEL_QUERY_STATE, 20000)
-        .then((ipcBusRequestResponse) => onIPC_BrokerStatusTopic(ipcBusRequestResponse.payload));
+    processToMaster.send('query-state');
 }
 
 function getProcessElt() {
@@ -46,6 +45,19 @@ function getTopicName(elt) {
         return topicName;
     }
     return getTopicName(elt.parentElement);
+}
+
+function doClearTopic(event) {
+    var target = event.target;
+    var topicItemElt = target.parentElement;
+    var topicReceivedElt = topicItemElt.querySelector('.topicReceived');
+    topicReceivedElt.value = '';
+}
+
+function findTopicItemElt(channel) {
+    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
+    var topicItemElt = SubscriptionsListElt.querySelector('[topic-name=\"' + channel + '\"]');
+    return topicItemElt;
 }
 
 function doSubscribeToTopic(event) {
@@ -202,37 +214,73 @@ function doSendMessageToTopic(event) {
     }
 }
 
-function doClearTopic(event) {
+function doSendPortToTopic(event) {
+    console.log('doSendPortToTopic:' + event);
+
     var target = event.target;
     var topicItemElt = target.parentElement;
-    var topicReceivedElt = topicItemElt.querySelector('.topicReceived');
-    topicReceivedElt.value = '';
+    var topicNameElt = topicItemElt.querySelector('.topicSendPortName');
+    var topicName = topicNameElt.value;
+
+    var topicMsgElt = topicItemElt.querySelector('.topicSendPortMsg');
+    var topicMsg = topicMsgElt.value;
+
+    var args = { topic: topicName, msg: topicMsg};
+    if (processToMonitor.Type() === 'renderer') {
+        const channel = new MessageChannel();
+        const port1 = channel.port1
+        const port2 = channel.port2
+        port2.postMessage(`I'm ${JSON.stringify(ipcBus.peer)}`);
+        ipcBus.postMessage(topicName, args, [port1]);
+        // port2.on('message', () => {
+        port2.addEventListener('message', (event) => {
+            var topicRespElt = document.querySelector('.topicSendPortResponse');
+            if (topicRespElt != null) {
+                topicRespElt.style.color = 'black';
+                topicRespElt.value = event.data; // + ' from (' + JSON.stringify(ipcBusEvent.sender) + ')';
+            }
+            port2.close();
+        });
+        port2.start();
+        // ipcBus.send(topicName, bigpayload);
+    }
+    else {
+        processToMonitor.postSendPort(topicName, topicMsg);
+    }
 }
 
-function findTopicItemElt(channel) {
-    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
-    var topicItemElt = SubscriptionsListElt.querySelector('[topic-name=\"' + channel + '\"]');
-    return topicItemElt;
-}
 
 function onIPC_Received(ipcBusEvent, ipcContent) {
     console.log('onIPCBus_received : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
-
-    var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
-    if (topicItemElt != null) {
-        var topicAutoReplyElt = topicItemElt.querySelector('.topicAutoReply');
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve(topicAutoReplyElt.value);
+    if (ipcBusEvent.ports && ipcBusEvent.ports.length) {
+        const [port] = ipcBusEvent.ports;
+        port.addEventListener('message', (event) => {
+            var topicRespElt = document.querySelector('.topicSendPortResponse');
+            if (topicRespElt != null) {
+                topicRespElt.style.color = 'black';
+                topicRespElt.value = event.data + ' from (' + JSON.stringify(ipcBusEvent.sender) + ')';
+            }
+            port.postMessage('Well received: ' + event.data);
+            port.close();
+        });
+        port.start();
+    }
+    else {
+        var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
+        if (topicItemElt != null) {
+            var topicAutoReplyElt = topicItemElt.querySelector('.topicAutoReply');
+            if (ipcBusEvent.request) {
+                ipcBusEvent.request.resolve(topicAutoReplyElt.value);
+            }
+            var topicReceivedElt = topicItemElt.querySelector('.topicReceived');
+            ipcContent += ' from (' + JSON.stringify(ipcBusEvent.sender) + ')';
+            topicReceivedElt.value = ipcContent + '\n';
         }
-        var topicReceivedElt = topicItemElt.querySelector('.topicReceived');
-        ipcContent += ' from (' + JSON.stringify(ipcBusEvent.sender) + ')';
-        topicReceivedElt.value = ipcContent + '\n';
     }
 }
 
 function onIPC_EmitReceived(ipcBusEvent, ipcContent1, ipcContent2, ipcContent3) {
     console.log('onIPC_EmitReceived : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
-
 
     var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
     if (topicItemElt != null) {
@@ -321,6 +369,10 @@ processMonitorDefaultSend.value = 'SendFrom:' + getParameterByName('peerName');
 var processMonitorDefaultRequest = processMonitorElt.querySelector('.topicRequestMsg');
 processMonitorDefaultRequest.value = 'PromiseFrom:' + getParameterByName('peerName');
 
+var processMonitorDefaultSendPort = processMonitorElt.querySelector('.topicSendPortMsg');
+processMonitorDefaultSendPort.value = 'SendPortFrom:' + getParameterByName('peerName');
+
+
 processToMaster = new ProcessConnector('browser', ipcRenderer);
 
 processToMonitor = new ProcessConnector(getParameterByName('type'), ipcRenderer, getParameterByName('id'));
@@ -357,8 +409,10 @@ if (getParameterByName('type') === 'renderer') {
     var perfTests = new PerfTests('renderer');
     ipcBus.connect()
         .then(() => {
+            processTitleElt.textContent = getParameterByName('peerName') + `( ${processId} / ${ipcBus.peer.id} )`;
+            document.title = processTitleElt.textContent;
             console.log('renderer : connected to ipcBus');
-            perfTests.connect(peerName);
+            perfTests.connect(peerName)
         });
 }
 if (getParameterByName('type') === 'node') {

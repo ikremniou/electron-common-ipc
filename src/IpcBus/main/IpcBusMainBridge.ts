@@ -7,7 +7,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
@@ -18,7 +18,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        return IpcBusUtils.GetTargetMain(ipcMessage) != null;
+        return IpcBusCommandHelpers.GetTargetMain(ipcMessage) != null;
     }
     
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
@@ -33,9 +33,11 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return Promise.resolve();
     }
 
-    postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void {
-        // ipcBusMessage.process = this._process;
-        this._bridge._onMainMessageReceived(ipcBusMessage, args);
+    postMessage(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): void {
+        // ipcMessage.process = this._process;
+        // Seems to have a bug in Electron, undefined is not supported
+        // messagePorts = messagePorts || [];
+        this._bridge._onMainMessageReceived(ipcMessage, data, messagePorts);
     }
 
     postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {
@@ -49,32 +51,14 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
                 ipcCommand.peer = ipcCommand.peer || this._peerProcess;
                 this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
+
+            case IpcBusCommand.Kind.QueryState:
+            case IpcBusCommand.Kind.QueryStateResponse:
+                this._bridge._onMainCommandReceived(ipcCommand);
+                break;
         }
     }
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
-    // broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-    //     throw 'not implemented';
-    // }
-
-    // broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-    //     throw 'not implemented';
-    // }
-
-    // broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): void {
-    //     throw 'not implemented';
-    // }
-
-    // broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): void {
-    //     this.onConnectorArgsReceived(ipcCommand, args);
-    // }
-
-    // broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
-    //     this.onConnectorPacketReceived(ipcCommand, ipcPacketBufferCore);
-    // }
-
-    // broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): void {
-    //     this.onConnectorRawDataReceived(ipcCommand, rawData);
-    // }
 }

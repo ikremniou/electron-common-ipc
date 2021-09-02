@@ -1,152 +1,211 @@
+/// <reference types='electron' />
+
 import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
-import { IpcPacketBuffer } from 'socket-serializer';
-import { JSONParserV1 } from 'json-helpers';
-
 import * as IpcBusUtils from '../IpcBusUtils';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type * as Client from '../IpcBusClient';
-import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
+import { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';
+import type { QueryStateConnector } from '../IpcBusQueryState';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
-export const IPCBUS_RENDERER_MESSAGE_RAWDATA = 'ECIPC:IpcBusRenderer:Message.RawData';
-export const IPCBUS_RENDERER_MESSAGE_ARGS = 'ECIPC:IpcBusRenderer:Message.Args';
-export const IPCBUS_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command.Args';
+export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:RendererCommand';
+export const IPCBUS_TRANSPORT_RENDERER_MESSAGE = 'ECIPC:IpcBusRenderer:RendererMessage';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
     sendTo(webContentsId: number, channel: string, ...args: any[]): void;
+    postMessage(channel: string, message: any, messagePorts?: MessagePort[]): void;
 }
 
 // Implementation for renderer process
 /** @internal */
 export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
-    private _onIpcEventRawDataReceived: (...args: any[]) => void;
-    private _onIpcEventArgsReceived: (...args: any[]) => void;
-    private _useElectronSerialization: boolean;
-    // private _useIPCFrameAPI: boolean;
-    private _packetOut: IpcPacketBuffer;
+    private _messageBag: IpcBusCommandHelpers.SmartMessageBag;
+    private _messageChannel: MessageChannel;
+    private _commandChannel: MessageChannel;
 
     constructor(contextType: Client.IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._peerProcess.process.isMainFrame = isMainFrame;
-        this._packetOut = new IpcPacketBuffer();
-        this._packetOut.JSON = JSONParserV1;
+        this._messageBag = new IpcBusCommandHelpers.SmartMessageBag();
 
-        // WE MUST NOT CLEAN-UP IPC ON THIS EVENT AS SOME APPS ARE STILL SENDING MESSAGES AT THIS STAGE.
-        // window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
-            // console.log(`IPCBUS-'beforeunload'`);
-            // this.onConnectorBeforeShutdown();
-            // this.onConnectorShutdown();
-        // });
-        // window.addEventListener('pagehide', (event: PageTransitionEvent) => {
-        //     // console.log(`IPCBUS-'pagehide'`);
-        //     if (event.persisted) {
-        //     }
-        //     else {
-        //         // this.onConnectorBeforeShutdown();
-        //         // this.onConnectorShutdown();
-        //     }
-        // });
-        // window.addEventListener('unload', (event: BeforeUnloadEvent) => {
-            // console.log(`IPCBUS-'unload'`);
-            // setTimeout(() => {
-            //     this.onConnectorBeforeShutdown();
-            //     this.onConnectorShutdown();
-            // }, 1);
-        // });
+        this.onPortMessageReceived = this.onPortMessageReceived.bind(this);
+        this.onPortCommandReceived = this.onPortCommandReceived.bind(this);
+        this.onIPCMessageReceived = this.onIPCMessageReceived.bind(this);
+        this.onIPCCommandReceived = this.onIPCCommandReceived.bind(this);
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        const target = IpcBusUtils.GetTargetRenderer(ipcMessage);
+        const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage);
         return (target
+                && (target.process.pid == this._peerProcess.process.pid)
                 && (target.process.wcid == this._peerProcess.process.wcid)
                 && (target.process.frameid == this._peerProcess.process.frameid));
     }
 
-    protected onConnectorBeforeShutdown() {
+    protected override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
-        if (this._onIpcEventRawDataReceived) {
-            this._ipcWindow.removeListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onIpcEventRawDataReceived);
-            this._ipcWindow.removeListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onIpcEventArgsReceived);
-            this._onIpcEventRawDataReceived = null;
-            this._onIpcEventArgsReceived = null;
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this.onIPCMessageReceived);
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this.onIPCCommandReceived);
+
+        if (this._messageChannel) {
+            this._messageChannel.port1.removeEventListener('message', this.onPortMessageReceived);
+            this._messageChannel.port1.close();
+            this._messageChannel = null;
+
+            this._commandChannel.port1.removeEventListener('message', this.onPortCommandReceived);
+            this._commandChannel.port1.close();
+            this._commandChannel = null;
         }
     }
 
-    protected _onConnect(eventOrHanshake: any | IpcBusConnector.Handshake, handshakeOrUndefined: IpcBusConnector.Handshake): IpcBusConnector.Handshake {
-        let handshake: IpcBusConnector.Handshake;
-        // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
-        if (handshakeOrUndefined) {
-            // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
-            handshake = handshakeOrUndefined;
-            this._onIpcEventRawDataReceived = (event, ipcMessage, rawData) => {
-                IpcBusRendererContent.FixRawContent(rawData);
-                this._client.onConnectorRawDataReceived(ipcMessage, rawData);
-            };
-            this._onIpcEventArgsReceived = (event, ipcMessage, args) => {
-                this._client.onConnectorArgsReceived(ipcMessage, args);
-            };
+    protected onIPCMessageReceived(event: Electron.IpcRendererEvent, ipcMessage: IpcBusMessage, data: any) {
+        if (ipcMessage.rawData) {
+            // Electron IPC "corrupts" Buffer to a Uint8Array
+            IpcBusRendererContent.FixRawContent(data);
+            this._client.onConnectorRawDataReceived(ipcMessage, data);
         }
         else {
-            handshake = eventOrHanshake as IpcBusConnector.Handshake;
-            this._onIpcEventRawDataReceived = (ipcMessage, rawData) => {
-                IpcBusRendererContent.FixRawContent(rawData);
-                this._client.onConnectorRawDataReceived(ipcMessage, rawData);
-            };
-            this._onIpcEventArgsReceived = (ipcMessage, args) => {
-                this._client.onConnectorArgsReceived(ipcMessage, args);
-            };
+            this._client.onConnectorArgsReceived(ipcMessage, data);
         }
-        // console.warn(`ElectronCommonIpc:handshake${JSON.stringify(handshake)}`);
-        this._useElectronSerialization = handshake.useIPCNativeSerialization;
-        // this._useIPCFrameAPI = handshake.useIPCFrameAPI;
-        // Keep the this._peer.process ref intact as shared with client peers
-        this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
-        this._log.level = handshake.logLevel;
-        this._ipcWindow.addListener(IPCBUS_RENDERER_MESSAGE_RAWDATA, this._onIpcEventRawDataReceived);
-        this._ipcWindow.addListener(IPCBUS_RENDERER_MESSAGE_ARGS, this._onIpcEventArgsReceived);
+    }
 
-        this.onConnectorHandshake();
+    protected onPortMessageReceived(event?: MessageEvent) {
+        const [ipcMessage, data] = event.data;
+        if (ipcMessage.rawData) {
+            // Electron IPC "corrupts" Buffer to a Uint8Array
+            IpcBusRendererContent.FixRawContent(data);
+            this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);
+        }
+        else {
+            this._client.onConnectorArgsReceived(ipcMessage, data, event.ports);
+        }
+    }
 
-        return handshake;
-    };
+    protected onIPCCommandReceived(event: Electron.IpcRendererEvent, ipcCommand: IpcBusCommand) {
+        this.onCommandReceived(ipcCommand);
+    }
+
+    protected onPortCommandReceived(event?: MessageEvent) {
+        const ipcCommand = event.data as IpcBusCommand;
+        this.onCommandReceived(ipcCommand);
+    }
+
+    override onCommandReceived(ipcCommand: IpcBusCommand): void {
+        switch (ipcCommand.kind) {
+            case IpcBusCommand.Kind.QueryState: {
+                const queryState: QueryStateConnector = {
+                    type: 'connector-renderer',
+                    process: this._peerProcess.process,
+                    peerProcess: this._peerProcess,
+                }
+                this.postCommand({
+                    kind: IpcBusCommand.Kind.QueryStateResponse,
+                    data: {
+                        id: ipcCommand.channel,
+                        queryState
+                    }
+                } as any);
+                break;
+            }
+        }
+        super.onCommandReceived(ipcCommand);
+    }
+
+    protected onIPCHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+        return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
+            // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
+            let timer: NodeJS.Timer;
+            const onHandshake = (event: Electron.IpcRendererEvent, handshake: IpcBusConnector.Handshake) => {
+                clearTimeout(timer);
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this.onIPCMessageReceived);
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this.onIPCCommandReceived);
+
+                this.addClient(client);
+
+                // We have to keep the reference untouched as used by client
+                this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
+                this._log.level = handshake.logLevel;
+                this.onConnectorHandshake();
+                resolve(handshake);
+            };
+
+            // Below zero = infinite
+            options = IpcBusUtils.CheckConnectOptions(options);
+            if (options.timeoutDelay >= 0) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onHandshake);
+                    reject('timeout');
+                }, options.timeoutDelay);
+            }
+            const ipcCommand = { 
+                peer: this._peerProcess 
+            };
+            this._ipcWindow.once(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onHandshake);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand);
+        });
+    }
+
+    protected onPortHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+        return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
+            // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
+            let timer: NodeJS.Timer;
+            const onHandshake = (event: MessageEvent) => {
+                clearTimeout(timer);
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this.onIPCMessageReceived);
+
+                this._commandChannel.port1.addEventListener('message', this.onPortCommandReceived);
+                this._commandChannel.port1.removeEventListener('message', onHandshake);
+            
+                this._messageChannel.port1.addEventListener('message', this.onPortMessageReceived);
+                this._messageChannel.port1.start();
+
+                this.addClient(client);
+                const handshake = event.data as IpcBusConnector.Handshake;
+
+                // We have to keep the reference untouched as used by client
+                this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
+                this._log.level = handshake.logLevel;
+                this.onConnectorHandshake();
+                resolve(handshake);
+            };
+
+            // Below zero = infinite
+            options = IpcBusUtils.CheckConnectOptions(options);
+            if (options.timeoutDelay >= 0) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    this._commandChannel.port1.removeEventListener('message', onHandshake);
+                    reject('timeout');
+                }, options.timeoutDelay);
+            }
+            this._messageChannel = new MessageChannel();
+
+            this._commandChannel = new MessageChannel();
+            this._commandChannel.port1.addEventListener('message', onHandshake);
+            this._commandChannel.port1.start();
+            const ipcCommand = { 
+                peer: this._peerProcess 
+            };
+            this._ipcWindow.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand, [this._commandChannel.port2, this._messageChannel.port2]);
+        });
+    }
 
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return this._connectCloseState.connect(() => {
-            return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
-                // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
-                let timer: NodeJS.Timer;
-                const onIpcConnect = (eventOrHanshake: any | IpcBusConnector.Handshake, handshakeOrUndefined: IpcBusConnector.Handshake) => {
-                    clearTimeout(timer);
-                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    this.addClient(client);
-
-                    const handshake = this._onConnect(eventOrHanshake, handshakeOrUndefined);
-                    resolve(handshake);
-                };
-
-                // Below zero = infinite
-                options = IpcBusUtils.CheckConnectOptions(options);
-                if (options.timeoutDelay >= 0) {
-                    timer = setTimeout(() => {
-                        timer = null;
-                        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                        reject('timeout');
-                    }, options.timeoutDelay);
-                }
-                // We wait for the bridge confirmation
-                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._peerProcess);
-            });
+            return this.onIPCHandshake(client, options);
         });
     }
 
@@ -158,38 +217,25 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    postMessage(ipcMessage: IpcBusMessage, args?: any[]): void {
-        // ipcMessage.process = ipcMessage.process || this._process;
-        const target = IpcBusUtils.GetTargetRenderer(ipcMessage, true);
-        if (this._useElectronSerialization) {
-            try {
-                if (target && target.process.isMainFrame) {
-                    this._ipcWindow.sendTo(target.process.wcid, IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
-                }
-                else {
-                    this._ipcWindow.send(IPCBUS_RENDERER_MESSAGE_ARGS, ipcMessage, args);
-                }
-                return;
+    postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
+        this._messageBag.set(ipcMessage, args);
+        if (messagePorts == null) {
+            const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
+            if (target && target.process.isMainFrame) {
+                this._messageBag.ipcMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
             }
-            catch (err) {
-                // maybe an arg does not supporting Electron serialization !
+            else {
+                this._messageBag.ipcMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
             }
+            return;
         }
-        JSONParserV1.install();
-        this._packetOut.serialize([ipcMessage, args]);
-        JSONParserV1.uninstall();
-        const rawData = this._packetOut.getRawData();
-        if (target && target.process.isMainFrame) {
-            this._ipcWindow.sendTo(target.process.wcid, IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
-        }
-        else {
-            this._ipcWindow.send(IPCBUS_RENDERER_MESSAGE_RAWDATA, ipcMessage, rawData);
-        }
+        this._messageBag.portMessage(this._messageChannel.port1, messagePorts);
     }
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
     postCommand(ipcCommand: IpcBusCommand): void {
         ipcCommand.peer = ipcCommand.peer || this._peerProcess;
-        this._ipcWindow.send(IPCBUS_RENDERER_COMMAND, ipcCommand);
+        this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
+        // this._commandChannel.port1.postMessage(ipcCommand);
     }
 }

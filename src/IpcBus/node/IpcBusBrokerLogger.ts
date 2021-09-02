@@ -16,11 +16,10 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
 
     protected abstract addLog(socket: net.Socket, ipcPacketBufferCore: IpcPacketBufferCore, ipcCommand: IpcBusCommand, args: any[]): void;
 
-    onSocketPacket(socket: net.Socket, ipcPacketBufferList: IpcPacketBufferList): void {
-        const ipcCommand: IpcBusCommand = ipcPacketBufferList.parseArrayAt(0);
+    override onSocketData(socket: net.Socket, ipcCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void {
         const args = ipcPacketBufferList.parseArrayAt(1);
         this.addLog(socket, ipcPacketBufferList, ipcCommand, args);
 
-        super.onSocketCommand(socket, ipcCommand, ipcPacketBufferList);
+        super.onSocketData(socket, ipcCommand, ipcPacketBufferList);
     }
 }

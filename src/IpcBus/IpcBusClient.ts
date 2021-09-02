@@ -25,24 +25,60 @@ export interface IpcBusPeerProcess {
 }
 
 export interface IpcBusPeer extends IpcBusPeerProcess {
-    id: string;
+    readonly id: string;
     name: string;
 }
 
 export interface IpcBusRequest {
     resolve(payload: any): void;
-    reject(err: string): void;
+    reject(err: any): void;
 }
 
 export interface IpcBusRequestResponse {
-    event: IpcBusEvent;
-    payload?: any;
-    err?: string;
+    readonly event: IpcBusEvent;
+    readonly payload?: any;
+    readonly err?: string;
+}
+
+interface MessagePortEventMap {
+     'message': MessageEvent;
+     'messageerror': MessageEvent;
+     'close': Function;
+}
+
+export type IpcMessagePortType = Electron.MessagePortMain | MessagePort | IpcBusMessagePort;
+
+export interface IpcBusMessagePortPost {
+    postMessage(message: any, messagePorts?: Transferable[]): void;
+}
+
+// In order to ensure a common interface in Web/Electron/Node.js, we use an 'union' interface of 
+// - EventTarget
+// - EventEmitter
+// - MessagePort
+// - MessagePortMain
+export interface IpcBusMessagePort extends IpcBusMessagePortPost {
+    // Docs: https://electronjs.org/docs/api/message-port-main
+
+    on<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    off<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    once<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    addListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+    removeListener<K extends keyof MessagePortEventMap>(event: K, listener: (messageEvent: MessagePortEventMap[K]) => void): this;
+
+    addEventListener<K extends keyof MessagePortEventMap>(type: K, listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener<K extends keyof MessagePortEventMap>(type: K, listener: (this: MessagePort, ev: MessagePortEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+
+    start(): void;
+    close(): void;
 }
 
 export interface IpcBusEvent {
-    channel: string;
-    sender: IpcBusPeer;
+    readonly channel: string;
+    readonly sender: IpcBusPeer;
+    ports?: IpcBusMessagePort[];
     request?: IpcBusRequest;
 }
 
@@ -108,17 +144,20 @@ export interface IpcBusClient extends EventEmitter {
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
     requestTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
+    postMessage(channel: string, message: any, messagePorts?: IpcMessagePortType[]): void;
+    postMessageTo(target: IpcBusPeer | IpcBusPeerProcess, channel: string, message: any, messagePorts?: IpcMessagePortType[]): void;
+
     // EventEmitter API
     emit(event: string, ...args: any[]): boolean;
 
     addListener(channel: string, listener: IpcBusListener): this;
     removeListener(channel: string, listener: IpcBusListener): this;
     removeAllListeners(channel?: string): this;
+
     on(channel: string, listener: IpcBusListener): this;
     once(channel: string, listener: IpcBusListener): this;
     off(channel: string, listener: IpcBusListener): this;
 
-    // EventEmitter API - Added in Node 6...
     prependListener(channel: string, listener: IpcBusListener): this;
     prependOnceListener(channel: string, listener: IpcBusListener): this;
 }

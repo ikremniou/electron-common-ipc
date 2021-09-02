@@ -6,6 +6,23 @@ import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
 import { ConnectCloseState } from './IpcBusUtils';
 
+export function CreateProcessId(process: Client.IpcBusProcess): string {
+    let name = `${process.type}`;
+    if (process.wcid) {
+        name += `-${process.wcid}`;
+    }
+    if (process.frameid) {
+        name += `-f${process.frameid}`;
+    }
+    if (process.rid && (process.rid !== process.wcid)) {
+        name += `-r${process.rid}`;
+    }
+    if (process.pid) {
+        name += `-p${process.pid}`;
+    }
+    return name;
+}
+
 // Implementation for renderer process
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
@@ -30,8 +47,17 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._messageCount = 0;
     }
 
+    get peer() {
+        return this._peerProcess;
+    }
+
     protected onConnectorBeforeShutdown() {
         this._client && this._client.onConnectorBeforeShutdown();
+        const shutdownCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.Shutdown,
+            channel: ''
+        };
+        this.postCommand(shutdownCommand);
     }
 
     protected onConnectorHandshake() {
@@ -43,11 +69,6 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     protected onConnectorShutdown() {
-        const shutdownCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.Shutdown,
-            channel: ''
-        };
-        this.postCommand(shutdownCommand);
         this._connectCloseState.shutdown();
         this._client && this._client.onConnectorShutdown();
         this.removeClient();
@@ -127,11 +148,16 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     //     return null;
     // }
 
+    onCommandReceived(ipcCommand: IpcBusCommand): void {
+        this._client.onCommandReceived(ipcCommand);
+    }
+
     abstract isTarget(ipcMessage: IpcBusMessage): boolean;
 
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     abstract shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    abstract postMessage(ipcBusMessage: IpcBusMessage, args?: any[]): void;
+    abstract postMessage(ipcMessage: IpcBusMessage, args?: any[], messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void;
+    abstract postMessage(ipcMessage: IpcBusMessage, args?: any[]): void;
     abstract postCommand(ipcCommand: IpcBusCommand): void;
 }

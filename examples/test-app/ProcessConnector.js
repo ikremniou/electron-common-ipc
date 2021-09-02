@@ -78,6 +78,7 @@ ProcessConnector = (function () {
 
         this.postReceivedMessage = function _postReceivedMessage(event, content) {
             const clonedEvent = lodash_cloneDeep(event);
+            clonedEvent.ports = undefined;
             if (clonedEvent.request) {
                 clonedEvent.request.resolve = undefined;
                 clonedEvent.request.reject = undefined;
@@ -98,6 +99,16 @@ ProcessConnector = (function () {
 
         this.onRequestMessage = function _onRequestMessage(callback) {
             _ipc.on(buildChannel('requestMessage'), function (event, data) {
+                const response = (data !== undefined) ? data : event;
+                callback(response['topic'], response['msg']);
+            });
+        };
+        this.postSendPort = function _postRequestMessage(topicName, topicMsg) {
+            _ipc.send(buildChannel('postMessage'), { topic: topicName, msg: topicMsg });
+        };
+
+        this.onPostMessage = function _onPostMessage(callback) {
+            _ipc.on(buildChannel('postMessage'), function (event, data) {
                 const response = (data !== undefined) ? data : event;
                 callback(response['topic'], response['msg']);
             });

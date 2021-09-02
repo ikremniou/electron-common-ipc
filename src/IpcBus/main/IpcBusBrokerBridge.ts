@@ -1,12 +1,12 @@
 import type * as net from 'net';
 
-import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import type { IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
+import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
-import * as IpcBusUtils from '../IpcBusUtils';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -24,7 +24,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         if (this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
-        return IpcBusUtils.GetTargetProcess(ipcMessage) != null;
+        return IpcBusCommandHelpers.GetTargetProcess(ipcMessage) != null;
     }
 
     getChannels(): string[] {
@@ -40,20 +40,19 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
-        throw 'not implemented';
+        throw 'TODO';
     }
 
-    broadcastArgs(ipcMessage: IpcBusMessage, args: any[]): boolean {
-        throw 'not implemented';
-    }
-
-    broadcastRawData(ipcMessage: IpcBusMessage, rawData: IpcPacketBuffer.RawData): boolean {
-        if (rawData.buffer) {
-            return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
+    broadcastData(ipcMessage: IpcBusMessage, data: any): boolean {
+        if (ipcMessage.rawData) {
+            if (data.buffer) {
+                return this.broadcastBuffers(ipcMessage, [data.buffer]);
+            }
+            else {
+                return this.broadcastBuffers(ipcMessage, data.buffers);
+            }
         }
-        else {
-            return this.broadcastBuffers(ipcMessage, rawData.buffers);
-        }
+        throw 'not supported';
     }
 
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
@@ -61,8 +60,8 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
-        const target = IpcBusUtils.GetTargetProcess(ipcMessage);
+    protected broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
+        const target = IpcBusCommandHelpers.GetTargetProcess(ipcMessage);
         if (target) {
             const endpoint = this._endpoints.get(target.process.pid);
             if (endpoint) {
@@ -79,16 +78,20 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return false;
     }
 
-    protected _reset(closeServer: boolean) {
+    protected override _reset(closeServer: boolean) {
         super._reset(closeServer);
         this._bridge._onSocketClosed();
     }
 
-    protected broadcastToBridge(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
-        this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
+    protected override broadcastCommandToBridge(ipcCommand: IpcBusCommand): void {
+        this._bridge._onSocketCommandReceived(ipcCommand);
     }
 
-    protected broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+    protected override broadcastToBridgeRequestResponse(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onSocketRequestResponseReceived(ipcMessage, ipcPacketBufferList);
+    }
+
+    protected override broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
         this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
     }
 }

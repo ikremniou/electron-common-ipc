@@ -25,8 +25,8 @@ export namespace IpcBusCommand {
         BridgeAddChannelListener    = 'BILICA',
         BridgeRemoveChannelListener = 'BILICR',
 
-        BrokerAddChannelListener    = 'BOICA',
-        BrokerRemoveChannelListener = 'BOICR',
+        QueryState = 'QUST',
+        QueryStateResponse = 'QUSTR',
 
         // Message
         SendMessage                 = 'MES',
@@ -81,6 +81,8 @@ export interface IpcBusMessage extends IpcBusCommandBase {
 
     peer: IpcBusPeer;
     target?: IpcBusTarget;
+
+    rawData?: boolean;
 
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;

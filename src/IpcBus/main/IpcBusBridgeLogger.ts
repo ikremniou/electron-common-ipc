@@ -7,7 +7,7 @@ import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
-// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
+// This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     private _ipcBusLog: IpcBusLogMain;
@@ -29,28 +29,30 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
     }
     
-    // _onRendererArgsReceived(ipcCommand: IpcBusCommand, args: any[]) {
-    //     if (this._ipcBusLog.addLog(ipcCommand, args)) {
-    //         super._onRendererArgsReceived(ipcCommand, args);
-    //     }
-    // }
-
-    _onRendererContentReceived(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent) {
-        if (this._ipcBusLog.addLogRawContent(ipcMessage, IpcBusRendererContent)) {
-            super._onRendererRawDataReceived(ipcMessage, IpcBusRendererContent);
+    override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
+        if (this._ipcBusLog.addLogRawContent(ipcMessage, data)) {
+            super._onRendererMessageReceived(ipcMessage, data, messagePorts);
         }
     }
 
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, args?: any[]) {
-        if (this._ipcBusLog.addLog(ipcMessage, args)) {
-            super._onMainMessageReceived(ipcMessage, args);
+    override _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
+        if (this._ipcBusLog.addLog(ipcMessage, data)) {
+            super._onMainMessageReceived(ipcMessage, data, messagePorts);
         }
     }
 
-    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer) {
+    override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
-            super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
+            return super._onSocketMessageReceived(ipcMessage, ipcPacketBuffer);
         }
+        return true;
+    }
+
+    override _onSocketRequestResponseReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {
+            return super._onSocketRequestResponseReceived(ipcMessage, ipcPacketBuffer);
+        }
+        return true;
     }
 
 }

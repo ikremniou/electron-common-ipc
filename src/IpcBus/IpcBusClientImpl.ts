@@ -59,59 +59,69 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, undefined, channel, args);
+        this._transport.postMessage(this, undefined, channel, args);
         return this._connectCloseState.connected;
     }
 
     sendTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, ...args: any[]): boolean {
         channel = IpcBusUtils.CheckChannel(channel);
-        this._transport.sendMessage(this, target, channel, args);
+        this._transport.postMessage(this, target, channel, args);
         return this._connectCloseState.connected;
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, undefined, channel, timeoutDelay, args);
+        return this._transport.postRequestMessage(this, undefined, channel, timeoutDelay, args);
     }
 
     requestTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         channel = IpcBusUtils.CheckChannel(channel);
-        return this._transport.requestMessage(this, target, channel, timeoutDelay, args);
+        return this._transport.postRequestMessage(this, target, channel, timeoutDelay, args);
     }
 
-    emit(event: string, ...args: any[]): boolean {
+    postMessage(channel: string, message: any, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.postMessage(this, undefined, channel, [message], messagePorts);
+    }
+
+    postMessageTo(target: Client.IpcBusPeer | Client.IpcBusPeerProcess, channel: string, message: any, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): void {
+        channel = IpcBusUtils.CheckChannel(channel);
+        return this._transport.postMessage(this, target, channel, [message], messagePorts);
+    }
+
+    override emit(event: string, ...args: any[]): boolean {
         event = IpcBusUtils.CheckChannel(event);
-        this._transport.sendMessage(this, undefined, event, args);
+        this._transport.postMessage(this, undefined, event, args);
         return this._connectCloseState.connected;
     }
  
-    on(channel: string, listener: Client.IpcBusListener): this {
+    override on(channel: string, listener: Client.IpcBusListener): this {
         return this.addListener(channel, listener);
     }
 
-    off(channel: string, listener: Client.IpcBusListener): this {
+    override off(channel: string, listener: Client.IpcBusListener): this {
         return this.removeListener(channel, listener);
     }
 
-    addListener(channel: string, listener: Client.IpcBusListener): this {
+    override addListener(channel: string, listener: Client.IpcBusListener): this {
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.addListener(channel, listener);
     }
 
-    removeListener(channel: string, listener: Client.IpcBusListener): this {
+    override removeListener(channel: string, listener: Client.IpcBusListener): this {
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.removeChannel(this, channel);
         return super.removeListener(channel, listener);
     }
 
-    once(channel: string, listener: Client.IpcBusListener): this {
+    override once(channel: string, listener: Client.IpcBusListener): this {
         // addListener will be automatically called by NodeJS
         // removeListener will be automatically called by NodeJS when callback has been triggered
         return super.once(channel, listener);
     }
 
-    removeAllListeners(channel?: string): this {
+    override removeAllListeners(channel?: string): this {
         if (arguments.length === 1) {
             channel = IpcBusUtils.CheckChannel(channel);
         }
@@ -119,14 +129,13 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return super.removeAllListeners(channel);
     }
 
-    // Added in Node 6...
-    prependListener(channel: string, listener: Client.IpcBusListener): this {
+    override prependListener(channel: string, listener: Client.IpcBusListener): this {
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.prependListener(channel, listener);
     }
 
-    prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
+    override prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.prependOnceListener(channel, listener);

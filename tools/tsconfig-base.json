@@ -18,6 +18,7 @@
         "noUnusedLocals" : true,
         "noUnusedParameters" : false,
         "noImplicitReturns": true,
+        "noImplicitOverride": true,
         "noFallthroughCasesInSwitch" : true,
         "forceConsistentCasingInFileNames": true,
         "noImplicitAny": true,

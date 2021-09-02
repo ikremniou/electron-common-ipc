@@ -1,9 +1,12 @@
+import type { IpcPacketBufferCore } from 'socket-serializer';
+
 import type * as Client from './IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector } from './IpcBusConnector';
 import { ChannelConnectionMap } from './IpcBusChannelMap';
+import type { QueryStateTransport, QueryStateChannels, QueryStatePeers } from './IpcBusQueryState';
 
 /** @internal */
 export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
@@ -13,7 +16,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         super(connector);
     }
 
-    isTarget(ipcMessage: IpcBusMessage): boolean {
+    override isTarget(ipcMessage: IpcBusMessage): boolean {
         if (this._subscriptions && this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
@@ -24,11 +27,12 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
-    protected _onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[]): boolean {
+    onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args?: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
+            args = args || ipcPacketBufferCore.parseArrayAt(1);
             for (const entry of channelConns) {
-                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args)) {
+                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, messagePorts)) {
                     return true;
                 }
             }
@@ -36,7 +40,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return false;
     }
 
-    onConnectorBeforeShutdown() {
+    override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._subscriptions) {
             this._subscriptions.client = null;
@@ -48,7 +52,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         }
     }
 
-    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    override connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.connect(client, options)
             .then((peer) => {
                 if (this._subscriptions == null) {
@@ -76,7 +80,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             });
     }
 
-    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    override close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
             this.cancelRequest(client);
             this.removeChannel(client);
@@ -111,5 +115,41 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         else {
             this._subscriptions.remove(client.peer.id);
         }
+    }
+
+    queryState(): QueryStateTransport {
+        const peersJSON: QueryStatePeers = {};
+        const processChannelsJSON: QueryStateChannels = {};
+
+        const channels = this._subscriptions.getChannels();
+        for (let i = 0; i < channels.length; ++i) {
+            const channel = channels[i];
+            const processChannelJSON = processChannelsJSON[channel] = {
+                name: channel,
+                refCount: 0
+            }
+            const channelConns = this._subscriptions.getChannelConns(channel);
+            channelConns.forEach((clientRef) => {
+                processChannelJSON.refCount += clientRef.refCount;
+                const peer = clientRef.data.peer;
+                const peerJSON = peersJSON[peer.id] = peersJSON[peer.id] || {
+                    peer,
+                    channels: {}
+                };
+                const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
+                    name: channel,
+                    refCount: 0
+                };
+                peerChannelJSON.refCount += clientRef.refCount;
+            })
+        }
+
+        const results: QueryStateTransport = {
+            type: 'transport',
+            process: this._connector.peer.process,
+            channels: processChannelsJSON,
+            peers: peersJSON
+        };
+        return results;
     }
 }

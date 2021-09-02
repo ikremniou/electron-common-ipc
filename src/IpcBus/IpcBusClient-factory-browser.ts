@@ -1,7 +1,7 @@
 import { IpcBusClient } from './IpcBusClient';
 
 export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
-    const newModule = require('./IpcBusClient-new-renderer');
+    const newModule = require('./IpcBusClient-factory-renderer');
     return newModule.NewIpcBusClient('renderer');
 }
 

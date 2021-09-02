@@ -81,6 +81,21 @@
                     </div>
                     <input type="button" class="btn btn-primary" onclick="doRequestMessageToTopic(event)" value="Promise"></<input>
                 </form>
+                <form class="form-inline topicSendPort">
+                    <div class="input-group">
+                        <span class="input-group-addon">Topic</span>
+                        <input class="topicSendPortName form-control" type="text" />
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-addon">Message</span>
+                        <input class="topicSendPortMsg form-control" type="text" />
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-addon">Response</span>
+                        <input class="topicSendPortResponse form-control" type="text" readonly/>
+                    </div>
+                    <input type="button" class="btn btn-primary" onclick="doSendPortToTopic(event)" value="MessagePort"></<input>
+                </form>
             </div>
         </div>
         <div id="ProcessSubscriptions" class="panel panel-default">

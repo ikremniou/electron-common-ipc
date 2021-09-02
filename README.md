@@ -1,11 +1,13 @@
 # electron-common-ipc
 An IPC (Inter-Process Communication) bus for applications built for [Node](https://nodejs.org/en/) and/or [Electron](https://electronjs.org/). 
 
-This bus offers an EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Master, Electron Renderer process/s).
+This bus offers an EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Main and Electron Renderer process/s).
 * Node to Node, 
 * Node to Electron (Master and Renderer processes + Frames), 
 * Electron to Node, 
 * Electron to Electron.
+
+You can exchange a lot of different kinds of data and transfer MessagePort/s between 2 renderers.
 
 For Node processes support, you need to instanciate a "BusBroker" (Net socket server) in charge to commute messages to right listeners.  
 For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers WebPage and WebFrame, Master and Node.
@@ -18,6 +20,7 @@ A WebPage is then able to dialog with a node process and vice-versa.
 
 # Features
 * EventEmitter oriented API
+* Transfer MessagePort/s
 * Works with Electron sandboxed renderer process
 * Support for Electron renderer affinity (several webpages hosted in the same renderer process)
 * Basic remote API calls/events and pending messages management with Services
@@ -229,19 +232,6 @@ electronApp.on('ready', function () {
         });
 });
 ```
-
-# Breaking changes
-6.x.x | 7.x.x
---- | ---
-IpcBusBridge.Create(net-options) | IpcBusBridge.Create()
-ipcBusBridge.connect(connect-options) | ipcBusBridge.connect(connect-options + net-options)
-ipcBusBridge.stop(close-options) | ipcBusBridge.close(close-options)
-IpcBusBroker.Create(net-options) | IpcBusBroker.Create()
-IpcBusBroker.connect(connect-options) | IpcBusBroker.connect(connect-options + net-options)
-IpcBusBroker.stop(close-options) | IpcBusBroker.close(close-options)
-IpcBusClient.Create(net-options) | IpcBusClient.Create()
-IpcBusClient.connect(connect-options) | IpcBusClient.connect(connect-options + net-options)
-IpcBusClient.stop(close-options) | IpcBusClient.close(close-options)
 
 # Common options
 Some interfaces are sharing the same kind of options.  
@@ -844,7 +834,7 @@ npm run connect-sandboxed
 
 # MIT License
 
-Copyright (c) 2020 Emmanuel Kimmerlin
+Copyright (c) 2021 Emmanuel Kimmerlin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
