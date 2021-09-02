@@ -102,6 +102,7 @@ var MainProcess = (function () {
         processMainFromView.onSendMessage(onIPCElectron_SendMessage);
         processMainFromView.onSubscribe(onIPCElectron_Subscribe);
         processMainFromView.onUnsubscribe(onIPCElectron_Unsubscribe);
+        processMainFromView.onPostMessage(onIPCElectron_PortMessage);
         processMainFromView.on('new-process', doNewProcess);
         processMainFromView.on('new-renderer', doNewRenderer);
         processMainFromView.on('new-perf', doNewPerfView);
@@ -252,6 +253,14 @@ var MainProcess = (function () {
             if (ipcBusEvent.request) {
                 ipcBusEvent.request.resolve(ipcBusEvent.channel + ' - AutoReply from #' + ipcBusEvent.sender.name);
             }
+            if (ipcBusEvent.ports && ipcBusEvent.ports.length) {
+                const [port] = ipcBusEvent.ports;
+                port.addEventListener('message', (event) => {
+                    port.postMessage('Well received: ' + event.data);
+                    port.close();
+                });
+                port.start();
+            }
             processMainToView.postReceivedMessage(ipcBusEvent, ipcContent);
         }
 
@@ -271,6 +280,25 @@ var MainProcess = (function () {
             console.log('Master - onIPCElectron_SendMessage : topic:' + topicName + ' msg:' + topicMsg);
             ipcBusClient.send(topicName, topicMsg);
             // ipcBusClient.send(topicName, bigpayload);
+        }
+
+        function onIPCElectron_PostMessage(topicName, topicMsg) {
+            console.log('Master - onIPCElectron_PostMessage : topic:' + topicName + ' msg:' + topicMsg);
+            const channel = new MessageChannel();
+            const port1 = channel.port1
+            const port2 = channel.port2
+            port2.postMessage(`I'm ${JSON.stringify(ipcBus.peer)}`);
+            ipcBusClient.postMessage(topicName, args, [port1]);
+            // port2.on('message', () => {
+            port2.addEventListener('message', (event) => {
+                // var topicRespElt = document.querySelector('.topicSendPortResponse');
+                // if (topicRespElt != null) {
+                //     topicRespElt.style.color = 'black';
+                //     topicRespElt.value = event.data; // + ' from (' + JSON.stringify(ipcBusEvent.sender) + ')';
+                // }
+                port2.close();
+            });
+            port2.start();
         }
 
         function onIPCElectron_RequestMessage(topicName, topicMsg) {

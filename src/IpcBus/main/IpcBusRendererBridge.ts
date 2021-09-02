@@ -234,7 +234,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const key = IpcBusCommandHelpers.CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
-                // Electron Main has issue with a "undefined" ports arg
                 if (messagePorts == null) {
                     endpoint.webContents.sendToFrame(endpoint.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
                 }
@@ -247,7 +246,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (ipcMessage.kind === IpcBusCommand.Kind.SendMessage) {
             const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
             if (channelConns) {
-                // Electron Main has issue with a "undefined" ports arg
                 const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
                 if (messagePorts == null) {
                     for (const entry of channelConns) {
@@ -279,7 +277,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onCommandReceived(ipcCommand: IpcBusCommand): boolean {
-            switch (ipcCommand.kind) {
+        switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
                 this._onEndpointHandshake(ipcCommand);
                 return true;

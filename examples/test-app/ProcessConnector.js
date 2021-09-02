@@ -103,6 +103,16 @@ ProcessConnector = (function () {
                 callback(response['topic'], response['msg']);
             });
         };
+        this.postSendPort = function _postRequestMessage(topicName, topicMsg) {
+            _ipc.send(buildChannel('postMessage'), { topic: topicName, msg: topicMsg });
+        };
+
+        this.onPostMessage = function _onPostMessage(callback) {
+            _ipc.on(buildChannel('postMessage'), function (event, data) {
+                const response = (data !== undefined) ? data : event;
+                callback(response['topic'], response['msg']);
+            });
+        };
 
         this.postRequestThen = function _postRequestThen(requestPromiseArgs) {
             _ipc.send(buildChannel('requestMessage-then'), requestPromiseArgs);
