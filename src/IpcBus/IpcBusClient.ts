@@ -31,7 +31,7 @@ export interface IpcBusPeer extends IpcBusPeerProcess {
 
 export interface IpcBusRequest {
     resolve(payload: any): void;
-    reject(err: string): void;
+    reject(err: any): void;
 }
 
 export interface IpcBusRequestResponse {

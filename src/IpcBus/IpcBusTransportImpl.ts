@@ -124,8 +124,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcMessage.channel}' from peer #${ipcMessage.peer.name} - payload: ${JSON.stringify(payload)}`);
                     settled(true, [payload]);
                 },
-                reject: (err: string) => {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcMessage.channel}' from peer #${ipcMessage.peer.name} - err: ${JSON.stringify(err)}`);
+                reject: (err: string | Error) => {
+                    let errResponse: string;
+                    if (typeof err === 'string') {
+                        errResponse = err;
+                    }
+                    else {
+                        errResponse = JSON.stringify(err);
+                    }
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcMessage.channel}' from peer #${ipcMessage.peer.name} - err: ${errResponse}`);
                     settled(false, [err]);
                 }
             };

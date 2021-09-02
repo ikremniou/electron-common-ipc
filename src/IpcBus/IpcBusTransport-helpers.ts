@@ -74,7 +74,7 @@ export class DeferredRequestPromise {
             }
             catch (err) {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: ${err}`);
-                const response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err };
+                const response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err: JSON.stringify(err) };
                 this.reject(response);
             }
             this._settled = true;

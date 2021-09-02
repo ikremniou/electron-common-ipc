@@ -282,7 +282,7 @@ var MainProcess = (function () {
             // ipcBusClient.send(topicName, bigpayload);
         }
 
-        function onIPCElectron_PostMessage(topicName, topicMsg) {
+        function onIPCElectron_PortMessage(topicName, topicMsg) {
             console.log('Master - onIPCElectron_PostMessage : topic:' + topicName + ' msg:' + topicMsg);
             const channel = new MessageChannel();
             const port1 = channel.port1
