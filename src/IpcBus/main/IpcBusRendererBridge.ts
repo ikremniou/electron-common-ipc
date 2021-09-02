@@ -9,7 +9,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type { QueryStateBase, QueryStateChannels, QueryStatePeerProcesses, QueryStateRendererBridge } from '../IpcBusQueryState';
-import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE } from '../renderer/IpcBusConnectorRenderer';
+import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_MESSAGE } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
@@ -24,8 +24,9 @@ catch (err) {
 }
 
 interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
-    messagePort: Electron.MessagePortMain;
-    commandPort: Electron.MessagePortMain;
+    webContents: Electron.WebContents;
+    messagePort?: Electron.MessagePortMain;
+    commandPort?: Electron.MessagePortMain;
 }
  
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
@@ -66,9 +67,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
         };
 
-        this._onPortCommandReceived = this._onPortCommandReceived.bind(this);
         this._onHandshakeReceived = this._onHandshakeReceived.bind(this);
         this._onPortMessageReceived = this._onPortMessageReceived.bind(this);
+        this._onPortCommandReceived = this._onPortCommandReceived.bind(this);
+
+        this._onIPCCommandReceived = this._onIPCCommandReceived.bind(this);
+        this._onIPCMessageReceived = this._onIPCMessageReceived.bind(this);
     }
 
     getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
@@ -97,6 +101,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
+
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onIPCCommandReceived);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onIPCCommandReceived);
+
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
 
         return Promise.resolve();
     }
@@ -134,41 +144,43 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             handshake.process.pid = webContents.id;
         }
 
-        const endpoint: IpcBusPeerProcessEndpoint = Object.assign(ipcCommand.peer, { 
-            commandPort: event.ports[0],
-            messagePort: event.ports[1]
-        });
+        const endpoint: IpcBusPeerProcessEndpoint = Object.assign(ipcCommand.peer, { webContents });
         const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
         this._endpoints.set(key, endpoint);
+        if (event.ports) {
+            endpoint.commandPort = event.ports[0];
+            endpoint.messagePort = event.ports[1];
 
-        endpoint.messagePort.on('close', () => {
-            this._onEndpointShutdown(ipcCommand);
-        });
-        endpoint.commandPort.on('close', () => {
-            this._onEndpointShutdown(ipcCommand);
-        });
+            endpoint.messagePort.on('close', () => {
+                this._onEndpointShutdown(ipcCommand);
+            });
+            endpoint.commandPort.on('close', () => {
+                this._onEndpointShutdown(ipcCommand);
+            });
 
-        endpoint.messagePort.addListener('message', this._onPortMessageReceived);
-        endpoint.messagePort.start();
+            endpoint.messagePort.addListener('message', this._onPortMessageReceived);
+            endpoint.messagePort.start();
 
-        endpoint.commandPort.addListener('message', this._onPortCommandReceived);
-        endpoint.commandPort.start();
+            endpoint.commandPort.addListener('message', this._onPortCommandReceived);
+            endpoint.commandPort.start();
 
-        endpoint.commandPort.postMessage(handshake);
-
-        // We get back to the webContents
-        // - to confirm the connection
-        // - to provide id/s
-        // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        // See https://github.com/electron/electron/issues/25119
-        // if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-        //     webContents.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake, [this._messageChannel.port2]);
-        // }
-        // else {
-        //     webContents.on('did-finish-load', () => {
-        //         webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake, [this._messageChannel.port2]);
-        //     });
-        // }
+            endpoint.commandPort.postMessage(handshake);
+        }
+        else {
+            // We get back to the webContents
+            // - to confirm the connection
+            // - to provide id/s
+            // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+            // See https://github.com/electron/electron/issues/25119
+            if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+                webContents.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+            }
+            else {
+                webContents.on('did-finish-load', () => {
+                    webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+                });
+            }
+        }
     }
 
     private _onEndpointHandshake(ipcCommand: IpcBusCommand) {
@@ -181,17 +193,22 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._endpoints.delete(key);
             this._subscriptions.remove(key);
 
-            endpoint.messagePort.close();
-            endpoint.messagePort.removeListener('message', this._onPortMessageReceived);
+            if (endpoint.commandPort) {
+                endpoint.messagePort.close();
+                endpoint.messagePort.removeListener('message', this._onPortMessageReceived);
+                endpoint.messagePort = null;
 
-            endpoint.commandPort.close();
-            endpoint.commandPort.removeListener('message', this._onPortCommandReceived);
+                endpoint.commandPort.close();
+                endpoint.commandPort.removeListener('message', this._onPortCommandReceived);
+                endpoint.commandPort = null;
+            }
         }
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
         this._endpoints.forEach((endpoint) => {
-            endpoint.commandPort.postMessage(ipcCommand);
+            // endpoint.commandPort.postMessage(ipcCommand);
+            endpoint.webContents.sendToFrame(endpoint.process.frameid, IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
         });
     }
 
@@ -219,7 +236,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             if (endpoint) {
                 // Electron Main has issue with a "undefined" ports arg
                 if (messagePorts == null) {
-                    // endpoint.essagePort.postMessage([ipcMessage, data], messagePorts);
+                    endpoint.webContents.sendToFrame(endpoint.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
                 }
                 else {
                     endpoint.messagePort.postMessage([ipcMessage, data], messagePorts);
@@ -231,12 +248,21 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
             if (channelConns) {
                 // Electron Main has issue with a "undefined" ports arg
-                messagePorts = messagePorts || [];
                 const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
-                for (const entry of channelConns) {
-                    // Prevent echo message
-                    if (entry[1].key !== key) {
-                        entry[1].data.messagePort.postMessage([ipcMessage, data], messagePorts);
+                if (messagePorts == null) {
+                    for (const entry of channelConns) {
+                        // Prevent echo message
+                        if (entry[1].key !== key) {
+                            entry[1].data.webContents.sendToFrame(entry[1].data.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
+                        }
+                    }
+                }
+                else {
+                    for (const entry of channelConns) {
+                        // Prevent echo message
+                        if (entry[1].key !== key) {
+                            entry[1].data.messagePort.postMessage([ipcMessage, data], messagePorts);
+                        }
                     }
                 }
             }
@@ -244,9 +270,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
+    private _onIPCCommandReceived(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {
+        return this._onCommandReceived(ipcCommand);
+    }
+
     private _onPortCommandReceived(event: Electron.MessageEvent): boolean {
-        const ipcCommand = event.data as IpcBusCommand;
-        switch (ipcCommand.kind) {
+        return this._onCommandReceived(event.data as IpcBusCommand);
+    }
+
+    private _onCommandReceived(ipcCommand: IpcBusCommand): boolean {
+            switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
                 this._onEndpointHandshake(ipcCommand);
                 return true;
@@ -282,6 +315,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
         }
         return false;
+    }
+
+    private _onIPCMessageReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, data: any): void {
+        if (this._broadcastData(true, ipcMessage, data) === false) {
+            this._bridge._onRendererMessageReceived(ipcMessage, data);
+        }
     }
 
     private _onPortMessageReceived(event: Electron.MessageEvent): void {
