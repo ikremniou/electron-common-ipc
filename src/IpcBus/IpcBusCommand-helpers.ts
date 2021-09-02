@@ -134,6 +134,7 @@ export class SerializeMessage {
 }
 
 export interface IpcInterface {
+    send(channel: string, ...args: any[]): void;
     sendTo(webContentsId: number, channel: string, ...args: any[]): void;
 }
 
@@ -191,6 +192,31 @@ export class SmartMessageBag {
 
     writeCommand(writer: Writer, ipcCommand: IpcBusCommand) {
         this._packetOut.write(writer, [ipcCommand]);
+    }
+
+    ipcMessage(ipc: IpcInterface, channel: string): void {
+        if (this._data) {
+            if (this._supportStructureClone !== false) {
+                try {
+                    ipc.send(channel, this._ipcMessage, this._data);
+                    this._supportStructureClone = true;
+                    return;
+                }
+                catch (err) {
+                    this._supportStructureClone = false;
+                }
+            }
+        }
+        this._ipcMessage.rawData = true;
+        if (this._rawData == null) {
+            // maybe an arg does not supporting Electron serialization !
+            JSONParserV1.install();
+            this._packetOut.serialize([this._ipcMessage, this._data]);
+            JSONParserV1.uninstall();
+            this._rawData = this._packetOut.getRawData();
+        }
+        ipc.send(channel, this._ipcMessage, this._rawData);
+        this._ipcMessage.rawData = false;
     }
 
     ipcMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
