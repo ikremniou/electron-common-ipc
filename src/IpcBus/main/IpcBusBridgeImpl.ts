@@ -184,6 +184,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._rendererConnector.broadcastData(ipcMessage, data, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             if (hasSocketChannel) {
+                // A message coming from is never a rawData but who knowns
                 if (ipcMessage.rawData) {
                     this._socketTransport.broadcastPacket(ipcMessage, data);
                 }

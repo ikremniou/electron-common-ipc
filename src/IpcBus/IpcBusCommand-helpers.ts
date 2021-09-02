@@ -110,6 +110,7 @@ export class SerializeMessage {
     }
 
     writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: any[]) {
+        // Args will be serialized by packetOut
         ipcMessage.rawData = true;
         this._packetOut.write(writer, [ipcMessage, args]);
     }
