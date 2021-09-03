@@ -195,7 +195,7 @@ export class SmartMessageBag {
         this._packetOut.write(writer, [ipcCommand]);
     }
 
-    ipcMessage(ipc: IpcInterface, channel: string): void {
+    sendIPCMessage(ipc: IpcInterface, channel: string): void {
         if (this._data) {
             if (this._supportStructureClone !== false) {
                 try {
@@ -220,7 +220,7 @@ export class SmartMessageBag {
         this._ipcMessage.rawData = false;
     }
 
-    ipcMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
+    sendIPCMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
         if (this._data) {
             if (this._supportStructureClone !== false) {
                 try {
@@ -245,7 +245,7 @@ export class SmartMessageBag {
         this._ipcMessage.rawData = false;
     }
 
-    portMessage(port: PortInterface, messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
+    sendPortMessage(port: PortInterface, messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
         // Seems to have a bug in Electron, undefined is not supported for messagePorts !
         // messagePorts = messagePorts || [];
         if (this._data) {

@@ -1,6 +1,6 @@
 /// <reference types='electron' />
 
-import { IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
@@ -53,17 +53,19 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._postCommand(ipcCommand);
     }
 
-    broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean {
         if (ipcMessage.rawData) {
-            if (data.buffer) {
-                return this._broadcastBuffers(ipcMessage, [data.buffer]);
+            const rawData = data as IpcPacketBuffer.RawData;
+            if (rawData.buffer) {
+                return this._broadcastBuffers(ipcMessage, [rawData.buffer]);
             }
             else {
-                return this._broadcastBuffers(ipcMessage, data.buffers);
+                return this._broadcastBuffers(ipcMessage, rawData.buffers);
             }
         }
         else {
-            this._postMessage(ipcMessage, data, messagePorts);
+            const args = data as any[];
+            this._postMessage(ipcMessage, args, messagePorts);
             return false;
         }
     }

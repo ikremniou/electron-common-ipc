@@ -315,7 +315,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    private _onIPCMessageReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, data: any): void {
+    private _onIPCMessageReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
         if (this._broadcastData(true, ipcMessage, data) === false) {
             this._bridge._onRendererMessageReceived(ipcMessage, data);
         }

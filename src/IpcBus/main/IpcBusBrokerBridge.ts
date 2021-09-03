@@ -1,6 +1,6 @@
 import type * as net from 'net';
 
-import type { IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 import { WriteBuffersToSocket } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
@@ -43,13 +43,14 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         throw 'TODO';
     }
 
-    broadcastData(ipcMessage: IpcBusMessage, data: any): boolean {
+    broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[]): boolean {
         if (ipcMessage.rawData) {
-            if (data.buffer) {
-                return this.broadcastBuffers(ipcMessage, [data.buffer]);
+            const rawData = data as IpcPacketBuffer.RawData;
+            if (rawData.buffer) {
+                return this.broadcastBuffers(ipcMessage, [rawData.buffer]);
             }
             else {
-                return this.broadcastBuffers(ipcMessage, data.buffers);
+                return this.broadcastBuffers(ipcMessage, rawData.buffers);
             }
         }
         throw 'not supported';

@@ -29,7 +29,7 @@ export namespace IpcBusRendererContent {
         return rawBuffer;
     }
 
-    export function FixRawContent(rawData: IpcBusRendererContent, forceSingleBuffer?: boolean) {
+    export function FixRawContent(rawData: IpcPacketBufferCore.RawData, forceSingleBuffer?: boolean) {
         if (rawData.buffer) {
             rawData.buffer = Uint8ArrayToBuffer(rawData.buffer);
         }

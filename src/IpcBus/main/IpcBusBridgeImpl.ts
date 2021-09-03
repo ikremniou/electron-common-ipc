@@ -1,6 +1,6 @@
 /// <reference types='electron' />
 
-import type { IpcPacketBufferCore } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
@@ -27,7 +27,7 @@ export interface IpcBusBridgeClient {
 
     broadcastCommand(ipcCommand: IpcBusCommand): void;
     broadcastPacket(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-    broadcastData(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): boolean;
+    broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean;
 
     queryState(): QueryStateBase;
 }
@@ -144,24 +144,26 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
+    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
         if (ipcMessage.rawData) {
+            const rawData = data as IpcPacketBufferCore.RawData;
             // Electron IPC "corrupts" Buffer to a Uint8Array
-            IpcBusRendererContent.FixRawContent(data);
-            if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, data, messagePorts) === false) {
+            IpcBusRendererContent.FixRawContent(rawData);
+            if (this._mainTransport.onConnectorRawDataReceived(ipcMessage, rawData, messagePorts) === false) {
                 const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 // Prevent serializing for nothing !
                 if (hasSocketChannel) {
-                    this._socketTransport.broadcastData(ipcMessage, data, messagePorts);
+                    this._socketTransport.broadcastData(ipcMessage, rawData, messagePorts);
                 }
             }
         }
         else {
-            if (this._mainTransport.onConnectorArgsReceived(ipcMessage, data, messagePorts) === false) {
+            const args = data as any[];
+            if (this._mainTransport.onConnectorArgsReceived(ipcMessage, args, messagePorts) === false) {
                 const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
                 // Prevent serializing for nothing !
                 if (hasSocketChannel) {
-                    const packet = this._serializeMessage.serialize(ipcMessage, data);
+                    const packet = this._serializeMessage.serialize(ipcMessage, args);
                     this._socketTransport.broadcastPacket(ipcMessage, packet);
                 }
             }
@@ -184,9 +186,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._rendererConnector.broadcastData(ipcMessage, data, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             if (hasSocketChannel) {
-                // A message coming from is never a rawData but who knowns
+                // A message coming from main should be never a rawData but who knowns
                 if (ipcMessage.rawData) {
-                    this._socketTransport.broadcastPacket(ipcMessage, data);
+                    this._socketTransport.broadcastData(ipcMessage, data);
                 }
                 else {
                     const packet = this._serializeMessage.serialize(ipcMessage, data);

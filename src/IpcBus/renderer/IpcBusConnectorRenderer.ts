@@ -222,14 +222,14 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         if (messagePorts == null) {
             const target = IpcBusCommandHelpers.GetTargetRenderer(ipcMessage, true);
             if (target && target.process.isMainFrame) {
-                this._messageBag.ipcMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
+                this._messageBag.sendIPCMessageTo(this._ipcWindow, target.process.wcid, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
             }
             else {
-                this._messageBag.ipcMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
+                this._messageBag.sendIPCMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_MESSAGE);
             }
             return;
         }
-        this._messageBag.portMessage(this._messageChannel.port1, messagePorts);
+        this._messageBag.sendPortMessage(this._messageChannel.port1, messagePorts);
     }
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
