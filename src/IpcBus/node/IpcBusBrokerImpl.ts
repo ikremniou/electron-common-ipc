@@ -182,13 +182,13 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected _socketCleanUp(socket: any): void {
         this.onBridgeClosed(socket);
         // Broadcast peers destruction ?
-        for (const endpoint of this._endpoints.values()) {
+        this._endpoints.forEach((endpoint) => {
             if (endpoint.socket === socket) {
                 const key = IpcBusCommandHelpers.CreateKeyForEndpoint(endpoint);
                 this._endpoints.delete(key);
                 this._subscriptions.remove(key);
             }
-        }
+        });
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 
