@@ -203,16 +203,16 @@ export class ChannelConnectionMap<T, K extends string | number> {
         return this._channelsMap.get(channel);
     }
 
-    // getConns(): ChannelConnectionData<T, K>[] {
-    //     // @ts-ignore really an edge case for the compiler that has not been implemented
-    //     const conns: Record<K, ChannelConnectionData<T, K>> = {};
-    //     this._channelsMap.forEach((connsMap) => {
-    //         connsMap.forEach((connData) => {
-    //             conns[connData.key] = connData;
-    //         });
-    //     });
-    //     return Object.values(conns);
-    // }
+    getConns(): ChannelConnectionData<T, K>[] {
+        // @ts-ignore really an edge case for the compiler that has not been implemented
+        const conns: Record<K, ChannelConnectionData<T, K>> = {};
+        this._channelsMap.forEach((connsMap) => {
+            connsMap.forEach((connData) => {
+                conns[connData.key] = connData;
+            });
+        });
+        return Object.values(conns);
+    }
 
     forEachChannel(channel: string, callback: ChannelConnectionDataRef.ForEachChannelHandler<T, K>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);

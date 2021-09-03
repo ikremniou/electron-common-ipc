@@ -144,6 +144,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             handshake.process.pid = webContents.id;
         }
 
+        this._trackRendererDestruction(webContents);
+
         const endpoint: IpcBusPeerProcessEndpoint = Object.assign(ipcCommand.peer, { webContents });
         const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
         this._endpoints.set(key, endpoint);
@@ -183,11 +185,22 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onEndpointHandshake(ipcCommand: IpcBusCommand) {
+    private _trackRendererDestruction(webContents: Electron.WebContents): void {
+        // When webContents is destroyed some properties like id are no more accessible !
+        const webContentsId = webContents.id;
+        webContents.once('destroyed', () => {
+            // Have to remove this webContents, included its frames
+            const entries = this._subscriptions.getConns().filter((entry) => {
+                return (entry.data.process.wcid === webContentsId);
+            });
+            // Broadcast peers destruction ?
+            for (let i = 0, l = entries.length; i < l; ++i) {
+                this.deleteEndpointKey(entries[i].key);
+            }
+        });
     }
 
-    private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
-        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
+    private deleteEndpointKey(key: number) {
         const endpoint = this._endpoints.get(key);
         if (endpoint) {
             this._endpoints.delete(key);
@@ -203,6 +216,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 endpoint.commandPort = null;
             }
         }
+    }
+
+    private _onEndpointHandshake(ipcCommand: IpcBusCommand) {
+    }
+
+    private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
+        const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
+        this.deleteEndpointKey(key);
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
