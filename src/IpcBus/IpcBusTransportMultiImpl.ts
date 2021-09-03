@@ -31,11 +31,18 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
         if (channelConns) {
             args = args || ipcPacketBufferCore.parseArrayAt(1);
-            for (const entry of channelConns) {
-                if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, messagePorts)) {
-                    return true;
+            let bHandled = false;
+            channelConns.forEach((entry) => {
+                if (!bHandled && this._onClientMessageReceived(entry.data, local, ipcMessage, args, messagePorts)) {
+                    bHandled = true;
                 }
-            }
+            });
+            return bHandled;
+            // for (const entry of channelConns) {
+            //     if (this._onClientMessageReceived(entry[1].data, local, ipcMessage, args, messagePorts)) {
+            //         return true;
+            //     }
+            // }
         }
         return false;
     }

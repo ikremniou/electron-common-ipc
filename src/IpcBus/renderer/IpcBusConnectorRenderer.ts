@@ -205,6 +205,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return this._connectCloseState.connect(() => {
+            // Keep IPC a primary media
             return this.onIPCHandshake(client, options);
         });
     }

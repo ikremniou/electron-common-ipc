@@ -269,35 +269,27 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             if (channelConns) {
                 const key = local ? IpcBusCommandHelpers.CreateKeyForEndpoint(ipcMessage.peer): -1;
                 if (messagePorts == null) {
-                    for (const entry of channelConns) {
+                    channelConns.forEach((entry) => {
                         // Prevent echo message
-                        if (entry[1].key !== key) {
-                            entry[1].data.webContents.sendToFrame(entry[1].data.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
+                        if (entry.key !== key) {
+                            entry.data.webContents.sendToFrame(entry.data.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
                         }
-                    }
+                    });
                 }
                 else {
-                    for (const entry of channelConns) {
+                    channelConns.forEach((entry) => {
                         // Prevent echo message
-                        if (entry[1].key !== key) {
-                            entry[1].data.messagePort.postMessage([ipcMessage, data], messagePorts);
+                        if (entry.key !== key) {
+                            entry.data.messagePort.postMessage([ipcMessage, data], messagePorts);
                         }
-                    }
+                    });
                 }
             }
         }
         return false;
     }
 
-    private _onIPCCommandReceived(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {
-        return this._onCommandReceived(ipcCommand);
-    }
-
-    private _onPortCommandReceived(event: Electron.MessageEvent): boolean {
-        return this._onCommandReceived(event.data as IpcBusCommand);
-    }
-
-    private _onCommandReceived(ipcCommand: IpcBusCommand): boolean {
+    private _onIPCCommandReceived(_event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.Handshake: 
                 this._onEndpointHandshake(ipcCommand);
@@ -334,6 +326,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
         }
         return false;
+    }
+
+    private _onPortCommandReceived(event: Electron.MessageEvent): boolean {
+        return this._onIPCCommandReceived(undefined, event.data as IpcBusCommand);
     }
 
     private _onIPCMessageReceived(event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
