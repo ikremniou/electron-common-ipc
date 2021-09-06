@@ -113,6 +113,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onIPCCommandReceived);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
         return Promise.resolve();
     }
 
@@ -175,7 +177,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
             // See https://github.com/electron/electron/issues/25119
             if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-                webContents.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+                webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
             }
             else {
                 webContents.on('did-finish-load', () => {
@@ -193,7 +195,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const entries = this._subscriptions.getConns().filter((entry) => {
                 return (entry.data.process.wcid === webContentsId);
             });
-            // Broadcast peers destruction ?
             for (let i = 0, l = entries.length; i < l; ++i) {
                 this.deleteEndpointKey(entries[i].key);
             }
