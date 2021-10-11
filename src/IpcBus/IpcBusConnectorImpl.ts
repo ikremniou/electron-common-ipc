@@ -4,7 +4,7 @@ import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
 import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
-import { ConnectCloseState } from './IpcBusUtils';
+import { ConnectCloseState, CreateProcessID } from './IpcBusUtils';
 
 export function CreateProcessId(process: Client.IpcBusProcess): string {
     let name = `${process.type}`;
@@ -80,6 +80,33 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     protected removeClient() {
         this._client = null;
+    }
+
+    stampMessage(ipcBusMessage: IpcBusMessage) {
+        const id = `${CreateProcessID(this._peerProcess.process)}.${this._messageCount++}`;
+        ipcBusMessage.stamp = {
+            id,
+            timestamp: this._log.now,
+            peer: ipcBusMessage.peer
+        }
+    }
+
+    stampResponse(ipcBusMessage: IpcBusMessage, args?: any[], response?: any[]) {
+        ipcBusMessage.stamp.response_timestamp = this._log.now;
+        ipcBusMessage.stamp.request_args = args;
+        ipcBusMessage.stamp.request_response = response;
+    }
+
+    ackMessage(ipcBusMessage: IpcBusMessage, related_peer: Client.IpcBusPeer) {
+        ipcBusMessage.stamp.related_peer = related_peer;
+        ipcBusMessage.stamp.related_timestamp = this._log.now;
+    }
+
+    ackResponse(ipcBusMessage: IpcBusMessage) {
+        ipcBusMessage.stamp.response_received_timestamp = this._log.now;
+    }
+
+    logRoundtrip(ipcBusMessage: IpcBusMessage) {
     }
 
     // protected cloneCommand(command: IpcBusCommand): IpcBusCommand.LogCommand {

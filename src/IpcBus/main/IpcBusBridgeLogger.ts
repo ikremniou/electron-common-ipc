@@ -5,11 +5,11 @@ import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
 import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
-import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusBridgeDispatcher, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
+export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridgeDispatcher {
     private _ipcBusLog: IpcBusLogMain;
 
     constructor(contextType: Client.IpcBusProcessType, ipcBusLog: IpcBusLogMain) {
