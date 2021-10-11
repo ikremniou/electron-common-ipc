@@ -137,7 +137,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         else {
             if (this._logActivate) {
-                this._connector.logRoundtrip(ipcMessage);
+                this._connector.postLogRoundtrip(ipcMessage);
             }
             if (messagePorts && messagePorts.length) {
                 ipcBusEvent.ports = messagePorts.map(CastToMessagePort);
@@ -156,7 +156,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
                 this._connector.ackResponse(ipcResponse);
-                this._connector.logRoundtrip(ipcResponse);
+                this._connector.postLogRoundtrip(ipcResponse);
             }
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name} (replyChannel '${ipcCommand.request.replyChannel}')`);
             deferredRequest.settled(ipcResponse, args);

@@ -33,6 +33,8 @@ export interface IpcBusBridgeClient {
 }
 
 export interface IpcBusBridgeDispatcher {
+    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void;
+
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererCommandReceived(ipcCommand: IpcBusCommand): void;
@@ -138,6 +140,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
         const rendererChannels = this._rendererConnector.getChannels();
         const mainChannels = this._mainTransport.getChannels();
         return rendererChannels.concat(mainChannels);
+    }
+
+    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
+
     }
 
     // This is coming from the Electron Main Process (Electron main ipc)

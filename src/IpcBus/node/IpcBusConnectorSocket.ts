@@ -290,4 +290,11 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
             this._serializeMessage.writeCommand(this._socketWriter, ipcCommand);
         }
     }
+
+    postLogRoundtrip(ipcMessage: IpcBusMessage) {
+        if (this._socketWriter) {
+            // ipcMessage.process = this._process;
+            this._serializeMessage.writeMessage(this._socketWriter, ipcMessage, [ipcMessage.stamp.request_args, ipcMessage.stamp.request_response]);
+        }
+    }
 }

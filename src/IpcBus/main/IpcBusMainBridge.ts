@@ -40,7 +40,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         this._bridge._onMainMessageReceived(ipcMessage, data, messagePorts);
     }
 
-    postCommand(ipcCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcCommand: IpcBusCommand): void {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:
@@ -57,6 +57,10 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
                 this._bridge._onMainCommandReceived(ipcCommand);
                 break;
         }
+    }
+
+    postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
+        this._bridge._onLogReceived(ipcMessage, args);
     }
 }
 

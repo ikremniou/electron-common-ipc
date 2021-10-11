@@ -342,6 +342,12 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 this.broadcastCommandToBridge(ipcCommand);
                 break;
 
+            case IpcBusCommand.Kind.LogRoundtrip: {
+                const ipcMessage = ipcCommand as IpcBusMessage;
+                this.broadcastToBridgeMessage(socket, ipcMessage, ipcPacketBufferList);
+                break;
+            }
+
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
@@ -379,12 +385,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 this.broadcastToBridgeRequestResponse(socket, ipcMessage, ipcPacketBufferList);
                 break;
             }
-
-            // case IpcBusCommand.Kind.LogGetMessage:
-            // case IpcBusCommand.Kind.LogLocalSendRequest:
-            // case IpcBusCommand.Kind.LogLocalRequestResponse:
-            //     this.broadcastToBridge(socket, ipcCommand, ipcPacketBufferList);
-            //     break;
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
