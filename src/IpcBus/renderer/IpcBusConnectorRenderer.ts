@@ -241,9 +241,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // this._commandChannel.port1.postMessage(ipcCommand);
     }
 
-    postLogRoundtrip(ipcMessage: IpcBusMessage) {
-        const ipcBusLog: IpcBusMessage = Object.assign(ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
-        this._messageBag.set(ipcBusLog, [ipcBusLog.stamp.request_args, ipcBusLog.stamp.request_response]);
+    postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
+        const ipcBusLog: IpcBusMessage = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
+        ipcBusLog.stamp.kind = ipcMessage.kind;
+        this._messageBag.set(ipcBusLog, args);
         this._messageBag.sendIPCMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP);
     }
 

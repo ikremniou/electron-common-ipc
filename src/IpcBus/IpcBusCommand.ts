@@ -81,22 +81,21 @@ export interface IpcBusMessageStamp {
     // order 0
     id: string;
     kind: IpcBusCommand.Kind;
+    local: boolean;
 
     peer: IpcBusPeer;
     timestamp: number;
 
     // order 1
-    related_peer?: IpcBusPeer;
-    related_timestamp?: number;
+    peer_received?: IpcBusPeer;
+    timestamp_received?: number;
 
     // order 2
-    response_sent_timestamp?: number;
-
-    request_args?: any[];
-    request_response?: any[];
+    timestamp_response?: number;
 
     // order 3
-    response_received_timestamp?: number;
+    response_local?: boolean;
+    timestamp_response_received?: number;
 }
 
 export interface IpcBusMessage extends IpcBusCommandBase {

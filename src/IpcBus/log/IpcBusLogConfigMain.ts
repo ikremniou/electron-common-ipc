@@ -57,11 +57,11 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
 
     private buildMessage(ipcMessage: IpcBusMessage, args: any[], payload: number): IpcBusLog.Message | null {
         // let needArgs = false;
-        const local = ipcMessage.stamp.related_peer ? ipcMessage.stamp.peer.id === ipcMessage.stamp.related_peer.id : false;
+        const local = ipcMessage.stamp.peer_received ? ipcMessage.stamp.peer.id === ipcMessage.stamp.peer_received.id : false;
         const message: Partial<IpcBusLog.Message> = {
             id: ipcMessage.stamp.id,
             peer: ipcMessage.stamp.peer, 
-            related_peer: ipcMessage.stamp.related_peer,
+            related_peer: ipcMessage.stamp.peer_received,
             local,
             payload,
             // args: needArgs ? this.getArgs(args) : undefined
@@ -75,14 +75,15 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 message.delay = 0,
 
                 message.channel = ipcMessage.channel;
+                message.responseChannel = ipcMessage.request && ipcMessage.request.id;
                 // needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
                 message.order = 2;
-                message.timestamp = ipcMessage.stamp.response_sent_timestamp - this._baseTime;
-                message.delay = ipcMessage.stamp.response_sent_timestamp - ipcMessage.stamp.timestamp;
+                message.timestamp = ipcMessage.stamp.timestamp_response - this._baseTime;
+                message.delay = ipcMessage.stamp.timestamp_response - ipcMessage.stamp.timestamp_received;
 
                 message.channel = ipcMessage.request.channel;
                 message.responseChannel = ipcMessage.request.id;
@@ -94,38 +95,27 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 if (ipcMessage.stamp.kind === IpcBusCommand.Kind.SendMessage) {
                     message.kind = ipcMessage.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
                     message.order = 1;
-                    message.timestamp = ipcMessage.stamp.related_timestamp - this._baseTime;
-                    message.delay = ipcMessage.stamp.related_timestamp - ipcMessage.stamp.timestamp;
+                    message.timestamp = ipcMessage.stamp.timestamp_received - this._baseTime;
+                    message.delay = ipcMessage.stamp.timestamp_received - ipcMessage.stamp.timestamp;
 
                     message.channel = ipcMessage.channel;
+                    message.responseChannel = ipcMessage.request && ipcMessage.request.id;
                 }
                  else if (ipcMessage.stamp.kind === IpcBusCommand.Kind.RequestResponse) {
-                    if (ipcMessage.stamp.request_args) {
-                        const newipcMessage: IpcBusMessage = {
-                            kind: IpcBusCommand.Kind.SendMessage,
-                            peer: ipcMessage.stamp.peer,
-                            channel: ipcMessage.request.channel,
-                            request: ipcMessage.request,
-                            stamp: ipcMessage.stamp
-                        };
-                        this.buildMessage(newipcMessage, ipcMessage.stamp.request_args, 0)
-                        newipcMessage.kind = IpcBusCommand.Kind.LogRoundtrip;
-                        this.buildMessage(newipcMessage, ipcMessage.stamp.request_args, 0)
-                    }
-                    if (ipcMessage.stamp.request_response) {
-                        const newipcMessage: IpcBusMessage = {
-                            kind: IpcBusCommand.Kind.RequestResponse,
-                            peer: ipcMessage.stamp.related_peer,
-                            channel: ipcMessage.request.id,
-                            request: ipcMessage.request,
-                            stamp: ipcMessage.stamp
-                        };
-                        this.buildMessage(newipcMessage, ipcMessage.stamp.request_args, 0)
-                    }
+                    // if (ipcMessage.stamp.request_response) {
+                    //     const newipcMessage: IpcBusMessage = {
+                    //         kind: IpcBusCommand.Kind.RequestResponse,
+                    //         peer: ipcMessage.stamp.related_peer,
+                    //         channel: ipcMessage.request.id,
+                    //         request: ipcMessage.request,
+                    //         stamp: ipcMessage.stamp
+                    //     };
+                    //     this.buildMessage(newipcMessage, ipcMessage.stamp.request_args, 0)
+                    // }
                     message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
                     message.order = 3;
-                    message.timestamp = ipcMessage.stamp.response_received_timestamp - this._baseTime;
-                    message.delay = ipcMessage.stamp.response_received_timestamp - ipcMessage.stamp.timestamp;
+                    message.timestamp = ipcMessage.stamp.timestamp_response_received - this._baseTime;
+                    message.delay = ipcMessage.stamp.timestamp_response_received - ipcMessage.stamp.timestamp_response;
 
                     message.channel = ipcMessage.request.channel;
                     message.responseChannel = ipcMessage.request.id;

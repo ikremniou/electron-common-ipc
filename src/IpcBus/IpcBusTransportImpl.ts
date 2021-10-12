@@ -78,16 +78,17 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (listeners.length === 0) {
             return false;
         }
+        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name}`);
+        if (this._logActivate) {
+            this._connector.ackMessage(ipcMessage, local, client.peer);
+            this._connector.postLogRoundtrip(ipcMessage, args);
+        }
         let messageHandled = false;
         if (ipcMessage.target && ipcMessage.target.peerid) {
             if (ipcMessage.target.peerid !== client.peer.id) {
                 return false;
             }
             messageHandled = true;
-        }
-        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name}`);
-        if (this._logActivate) {
-            this._connector.ackMessage(ipcMessage, client.peer);
         }
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcMessage.channel, sender: ipcMessage.peer };
         if (ipcMessage.request) {
@@ -104,18 +105,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 };
                 ipcMessage.request.resolve = resolve;
                 messageHandled = true;
+                if (this._logActivate) {
+                    ipcResponse.stamp = ipcMessage.stamp;
+                    this._connector.stampResponse(ipcResponse);
+                }
                 if (local) {
-                    if (this._logActivate) {
-                        ipcResponse.stamp = ipcMessage.stamp;
-                        this._connector.stampResponse(ipcResponse, args, argsResponse);
-                    }
                     this.onRequestResponseReceived(true, ipcResponse, argsResponse);
                 }
                 else {
-                    if (this._logActivate) {
-                        ipcResponse.stamp = ipcMessage.stamp;
-                        this._connector.stampResponse(ipcResponse);
-                    }
                     this._postRequestMessage(ipcResponse, argsResponse);
                 }
             }
@@ -138,9 +135,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             };
         }
         else {
-            if (this._logActivate) {
-                this._connector.postLogRoundtrip(ipcMessage);
-            }
             if (messagePorts && messagePorts.length) {
                 ipcBusEvent.ports = messagePorts.map(CastToMessagePort);
             }
@@ -157,8 +151,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._requestFunctions.delete(ipcResponse.request.id);
             args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
-                this._connector.ackResponse(ipcResponse);
-                this._connector.postLogRoundtrip(ipcResponse);
+                this._connector.ackResponse(ipcResponse, local);
+                this._connector.postLogRoundtrip(ipcResponse, args);
             }
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name} (replyChannel '${ipcCommand.request.replyChannel}')`);
             deferredRequest.settled(ipcResponse, args);
@@ -227,9 +221,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._connector.stampMessage(ipcMessage);
         }
         // Broadcast locally
-        this.onMessageReceived(true, ipcMessage, args, undefined, messagePorts);
-        // Broadcat globally
-        this._postMessage(ipcMessage, args, messagePorts);
+        if (!this.onMessageReceived(true, ipcMessage, args, undefined, messagePorts)) {
+        // Broadcast globally
+            this._postMessage(ipcMessage, args, messagePorts);
+        }
     }
 
     protected cancelRequest(client?: IpcBusTransport.Client): void {
@@ -265,11 +260,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._connector.stampMessage(ipcRequest);
         }
         // Broadcast locally
-        if (this.onMessageReceived(true, ipcRequest, args, undefined)) {
-            // this._connector.logLocalMessage(client.peer, ipcMessage, args);
-        }
-        // Broadcat globally, if not resolved by local clients
-        else {
+        if (!this.onMessageReceived(true, ipcRequest, args, undefined)) {
+        // Broadcast globally, if not resolved by local clients
             if (timeoutDelay >= 0) {
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusMessageRequest.id)) {

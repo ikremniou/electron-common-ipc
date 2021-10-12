@@ -86,6 +86,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         const timestamp = this._log.now;
         const id = `${CreateProcessID(this._peerProcess.process)}.${this._messageCount++}`;
         ipcMessage.stamp = {
+            local: false,
             id,
             kind: ipcMessage.kind,
             timestamp,
@@ -93,19 +94,22 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    stampResponse(ipcMessage: IpcBusMessage, args?: any[], response?: any[]) {
-        ipcMessage.stamp.response_sent_timestamp = this._log.now;
-        ipcMessage.stamp.request_args = args;
-        ipcMessage.stamp.request_response = response;
+    stampResponse(ipcMessage: IpcBusMessage) {
+        ipcMessage.stamp.timestamp_response = this._log.now;
+        ipcMessage.stamp.kind = ipcMessage.kind;
     }
 
-    ackMessage(ipcMessage: IpcBusMessage, related_peer: Client.IpcBusPeer) {
-        ipcMessage.stamp.related_timestamp = this._log.now;
-        ipcMessage.stamp.related_peer = related_peer;
+    ackMessage(ipcMessage: IpcBusMessage, local: boolean, related_peer: Client.IpcBusPeer) {
+        ipcMessage.rawData = false;
+        ipcMessage.stamp.timestamp_received = this._log.now;
+        ipcMessage.stamp.local = local;
+        ipcMessage.stamp.peer_received = related_peer;
     }
 
-    ackResponse(ipcMessage: IpcBusMessage) {
-        ipcMessage.stamp.response_received_timestamp = this._log.now;
+    ackResponse(ipcMessage: IpcBusMessage, local: boolean) {
+        ipcMessage.rawData = false;
+        ipcMessage.stamp.timestamp_response_received = this._log.now;
+        ipcMessage.stamp.response_local = local;
     }
 
     // protected cloneCommand(command: IpcBusCommand): IpcBusCommand.LogCommand {
@@ -187,5 +191,5 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     abstract postMessage(ipcMessage: IpcBusMessage, args?: any[]): void;
     abstract postCommand(ipcCommand: IpcBusCommand): void;
 
-    abstract postLogRoundtrip(ipcMessage: IpcBusMessage): void;
+    abstract postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]): void;
 }

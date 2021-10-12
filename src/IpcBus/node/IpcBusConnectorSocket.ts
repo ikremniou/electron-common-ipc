@@ -291,11 +291,12 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
     }
 
-    postLogRoundtrip(ipcMessage: IpcBusMessage) {
+    postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
         if (this._socketWriter) {
-            const ipcBusLog: IpcBusMessage = Object.assign(ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
+            const ipcBusLog: IpcBusMessage = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
+            ipcBusLog.stamp.kind = ipcMessage.kind;
             // ipcMessage.process = this._process;
-            this._serializeMessage.writeMessage(this._socketWriter, ipcBusLog, [ipcBusLog.stamp.request_args, ipcBusLog.stamp.request_response]);
+            this._serializeMessage.writeMessage(this._socketWriter, ipcBusLog, args);
         }
     }
 }

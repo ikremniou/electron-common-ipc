@@ -143,7 +143,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
     }
 
     _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
-
     }
 
     // This is coming from the Electron Main Process (Electron main ipc)
