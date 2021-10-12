@@ -79,6 +79,7 @@ export interface IpcBusCommand extends IpcBusCommandBase {
 
 export interface IpcBusMessageStamp {
     id: string;
+    kind: IpcBusCommand.Kind;
 
     peer: IpcBusPeer;
     timestamp: number;
@@ -86,7 +87,7 @@ export interface IpcBusMessageStamp {
     related_peer?: IpcBusPeer;
     related_timestamp?: number;
 
-    response_timestamp?: number;
+    response_sent_timestamp?: number;
     response_received_timestamp?: number;
 
     request_args?: any[];

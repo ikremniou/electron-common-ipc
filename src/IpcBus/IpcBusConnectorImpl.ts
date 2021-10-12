@@ -83,23 +83,25 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     stampMessage(ipcMessage: IpcBusMessage) {
+        const timestamp = this._log.now;
         const id = `${CreateProcessID(this._peerProcess.process)}.${this._messageCount++}`;
         ipcMessage.stamp = {
             id,
-            timestamp: this._log.now,
+            kind: ipcMessage.kind,
+            timestamp,
             peer: ipcMessage.peer
         }
     }
 
     stampResponse(ipcMessage: IpcBusMessage, args?: any[], response?: any[]) {
-        ipcMessage.stamp.response_timestamp = this._log.now;
+        ipcMessage.stamp.response_sent_timestamp = this._log.now;
         ipcMessage.stamp.request_args = args;
         ipcMessage.stamp.request_response = response;
     }
 
     ackMessage(ipcMessage: IpcBusMessage, related_peer: Client.IpcBusPeer) {
-        ipcMessage.stamp.related_peer = related_peer;
         ipcMessage.stamp.related_timestamp = this._log.now;
+        ipcMessage.stamp.related_peer = related_peer;
     }
 
     ackResponse(ipcMessage: IpcBusMessage) {

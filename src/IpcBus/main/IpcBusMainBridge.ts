@@ -60,7 +60,8 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
-        this._bridge._onLogReceived(ipcMessage, args);
+        const ipcBusLog: IpcBusMessage = Object.assign(ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
+        this._bridge._onLogReceived(ipcBusLog, args);
     }
 }
 

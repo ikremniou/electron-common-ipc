@@ -1,9 +1,9 @@
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
-import type { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
-import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusBridgeDispatcher, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
@@ -17,41 +17,46 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
         this._ipcBusLog = ipcBusLog;
     }
 
-    addLog(command: IpcBusCommand, args: any[], payload?: number): boolean {
-        return this._ipcBusLog.addLog(command, args);
-    }
+    // addLog(ipcMessage: IpcBusMessage, args: any[], payload?: number): boolean {
+    //     return this._ipcBusLog.addLog(ipcMessage, args);
+    // }
 
-    addLogRawContent(ipcCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent): boolean {
-        return this._ipcBusLog.addLogRawContent(ipcCommand, IpcBusRendererContent);
-    }
+    // addLogRawContent(ipcCommand: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent): boolean {
+    //     return this._ipcBusLog.addLogRawContent(ipcCommand, IpcBusRendererContent);
+    // }
 
-    addLogPacket(ipcCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
-    }
+    // addLogPacket(ipcCommand: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
+    //     return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
+    // }
 
     override _onLogReceived(ipcMessage: IpcBusMessage, data: any) {
         if (ipcMessage.rawData) {
-            this._ipcBusLog.addLogRawContent(ipcMessage, data);
+            const rawData = data as IpcPacketBufferCore.RawData;
+            IpcBusRendererContent.FixRawContent(rawData);
+            this._ipcBusLog.addLogRawContent(ipcMessage, rawData);
         }
         else {
-            this._ipcBusLog.addLog(ipcMessage, data);
+            const args = data as any[];
+            this._ipcBusLog.addLog(ipcMessage, args);
         }
     }
     
-    override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
+    override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
         if (ipcMessage.rawData) {
-            this._ipcBusLog.addLogRawContent(ipcMessage, data);
+            const rawData = data as IpcPacketBufferCore.RawData;
+            IpcBusRendererContent.FixRawContent(rawData);
+            this._ipcBusLog.addLogRawContent(ipcMessage, rawData);
         }
         else {
-            this._ipcBusLog.addLog(ipcMessage, data);
+            const args = data as any[];
+            this._ipcBusLog.addLog(ipcMessage, args);
         }
         super._onRendererMessageReceived(ipcMessage, data, messagePorts);
     }
 
     override _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
-        if (this._ipcBusLog.addLog(ipcMessage, data)) {
-            super._onMainMessageReceived(ipcMessage, data, messagePorts);
-        }
+        this._ipcBusLog.addLog(ipcMessage, data);
+        super._onMainMessageReceived(ipcMessage, data, messagePorts);
     }
 
     override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {

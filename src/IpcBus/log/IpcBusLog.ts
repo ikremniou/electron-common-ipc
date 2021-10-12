@@ -15,9 +15,11 @@ export namespace IpcBusLog {
 
     export interface Message {
         id: string;
+        order: number;
         peer: IpcBusPeer;
         related_peer: IpcBusPeer;
         timestamp: number;
+        delay: number;
         channel: string;
         kind: Kind;
         responseChannel?: string;
@@ -25,15 +27,6 @@ export namespace IpcBusLog {
         local?: boolean;
         payload?: number;
         args?: any[];
-    }
-
-    export interface Trace {
-        order: number;
-        id: string;
-
-        first: Message;
-        current: Message;
-        stack: Message[];
     }
 
     export function KindToStr(kind: Kind): string {
@@ -58,7 +51,7 @@ export namespace IpcBusLog {
     }
 
     export interface Callback {
-        (trace: Trace): void;
+        (message: IpcBusLog.Message): void;
     }
 
     export let SetLogLevel: (level: IpcBusLogConfig.Level, cb: IpcBusLog.Callback, argContentLen?: number) => void;
