@@ -5,11 +5,11 @@ import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
-import type { IpcBusLogConfig } from './IpcBusLogConfig';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { CreateIpcBusLog } from './IpcBusLog-factory';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSONParserV1 } from 'json-helpers';
-// import { CutData } from './IpcBusLogUtils';
+import { CutData } from './IpcBusLogUtils';
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
@@ -38,33 +38,33 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    // private getArgs(args?: any[]): any[] {
-    //     if (args == null) {
-    //         return [];
-    //     }
-    //     // We want full data
-    //     if (this._argMaxContentLen <= 0) {
-    //         return args;
-    //     }
-    //     else {
-    //         const managed_args = [];
-    //         for (let i = 0, l = args.length; i < l; ++i) {
-    //             managed_args.push(CutData(args[i], this._argMaxContentLen));
-    //         }
-    //         return managed_args;
-    //     }
-    // }
+    private getArgs(args?: any[]): any[] {
+        if (args == null) {
+            return [];
+        }
+        // We want full data
+        if (this._argMaxContentLen <= 0) {
+            return args;
+        }
+        else {
+            const managed_args = [];
+            for (let i = 0, l = args.length; i < l; ++i) {
+                managed_args.push(CutData(args[i], this._argMaxContentLen));
+            }
+            return managed_args;
+        }
+    }
 
     private buildMessage(ipcMessage: IpcBusMessage, args: any[], payload: number): IpcBusLog.Message | null {
-        // let needArgs = false;
-        const local = ipcMessage.stamp.peer_received ? ipcMessage.stamp.peer.id === ipcMessage.stamp.peer_received.id : false;
+        let needArgs = (this._level & IpcBusLogConfig.Level.Args) === IpcBusLogConfig.Level.Args;
+        const local = ipcMessage.stamp.local || ipcMessage.stamp.response_local;
         const message: Partial<IpcBusLog.Message> = {
             id: ipcMessage.stamp.id,
             peer: ipcMessage.stamp.peer, 
             related_peer: ipcMessage.stamp.peer_received,
             local,
             payload,
-            // args: needArgs ? this.getArgs(args) : undefined
+            args: needArgs ? this.getArgs(args) : undefined
         };
 
         switch (ipcMessage.kind) {
@@ -76,7 +76,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
 
                 message.channel = ipcMessage.channel;
                 message.responseChannel = ipcMessage.request && ipcMessage.request.id;
-                // needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
@@ -88,7 +87,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 message.channel = ipcMessage.request.channel;
                 message.responseChannel = ipcMessage.request.id;
                 message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
-                // needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.LogRoundtrip: {
@@ -102,16 +100,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                     message.responseChannel = ipcMessage.request && ipcMessage.request.id;
                 }
                  else if (ipcMessage.stamp.kind === IpcBusCommand.Kind.RequestResponse) {
-                    // if (ipcMessage.stamp.request_response) {
-                    //     const newipcMessage: IpcBusMessage = {
-                    //         kind: IpcBusCommand.Kind.RequestResponse,
-                    //         peer: ipcMessage.stamp.related_peer,
-                    //         channel: ipcMessage.request.id,
-                    //         request: ipcMessage.request,
-                    //         stamp: ipcMessage.stamp
-                    //     };
-                    //     this.buildMessage(newipcMessage, ipcMessage.stamp.request_args, 0)
-                    // }
                     message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
                     message.order = 3;
                     message.timestamp = ipcMessage.stamp.timestamp_response_received - this._baseTime;
@@ -121,7 +109,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                     message.responseChannel = ipcMessage.request.id;
                     message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
                 }
-                // needArgs = (this._level & IpcBusLogConfig.Level.GetArgs) === IpcBusLogConfig.Level.GetArgs;
                 break;
             }
         }

@@ -17,22 +17,22 @@ export function NewIpcBusBridge(electronProcessType: ElectronProcessType): IpcBu
     // For backward
     if (process.env['ELECTRON_IPC_LOG_CSV']) {
         if (logger.level === IpcBusLogConfig.Level.None) {
-            logger.level = IpcBusLogConfig.Level.SentArgs;
+            logger.level = IpcBusLogConfig.Level.Args;
         }
-        // if (logger.argMaxContentLen < 0) {
-        //     logger.argMaxContentLen = 255;
-        // }
+        if (logger.argMaxContentLen < 0) {
+            logger.argMaxContentLen = 255;
+        }
         const filename = path.join(process.env['ELECTRON_IPC_LOG_CSV'], 'electron-common-ipc.csv');
         IpcBusLog.SetLogLevelCVS(logger.level, filename, logger.argMaxContentLen);
     }
     // For backward
     if (process.env['ELECTRON_IPC_LOG_JSON']) {
         if (logger.level === IpcBusLogConfig.Level.None) {
-            logger.level = IpcBusLogConfig.Level.SentArgs;
+            logger.level = IpcBusLogConfig.Level.Args;
         }
-        // if (logger.argMaxContentLen < 0) {
-        //     logger.argMaxContentLen = 255;
-        // }
+        if (logger.argMaxContentLen < 0) {
+            logger.argMaxContentLen = 255;
+        }
         const filename = path.join(process.env['ELECTRON_IPC_LOG_JSON'], 'electron-common-ipc.json');
         IpcBusLog.SetLogLevelJSON(logger.level, filename, logger.argMaxContentLen);
     }

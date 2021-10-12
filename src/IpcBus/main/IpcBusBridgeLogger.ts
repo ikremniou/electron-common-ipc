@@ -17,18 +17,6 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
         this._ipcBusLog = ipcBusLog;
     }
 
-    // addLog(ipcMessage: IpcBusMessage, args: any[], payload?: number): boolean {
-    //     return this._ipcBusLog.addLog(ipcMessage, args);
-    // }
-
-    // addLogRawContent(ipcCommand: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent): boolean {
-    //     return this._ipcBusLog.addLogRawContent(ipcCommand, IpcBusRendererContent);
-    // }
-
-    // addLogPacket(ipcCommand: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
-    //     return this._ipcBusLog.addLogPacket(ipcCommand, ipcPacketBuffer);
-    // }
-
     override _onLogReceived(ipcMessage: IpcBusMessage, data: any) {
         if (ipcMessage.rawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
