@@ -78,20 +78,25 @@ export interface IpcBusCommand extends IpcBusCommandBase {
 }
 
 export interface IpcBusMessageStamp {
+    // order 0
     id: string;
     kind: IpcBusCommand.Kind;
 
     peer: IpcBusPeer;
     timestamp: number;
 
+    // order 1
     related_peer?: IpcBusPeer;
     related_timestamp?: number;
 
+    // order 2
     response_sent_timestamp?: number;
-    response_received_timestamp?: number;
 
     request_args?: any[];
     request_response?: any[];
+
+    // order 3
+    response_received_timestamp?: number;
 }
 
 export interface IpcBusMessage extends IpcBusCommandBase {

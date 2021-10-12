@@ -106,12 +106,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 messageHandled = true;
                 if (local) {
                     if (this._logActivate) {
+                        ipcResponse.stamp = ipcMessage.stamp;
                         this._connector.stampResponse(ipcResponse, args, argsResponse);
                     }
                     this.onRequestResponseReceived(true, ipcResponse, argsResponse);
                 }
                 else {
                     if (this._logActivate) {
+                        ipcResponse.stamp = ipcMessage.stamp;
                         this._connector.stampResponse(ipcResponse);
                     }
                     this._postRequestMessage(ipcResponse, argsResponse);
