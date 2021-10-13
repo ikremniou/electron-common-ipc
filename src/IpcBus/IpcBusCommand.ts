@@ -19,6 +19,7 @@ export namespace IpcBusCommand {
         LogGetMessage               = 'LOGGET',
         LogLocalSendRequest         = 'LOGMES',
         LogLocalRequestResponse     = 'LOGRQR',
+        LogRoundtrip                = 'LOGRT',
 
         BridgeConnect               = 'BICOO',
         BridgeClose                 = 'BICOC',
@@ -76,6 +77,27 @@ export interface IpcBusCommand extends IpcBusCommandBase {
     channels?: string[];
 }
 
+export interface IpcBusMessageStamp {
+    // order 0
+    id: string;
+    kind: IpcBusCommand.Kind;
+    local: boolean;
+
+    peer: IpcBusPeer;
+    timestamp: number;
+
+    // order 1
+    peer_received?: IpcBusPeer;
+    timestamp_received?: number;
+
+    // order 2
+    timestamp_response?: number;
+
+    // order 3
+    response_local?: boolean;
+    timestamp_response_received?: number;
+}
+
 export interface IpcBusMessage extends IpcBusCommandBase {
     channel: string;
 
@@ -85,5 +107,5 @@ export interface IpcBusMessage extends IpcBusCommandBase {
     rawData?: boolean;
 
     request?: IpcBusCommand.Request;
-    log?: IpcBusCommand.Log;
+    stamp?: IpcBusMessageStamp;
 }

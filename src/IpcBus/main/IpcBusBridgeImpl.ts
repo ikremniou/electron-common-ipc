@@ -32,9 +32,29 @@ export interface IpcBusBridgeClient {
     queryState(): QueryStateBase;
 }
 
+export interface IpcBusBridgeDispatcher {
+    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void;
+
+    // This is coming from the Electron Renderer Process (Electron renderer ipc)
+    // =================================================================================================
+    _onRendererCommandReceived(ipcCommand: IpcBusCommand): void;
+    _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]): void;
+
+    // This is coming from the Electron Main Process (Electron main ipc)
+    // =================================================================================================
+    _onMainCommandReceived(ipcCommand: IpcBusCommand): void;
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): void;
+
+    // This is coming from the Bus broker (socket)
+    // =================================================================================================
+    _onSocketCommandReceived(ipcCommand: IpcBusCommand): void;
+    _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
+    _onSocketRequestResponseReceived(ipcResponse: IpcBusMessage, ipcPacketBufferCore?: IpcPacketBufferCore): boolean;
+}
+
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
+export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispatcher {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusRendererBridge;
@@ -120,6 +140,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const rendererChannels = this._rendererConnector.getChannels();
         const mainChannels = this._mainTransport.getChannels();
         return rendererChannels.concat(mainChannels);
+    }
+
+    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
     }
 
     // This is coming from the Electron Main Process (Electron main ipc)

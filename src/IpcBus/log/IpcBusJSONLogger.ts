@@ -35,47 +35,25 @@ export class JSONLoggerBase {
     constructor() {
     }
 
-    addLog(trace: IpcBusLog.Trace): void {
+    addLog(message: IpcBusLog.Message): void {
         const jsonLog: JSONLog = {
-            order: trace.order,
-            timestamp: trace.current.timestamp,
-            channel: trace.first.channel,
-            id: trace.id,
-            kind: IpcBusLog.KindToStr(trace.current.kind),
-            peer: trace.current.peer,
-            peer_id: trace.first.peer.id,
+            order: message.order,
+            timestamp: message.timestamp,
+            channel: message.channel,
+            id: message.id,
+            kind: IpcBusLog.KindToStr(message.kind),
+            peer: message.peer,
+            peer_related: message.related_peer,
+            peer_id: message.peer.id,
+            delay: message.delay,
+            local: message.local
         };
 
-        switch (trace.current.kind) {
-            case IpcBusLog.Kind.SEND_MESSAGE:
-            case IpcBusLog.Kind.SEND_REQUEST: {
-                break;
-            }
-            case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
-                break;
-            }
-            case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
-                const delay = trace.current.timestamp - trace.first.timestamp;
-                jsonLog.delay = delay;
-                break;
-            }
-            case IpcBusLog.Kind.GET_CLOSE_REQUEST:
-            case IpcBusLog.Kind.GET_MESSAGE:
-            case IpcBusLog.Kind.GET_REQUEST:
-            case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
-                const delay = trace.current.timestamp - trace.first.timestamp;
-                jsonLog.delay = delay;
-                break;
-        }
-        jsonLog.local = trace.current.local;
-        if (trace.current.related_peer.id != trace.current.peer.id) {
-            jsonLog.peer_related = trace.current.related_peer;
-        }
-        jsonLog.responseChannel = trace.current.responseChannel;
-        jsonLog.responseStatus = trace.current.responseStatus;
-        jsonLog.payload = trace.current.payload;
+        jsonLog.responseChannel = message.responseChannel;
+        jsonLog.responseStatus = message.responseStatus;
+        jsonLog.payload = message.payload;
 
-        const args = trace.current.args;
+        const args = message.args;
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 (jsonLog as any)[`arg${i}`] = args[i];

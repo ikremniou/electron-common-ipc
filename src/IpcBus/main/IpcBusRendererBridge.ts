@@ -9,7 +9,7 @@ import type { IpcBusConnector } from '../IpcBusConnector';
 import { ChannelConnectionMap } from '../IpcBusChannelMap';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
 import type { QueryStateBase, QueryStateChannels, QueryStatePeerProcesses, QueryStateRendererBridge } from '../IpcBusQueryState';
-import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_MESSAGE } from '../renderer/IpcBusConnectorRenderer';
+import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_MESSAGE, IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
@@ -73,6 +73,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         this._onIPCCommandReceived = this._onIPCCommandReceived.bind(this);
         this._onIPCMessageReceived = this._onIPCMessageReceived.bind(this);
+
+        this._onIPCLogReceived = this._onIPCLogReceived.bind(this);
     }
 
     getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
@@ -108,6 +110,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
 
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP, this._onIPCLogReceived);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP, this._onIPCLogReceived);
+
         return Promise.resolve();
     }
 
@@ -115,6 +120,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onHandshakeReceived);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onIPCCommandReceived);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_MESSAGE, this._onIPCMessageReceived);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP, this._onIPCLogReceived);
         return Promise.resolve();
     }
 
@@ -288,6 +294,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
         }
         return false;
+    }
+
+    private _onIPCLogReceived(_event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, args: any[]): void {
+        this._bridge._onLogReceived(ipcMessage, args);
     }
 
     private _onIPCCommandReceived(_event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {

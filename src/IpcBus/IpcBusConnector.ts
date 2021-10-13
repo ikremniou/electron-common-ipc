@@ -49,6 +49,14 @@ export interface IpcBusConnector {
 
     onCommandReceived(ipcCommand: IpcBusCommand): void;
 
+    stampMessage(ipcMessage: IpcBusMessage): void;
+    stampResponse(ipcMessage: IpcBusMessage): void;
+
+    ackMessage(ipcMessage: IpcBusMessage, local: boolean, related_peer: Client.IpcBusPeer): void;
+    ackResponse(ipcMessage: IpcBusMessage, local: boolean): void;
+
+    postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]): void;
+
     // logMessageSend(previousLog: IpcBusMessage.Log, ipcMessage: IpcBusMessage): IpcBusCommand.Log;
     // logLocalMessage(peer: Client.IpcBusPeer, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;
     // logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcMessage: IpcBusMessage, args: any[]): IpcBusCommand.Log;

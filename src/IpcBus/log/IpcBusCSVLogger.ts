@@ -24,10 +24,10 @@ export class CSVLogger extends JSONLoggerBase {
         const options: any = {
             header: true,
             columns: [
-                { key: 'order', header: '#' },
                 { key: 'timestamp', header: 'timestamp' },
-                { key: 'channel', header: 'channel' },
                 { key: 'id', header: 'id' },
+                { key: 'order', header: 'order' },
+                { key: 'channel', header: 'channel' },
                 { key: 'kind', header: 'kind' },
                 { key: 'peer_id', header: 'peer id' },
                 { key: 'delay', header: 'delay' },

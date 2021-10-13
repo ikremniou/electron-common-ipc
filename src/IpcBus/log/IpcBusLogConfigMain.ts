@@ -1,21 +1,23 @@
-import type { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer';
 
-import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
-import type { IpcBusLogConfig } from './IpcBusLogConfig';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { CreateIpcBusLog } from './IpcBusLog-factory';
-// import { CutData } from './IpcBusLogUtils';
+import { IpcBusCommand } from '../IpcBusCommand';
+import { JSONParserV1 } from 'json-helpers';
+import { CutData } from './IpcBusLogUtils';
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
     setCallback(cb?: IpcBusLog.Callback): void;
-    addLog(command: IpcBusCommand, args: any[], payload?: number): boolean;
-    addLogRawContent(ipcCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent): boolean;
-    addLogPacket(ipcCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
+    addLog(command: IpcBusMessage, args: any[], payload?: number): boolean;
+    addLogRawContent(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent): boolean;
+    addLogPacket(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
 
 /** @internal */
@@ -36,154 +38,97 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    // private getArgs(args?: any[]): any[] {
-    //     if (args == null) {
-    //         return [];
-    //     }
-    //     // We want full data
-    //     if (this._argMaxContentLen <= 0) {
-    //         return args;
-    //     }
-    //     else {
-    //         const managed_args = [];
-    //         for (let i = 0, l = args.length; i < l; ++i) {
-    //             managed_args.push(CutData(args[i], this._argMaxContentLen));
-    //         }
-    //         return managed_args;
-    //     }
-    // }
-
-    // private buildMessage(logMessage: IpcBusCommand.Log, args: any[], payload: number, top: boolean): IpcBusLog.Message | null {
-    //     const command = logMessage.command;
-
-    //     let needArgs = false;
-    //     let kind: IpcBusLog.Kind;
-    //     switch (logMessage.kind) {
-    //         case IpcBusCommand.Kind.SendMessage:
-    //         case IpcBusCommand.Kind.LogLocalSendRequest: {
-    //             if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
-    //                 return null;
-    //             }
-    //             kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
-    //             needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
-    //             break;
-    //         }
-    //         case IpcBusCommand.Kind.RequestResponse:
-    //         case IpcBusCommand.Kind.LogLocalRequestResponse: {
-    //             if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
-    //                 return null;
-    //             }
-    //             kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
-    //             needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
-    //             break;
-    //         }
-    //         case IpcBusCommand.Kind.LogGetMessage: {
-    //             if (command.kind === IpcBusCommand.Kind.SendMessage) {
-    //                 kind = command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
-    //             }
-    //             else if (command.kind === IpcBusCommand.Kind.RequestResponse) {
-    //                 kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-    //             }
-    //             needArgs = (this._level & IpcBusLogConfig.Level.GetArgs) === IpcBusLogConfig.Level.GetArgs;
-    //             break;
-    //         }
-    //     }
-
-    //     const message: Partial<IpcBusLog.Message> = {
-    //         kind,
-    //         id: logMessage.id,
-    //         peer: logMessage.peer,
-    //         related_peer: logMessage.related_peer || logMessage.peer,
-    //         timestamp: logMessage.timestamp - this._baseTime,
-    //         local: logMessage.local,
-    //         payload,
-    //         args: needArgs ? this.getArgs(args) : undefined
-    //     };
-    //     switch (message.kind) {
-    //         case IpcBusLog.Kind.SEND_MESSAGE:
-    //         case IpcBusLog.Kind.GET_MESSAGE: {
-    //             message.channel = command.channel;
-    //             break;
-    //         }
-    //         case IpcBusLog.Kind.SEND_REQUEST:
-    //         case IpcBusLog.Kind.GET_REQUEST: {
-    //             message.channel = command.request.channel;
-    //             message.responseChannel = command.request.id;
-    //             break;
-    //         }
-    //         case IpcBusLog.Kind.SEND_CLOSE_REQUEST:
-    //         case IpcBusLog.Kind.GET_CLOSE_REQUEST: {
-    //             message.channel = command.request.channel;
-    //             message.responseChannel = command.request.id;
-    //             message.responseStatus = 'cancelled';
-    //             break;
-    //         }
-
-    //         case IpcBusLog.Kind.SEND_REQUEST_RESPONSE:
-    //         case IpcBusLog.Kind.GET_REQUEST_RESPONSE: {
-    //             message.channel = command.request.channel;
-    //             message.responseChannel = command.request.id;
-    //             message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
-    //             break;
-    //         }
-    //     }
-    //     return message as IpcBusLog.Message;
-    // }
-
-    addLog(ipcCommand: IpcBusCommand, args: any[], payload?: number): boolean {
-        ++this._order;
-        // // Some C++ lib can not manage log, so we have to simulate the minimum at this level
-        // if (ipcCommand.log == null) {
-        //     const id = `external-${ipcCommand.peer.id}-${this._order}`;
-        //     ipcCommand.log = {
-        //         id,
-        //         kind: ipcCommand.kind,
-        //         timestamp: this.now,
-        //         peer: ipcCommand.peer,
-        //         command: ipcCommand as any
-        //     };
-        // }
-
-        // let logMessage = ipcCommand.log;
-        // const message = this.buildMessage(logMessage, args, payload, true);
-        // if (message != null) {
-        //     const trace: Partial<IpcBusLog.Trace> = {
-        //         order: this._order,
-        //         stack: [message]
-        //     };
-        //     logMessage = logMessage.previous;
-        //     while (logMessage) {
-        //         const message = this.buildMessage(logMessage, args, payload, false);
-        //         trace.stack.push(message);
-        //         logMessage = logMessage.previous;
-        //     }
-        //     trace.first = trace.stack[trace.stack.length - 1];
-        //     trace.current = trace.stack[0];
-        //     const subOrder = (trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST) ? trace.current.kind - IpcBusLog.Kind.SEND_REQUEST : trace.current.kind;
-        //     trace.id = `${trace.first.id}_${String.fromCharCode(97 + subOrder)}`;
-
-        //     this._cb(trace as IpcBusLog.Trace);
-        // }
-        return (ipcCommand.kind.lastIndexOf('LOG', 0) !== 0);
+    private getArgs(args?: any[]): any[] {
+        if (args == null) {
+            return [];
+        }
+        // We want full data
+        if (this._argMaxContentLen <= 0) {
+            return args;
+        }
+        else {
+            const managed_args = [];
+            for (let i = 0, l = args.length; i < l; ++i) {
+                managed_args.push(CutData(args[i], this._argMaxContentLen));
+            }
+            return managed_args;
+        }
     }
 
-    addLogRawContent(ipcCommand: IpcBusCommand, rawData: IpcBusRendererContent): boolean {
-        // if (ipcCommand.log) {
-        //     const lograwContent = Object.assign({}, rawData);
-        //     IpcBusRendererContent.FixRawContent(lograwContent);
-        //     // IpcBusRendererContent.UnpackRawContent(lograwContent);
-        //     const packet = new IpcPacketBuffer(lograwContent);
-        //     packet.JSON = JSONParserV1;
-        //     return this.addLog(ipcCommand, packet.parseArrayAt(1), packet.buffer.length);
-        // }
-        return (ipcCommand.kind.lastIndexOf('LOG', 0) !== 0);
+    private buildMessage(ipcMessage: IpcBusMessage, args: any[], payload: number): IpcBusLog.Message | null {
+        let needArgs = (this._level & IpcBusLogConfig.Level.Args) === IpcBusLogConfig.Level.Args;
+        const local = ipcMessage.stamp.local || ipcMessage.stamp.response_local;
+        const message: Partial<IpcBusLog.Message> = {
+            id: ipcMessage.stamp.id,
+            peer: ipcMessage.stamp.peer, 
+            related_peer: ipcMessage.stamp.peer_received,
+            local,
+            payload,
+            args: needArgs ? this.getArgs(args) : undefined
+        };
+
+        switch (ipcMessage.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
+                message.kind = ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                message.order = 0;
+                message.timestamp = ipcMessage.stamp.timestamp - this._baseTime;
+                message.delay = 0,
+
+                message.channel = ipcMessage.channel;
+                message.responseChannel = ipcMessage.request && ipcMessage.request.id;
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+                message.order = 2;
+                message.timestamp = ipcMessage.stamp.timestamp_response - this._baseTime;
+                message.delay = ipcMessage.stamp.timestamp_response - ipcMessage.stamp.timestamp_received;
+
+                message.channel = ipcMessage.request.channel;
+                message.responseChannel = ipcMessage.request.id;
+                message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
+                break;
+            }
+            case IpcBusCommand.Kind.LogRoundtrip: {
+                if (ipcMessage.stamp.kind === IpcBusCommand.Kind.SendMessage) {
+                    message.kind = ipcMessage.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
+                    message.order = 1;
+                    message.timestamp = ipcMessage.stamp.timestamp_received - this._baseTime;
+                    message.delay = ipcMessage.stamp.timestamp_received - ipcMessage.stamp.timestamp;
+
+                    message.channel = ipcMessage.channel;
+                    message.responseChannel = ipcMessage.request && ipcMessage.request.id;
+                }
+                 else if (ipcMessage.stamp.kind === IpcBusCommand.Kind.RequestResponse) {
+                    message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
+                    message.order = 3;
+                    message.timestamp = ipcMessage.stamp.timestamp_response_received - this._baseTime;
+                    message.delay = ipcMessage.stamp.timestamp_response_received - ipcMessage.stamp.timestamp_response;
+
+                    message.channel = ipcMessage.request.channel;
+                    message.responseChannel = ipcMessage.request.id;
+                    message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
+                }
+                break;
+            }
+        }
+        this._cb(message as IpcBusLog.Message);
+        return message as IpcBusLog.Message;
     }
 
-    addLogPacket(ipcCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        // if (ipcCommand.log) {
-        //     return this.addLog(ipcCommand, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
-        // }
-        return (ipcCommand.kind.lastIndexOf('LOG', 0) !== 0);
+    addLog(ipcMessage: IpcBusMessage, args: any[], payload?: number): boolean {
+        this.buildMessage(ipcMessage, args, payload);
+        return (ipcMessage.kind !== IpcBusCommand.Kind.LogRoundtrip);
+    }
+
+    addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent): boolean {
+        const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
+        ipcPacketBufferCore.JSON = JSONParserV1;
+        return this.addLog(ipcMessage, ipcPacketBufferCore.parseArrayAt(1), ipcPacketBufferCore.buffer.length);
+    }
+
+    addLogPacket(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        return this.addLog(ipcMessage, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
     }
 }
 

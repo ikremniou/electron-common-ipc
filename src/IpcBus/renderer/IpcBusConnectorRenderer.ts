@@ -17,6 +17,7 @@ import type { QueryStateConnector } from '../IpcBusQueryState';
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:RendererCommand';
 export const IPCBUS_TRANSPORT_RENDERER_MESSAGE = 'ECIPC:IpcBusRenderer:RendererMessage';
+export const IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP = 'ECIPC:IpcBusRenderer:RendererLogRoundtrip';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
@@ -239,4 +240,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
         // this._commandChannel.port1.postMessage(ipcCommand);
     }
+
+    postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
+        const ipcBusLog: IpcBusMessage = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
+        ipcBusLog.stamp.kind = ipcMessage.kind;
+        this._messageBag.set(ipcBusLog, args);
+        this._messageBag.sendIPCMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP);
+    }
+
 }

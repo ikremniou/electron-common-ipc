@@ -4,10 +4,6 @@ import type { EventEmitter } from 'events';
 export const IPCBUS_CHANNEL = '/electron-ipc-bus';
 export const IPCBUS_CHANNEL_QUERY_STATE = `${IPCBUS_CHANNEL}/queryState`;
 
-// Log en vars
-export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
-export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
-
 // see { ElectronProcessType } from 'electron-process-type/lib/v2'
 export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
 
