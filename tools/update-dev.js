@@ -37,10 +37,10 @@ function CreateToDirs() {
 
     const toDirs = [];
     toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'node_modules'));
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'build', 'src', 'node_modules'));
+    // toDirs.push(path.join(DesktopFrameworkDir, 'src', 'df-core', 'build', 'src', 'node_modules'));
     toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'node_modules'));
-    toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'build', 'src', 'node_modules'));
-    toDirs.push(path.join(DesktopFrameworkDir, 'workspace', 'build', 'app', 'node_modules'));
+    // toDirs.push(path.join(DesktopFrameworkDir, 'src', 'eikon-framework', 'build', 'src', 'node_modules'));
+    // toDirs.push(path.join(DesktopFrameworkDir, 'workspace', 'build', 'app', 'node_modules'));
     toDirs.push(path.join(EikonOnElectronDir, 'node_modules'));
     toDirs.push(path.join(EikonOnElectronDir, 'build', 'node_modules'));
     // toDirs.push(path.join(EikonOnElectronDir, 'build', 'node_modules'));
