@@ -134,6 +134,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
                 this.addClient(client);
 
+                this._messageChannel.port1.addEventListener('message', this.onPortMessageReceived);
+                this._messageChannel.port1.start();
+
                 // We have to keep the reference untouched as used by client
                 this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
                 this._log.level = handshake.logLevel;
@@ -153,8 +156,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const ipcCommand = { 
                 peer: this._peerProcess 
             };
+            this._messageChannel = new MessageChannel();
             this._ipcWindow.once(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onHandshake);
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand);
+            // this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand);
+            this._ipcWindow.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand, [this._messageChannel.port2]);
         });
     }
 
@@ -199,7 +204,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const ipcCommand = { 
                 peer: this._peerProcess 
             };
-            this._ipcWindow.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand, [this._commandChannel.port2, this._messageChannel.port2]);
+            this._ipcWindow.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand, [this._messageChannel.port2, this._commandChannel.port2]);
         });
     }
 

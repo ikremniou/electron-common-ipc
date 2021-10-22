@@ -158,38 +158,34 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
         this._endpoints.set(key, endpoint);
         if (event.ports) {
-            endpoint.commandPort = event.ports[0];
-            endpoint.messagePort = event.ports[1];
-
+            endpoint.messagePort = event.ports[0];
             endpoint.messagePort.on('close', () => {
                 this._onEndpointShutdown(ipcCommand);
             });
-            endpoint.commandPort.on('close', () => {
-                this._onEndpointShutdown(ipcCommand);
-            });
-
             endpoint.messagePort.addListener('message', this._onPortMessageReceived);
             endpoint.messagePort.start();
 
-            endpoint.commandPort.addListener('message', this._onPortCommandReceived);
-            endpoint.commandPort.start();
-
-            endpoint.commandPort.postMessage(handshake);
+            endpoint.commandPort = event.ports[1];
+            if (endpoint.commandPort) {
+                endpoint.commandPort.on('close', () => {
+                    this._onEndpointShutdown(ipcCommand);
+                });
+                endpoint.commandPort.addListener('message', this._onPortCommandReceived);
+                endpoint.commandPort.start();
+            }
+        }
+        // We get back to the webContents
+        // - to confirm the connection
+        // - to provide id/s
+        // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+        // See https://github.com/electron/electron/issues/25119
+        if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+            webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
         }
         else {
-            // We get back to the webContents
-            // - to confirm the connection
-            // - to provide id/s
-            // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-            // See https://github.com/electron/electron/issues/25119
-            if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+            webContents.on('did-finish-load', () => {
                 webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
-            }
-            else {
-                webContents.on('did-finish-load', () => {
-                    webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
-                });
-            }
+            });
         }
     }
 
@@ -213,11 +209,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             this._endpoints.delete(key);
             this._subscriptions.remove(key);
 
-            if (endpoint.commandPort) {
+            if (endpoint.messagePort) {
                 endpoint.messagePort.close();
                 endpoint.messagePort.removeListener('message', this._onPortMessageReceived);
                 endpoint.messagePort = null;
+            }
 
+            if (endpoint.commandPort) {
                 endpoint.commandPort.close();
                 endpoint.commandPort.removeListener('message', this._onPortCommandReceived);
                 endpoint.commandPort = null;
