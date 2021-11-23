@@ -197,7 +197,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     private _sendApply(name: string, args?: any[]): Deferred<void> {
         const deferred = new Deferred<void>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
-            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), callMsg);
             this._pendingCalls.delete(deferred.id);
         }, false);
         this._pendingCalls.set(deferred.id, deferred);
@@ -207,7 +207,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     sendApply(name: string, args?: any[]): void {
         if (this._isStarted) {
             const callMsg = { handlerName: name, args: args };
-            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), callMsg);
         }
         else {
             this._sendApply(name, args);
