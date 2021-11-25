@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 
 // import CVS_stringify from 'csv-stringify';
-const CVS_stringify = require('csv-stringify')
+import { stringify } from 'csv-stringify';
 
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
@@ -45,7 +45,7 @@ export class CSVLogger extends JSONLoggerBase {
             ]
         };
 
-        this._stringifyer = CVS_stringify(options);
+        this._stringifyer = stringify(options);
         this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
     }
 
