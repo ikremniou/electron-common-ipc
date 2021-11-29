@@ -1,6 +1,7 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import type * as Client from '../IpcBusClient';
+import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
 
 import { IpcBusConnectorSocket } from './IpcBusConnectorSocket';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
@@ -21,11 +22,13 @@ function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector
     return connector;
 }
 
-let g_transport: IpcBusTransport = null;
+const g_transport_symbol_name = 'IpcBusTransportSocket';
 function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
+    let g_transport = GetSingleton<IpcBusTransport>(g_transport_symbol_name);
     if (g_transport == null) {
         const connector = CreateConnector(contextType);
         g_transport = new IpcBusTransportMultiImpl(connector);
+        RegisterSingleton(g_transport_symbol_name, g_transport);
     }
     return g_transport;
 }

@@ -1,4 +1,5 @@
 import type * as Client from '../IpcBusClient';
+import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
 
 import { IpcBusConnectorRenderer  } from './IpcBusConnectorRenderer';
 import type { IpcWindow } from './IpcBusConnectorRenderer';
@@ -12,11 +13,13 @@ function CreateConnector(contextType: Client.IpcBusProcessType, isMainFrame: boo
     return connector;
 }
 
-let g_transport: IpcBusTransport = null;
+const g_transport_symbol_name = 'IpcBusTransportRenderer';
 function CreateTransport(contextType: Client.IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow): IpcBusTransport {
+    let g_transport = GetSingleton<IpcBusTransport>(g_transport_symbol_name);
     if (g_transport == null) {
         const connector = CreateConnector(contextType, isMainFrame, ipcWindow);
         g_transport = new IpcBusTransportMultiImpl(connector);
+        RegisterSingleton(g_transport_symbol_name, g_transport);
     }
     return g_transport;
 }

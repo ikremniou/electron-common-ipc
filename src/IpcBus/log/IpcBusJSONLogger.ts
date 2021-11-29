@@ -3,6 +3,8 @@ import * as fse from 'fs-extra';
 import * as winston from 'winston';
 
 import type * as Client from '../IpcBusClient';
+import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
+
 // import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
@@ -93,16 +95,16 @@ export class JSONLogger extends JSONLoggerBase {
     }
 }
 
-let jsonLogger: JSONLogger;
+
+const g_jsonlogger_symbol_name = 'JSONLogger';
 IpcBusLog.SetLogLevelJSON = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
     if (level >= IpcBusLogConfig.Level.None) {
-        if (jsonLogger == null) {
-            jsonLogger = new JSONLogger(filename);
-            const cb = jsonLogger.addLog.bind(jsonLogger);
+        let g_jsonLogger = GetSingleton<JSONLogger>(g_jsonlogger_symbol_name);
+        if (g_jsonLogger == null) {
+            g_jsonLogger = new JSONLogger(filename);
+            RegisterSingleton(g_jsonlogger_symbol_name, g_jsonLogger);
+            const cb = g_jsonLogger.addLog.bind(g_jsonLogger);
             IpcBusLog.SetLogLevel(level, cb, argContentLen);
         }
-    }
-    else {
-        jsonLogger = null;
     }
 }

@@ -139,8 +139,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 ipcBusEvent.ports = messagePorts.map(CastToMessagePort);
             }
         }
-        for (let i = 0, l = listeners.length; i < l; ++i) {
-            listeners[i].call(client, ipcBusEvent, ...args);
+        // Seems spread operator or call function does not like args=undefined !
+        if (args) {
+            for (let i = 0, l = listeners.length; i < l; ++i) {
+                listeners[i].call(client, ipcBusEvent, ...args);
+            }
+        }
+        else {
+            for (let i = 0, l = listeners.length; i < l; ++i) {
+                listeners[i].call(client, ipcBusEvent);
+            }
         }
         return messageHandled;
     }

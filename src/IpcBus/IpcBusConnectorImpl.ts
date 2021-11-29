@@ -95,88 +95,28 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     stampResponse(ipcMessage: IpcBusMessage) {
-        ipcMessage.stamp.timestamp_response = this._log.now;
-        ipcMessage.stamp.kind = ipcMessage.kind;
+        if (ipcMessage.stamp) {
+            ipcMessage.stamp.timestamp_response = this._log.now;
+            ipcMessage.stamp.kind = ipcMessage.kind;
+        }
     }
 
     ackMessage(ipcMessage: IpcBusMessage, local: boolean, related_peer: Client.IpcBusPeer) {
-        ipcMessage.rawData = false;
-        ipcMessage.stamp.timestamp_received = this._log.now;
-        ipcMessage.stamp.local = local;
-        ipcMessage.stamp.peer_received = related_peer;
+        if (ipcMessage.stamp) {
+            ipcMessage.rawData = false;
+            ipcMessage.stamp.timestamp_received = this._log.now;
+            ipcMessage.stamp.local = local;
+            ipcMessage.stamp.peer_received = related_peer;
+        }
     }
 
     ackResponse(ipcMessage: IpcBusMessage, local: boolean) {
-        ipcMessage.rawData = false;
-        ipcMessage.stamp.timestamp_response_received = this._log.now;
-        ipcMessage.stamp.response_local = local;
+        if (ipcMessage.stamp) {
+            ipcMessage.rawData = false;
+            ipcMessage.stamp.timestamp_response_received = this._log.now;
+            ipcMessage.stamp.response_local = local;
+        }
     }
-
-    // protected cloneCommand(command: IpcBusCommand): IpcBusCommand.LogCommand {
-    //     const logCommand: IpcBusCommand.LogCommand = {
-    //         kind: command.kind,
-    //         peer: command.peer,
-    //         channel: command.channel,
-    //         request: command.request
-    //     };
-    //     return logCommand;
-    // }
-
-    // logMessageSend(previousLog: IpcBusCommand.Log, ipcCommand: IpcBusCommand): IpcBusCommand.Log {
-        // if (this._log.level >= IpcBusLogConfig.Level.Sent) {
-        //     // static part . dynamic part
-        //     const id = `${this._endpoint.id}.${this._messageCount++}`;
-        //     ipcCommand.log = {
-        //         id,
-        //         kind: ipcCommand.kind,
-        //         peer: ipcCommand.peer,
-        //         timestamp: this._log.now,
-        //         command: this.cloneCommand(ipcCommand),
-        //         previous: previousLog,
-        //     };
-        //     while (previousLog) {
-        //         ipcCommand.log.related_peer = previousLog.peer;
-        //         previousLog = previousLog.previous;
-        //     }
-        //     return ipcCommand.log;
-        // }
-    //     return null;
-    // }
-
-    // logLocalMessage(peer: Client.IpcBusPeer, ipcBusCommandLocal: IpcBusCommand, argsResponse: any[]): IpcBusCommand.Log {
-        // if (this._log.level >= IpcBusLogConfig.Level.Sent) {
-        //     // Clone first level
-        //     const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandLocal);
-        //     ipcBusCommandLog.kind = `LOG${ipcBusCommandLocal.kind}` as IpcBusCommand.Kind;
-        //     // ipcBusCommandLog.log = ipcBusCommandLocal.log; 
-        //     ipcBusCommandLog.log.local = true;
-        //     this.postCommand(ipcBusCommandLog, argsResponse);
-        //     return ipcBusCommandLog.log;
-        // }
-    //     return null;
-    // }
-
-    // logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args: any[]): IpcBusCommand.Log {
-        // if (this._log.level & IpcBusLogConfig.Level.Get) {
-        //     const ipcBusCommandLog: IpcBusCommand = {
-        //         kind: IpcBusCommand.Kind.LogGetMessage,
-        //         peer,
-        //         channel: ''
-        //     };
-        //     this.logMessageSend(ipcBusCommandPrevious.log, ipcBusCommandLog);
-        //     ipcBusCommandLog.log.command = this.cloneCommand(ipcBusCommandPrevious);
-        //     ipcBusCommandLog.log.related_peer = ipcBusCommandPrevious.peer;
-        //     ipcBusCommandLog.log.local = local;
-        //     if (this._log.level & IpcBusLogConfig.Level.GetArgs) {
-        //         this.postCommand(ipcBusCommandLog, args);
-        //     }
-        //     else {
-        //         this.postCommand(ipcBusCommandLog);
-        //     }
-        //     return ipcBusCommandLog.log;
-        // }
-    //     return null;
-    // }
 
     onCommandReceived(ipcCommand: IpcBusCommand): void {
         this._client.onCommandReceived(ipcCommand);

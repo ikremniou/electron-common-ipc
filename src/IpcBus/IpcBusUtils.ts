@@ -144,6 +144,19 @@ export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) =
     return -left - 1;
 };
 
+// https://derickbailey.com/2016/03/09/creating-a-true-singleton-in-node-js-with-es6-symbols/
+
+const PrefixSymbol = 'ecipc:';
+export function GetSingleton<T>(symbolName: string): T {
+    const symbolRef = Symbol.for(`${PrefixSymbol}${symbolName}`);
+    return (globalThis as any)[symbolRef];
+}
+
+export function RegisterSingleton<T>(symbolName: string, singleton: T) {
+    const symbolRef = Symbol.for(`${PrefixSymbol}${symbolName}`);
+    (globalThis as any)[symbolRef] = singleton;
+}
+
 
 /** @internal */
 export class Logger {

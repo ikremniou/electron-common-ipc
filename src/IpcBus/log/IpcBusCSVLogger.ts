@@ -4,6 +4,8 @@ import * as fse from 'fs-extra';
 // import CVS_stringify from 'csv-stringify';
 import { stringify } from 'csv-stringify';
 
+import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
+
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { JSONLoggerBase, JSONLog } from './IpcBusJSONLogger';
@@ -57,16 +59,16 @@ export class CSVLogger extends JSONLoggerBase {
     }
 }
 
-let cvsLogger: CSVLogger;
+const g_cvslogger_symbol_name = 'CSVLogger';
+
 IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
     if (level >= IpcBusLogConfig.Level.None) {
-        if (cvsLogger == null) {
-            cvsLogger = new CSVLogger(filename);
-            const cb = cvsLogger.addLog.bind(cvsLogger);
+        let g_cvsLogger = GetSingleton<CSVLogger>(g_cvslogger_symbol_name);
+        if (g_cvsLogger == null) {
+            g_cvsLogger = new CSVLogger(filename);
+            RegisterSingleton(g_cvslogger_symbol_name, g_cvsLogger);
+            const cb = g_cvsLogger.addLog.bind(g_cvsLogger);
             IpcBusLog.SetLogLevel(level, cb, argContentLen);
         }
-    }
-    else {
-        cvsLogger = null;
     }
 }

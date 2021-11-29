@@ -56,6 +56,9 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     }
 
     private buildMessage(ipcMessage: IpcBusMessage, args: any[], payload: number): IpcBusLog.Message | null {
+        if (ipcMessage.stamp == null) {
+            return null;
+        }
         let needArgs = (this._level & IpcBusLogConfig.Level.Args) === IpcBusLogConfig.Level.Args;
         const local = ipcMessage.stamp.local || ipcMessage.stamp.response_local;
         const message: Partial<IpcBusLog.Message> = {
@@ -124,11 +127,11 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent): boolean {
         const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
-        return this.addLog(ipcMessage, ipcPacketBufferCore.parseArrayAt(1), ipcPacketBufferCore.buffer.length);
+        return this.addLog(ipcMessage, ipcPacketBufferCore.parseArrayLength() > 1 ? ipcPacketBufferCore.parseArrayAt(1) : null, ipcPacketBufferCore.buffer.length);
     }
 
     addLogPacket(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this.addLog(ipcMessage, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
+        return this.addLog(ipcMessage,  ipcPacketBuffer.parseArrayLength() > 1 ? ipcPacketBuffer.parseArrayAt(1) : null, ipcPacketBuffer.buffer.length);
     }
 }
 

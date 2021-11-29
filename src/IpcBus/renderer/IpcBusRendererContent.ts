@@ -34,9 +34,10 @@ export namespace IpcBusRendererContent {
             rawData.buffer = Uint8ArrayToBuffer(rawData.buffer);
         }
         else if (Array.isArray(rawData.buffers)) {
-            for (let i = 0, l = rawData.buffers.length; i < l; ++i) {
-                rawData.buffers[i] = Uint8ArrayToBuffer(rawData.buffers[i]);
-            }
+            rawData.buffers = rawData.buffers.map(Uint8ArrayToBuffer);
+            // for (let i = 0, l = rawData.buffers.length; i < l; ++i) {
+            //     rawData.buffers[i] = Uint8ArrayToBuffer(rawData.buffers[i]);
+            // }
             if (forceSingleBuffer) {
                 rawData.buffer = Buffer.concat(rawData.buffers);
                 rawData.buffers = undefined;

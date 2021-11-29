@@ -4,27 +4,34 @@ import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBroker } from './IpcBusBroker';
 
+const g_broker_symbol_name = 'IpcBusBroker';
+
 export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker | null => {
-    let ipcBusBroker: IpcBusBroker = null;
-    const electronProcessType = GetElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType}`);
-    switch (electronProcessType) {
-        case 'main': {
-            const newModule = require('./IpcBusBroker-factory-main');
-            ipcBusBroker = newModule.NewIpcBusBroker(electronProcessType);
-            break;
+    let g_broker = IpcBusUtils.GetSingleton<IpcBusBroker>(g_broker_symbol_name);
+    // Beware, we test 'undefined' here
+    if (g_broker === undefined) {
+        const electronProcessType = GetElectronProcessType();
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType}`);
+        switch (electronProcessType) {
+            case 'main': {
+                const newModule = require('./IpcBusBroker-factory-main');
+                g_broker = newModule.NewIpcBusBroker(electronProcessType);
+                break;
+            }
+            case 'node': {
+                const newModule = require('./IpcBusBroker-factory-node');
+                g_broker = newModule.NewIpcBusBroker(electronProcessType);
+                break;
+            }
+            // not supported process
+            case 'renderer':
+            default:
+                g_broker = null;
+                break;
         }
-        case 'node': {
-            const newModule = require('./IpcBusBroker-factory-node');
-            ipcBusBroker = newModule.NewIpcBusBroker(electronProcessType);
-            break;
-        }
-        // not supported process
-        case 'renderer':
-        default:
-            break;
+        IpcBusUtils.RegisterSingleton(g_broker_symbol_name, g_broker);
     }
-    return ipcBusBroker;
+    return g_broker;
 };
 
 IpcBusBroker.Create = CreateIpcBusBroker;
