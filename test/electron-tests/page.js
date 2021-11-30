@@ -28,7 +28,7 @@ window.GetWindowId = () => {
 }
 
 window.addEventListener('load', () => {
-    const electronCommonIpcModule = require('../..');
+    const electronCommonIpcModule = require('../../lib/IpcBus/renderer/IpcBusRendererPreload');
     {
         const result = electronCommonIpcModule.PreloadElectronCommonIpc(true);
         console.log(`PreloadElectronCommonIpc=${result}`);
