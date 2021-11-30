@@ -3,7 +3,7 @@ export * from './IpcBus/IpcBusClient';
 export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
 
-export * from './IpcBus/renderer/IpcBusRendererPreload';
+// export * from './IpcBus/renderer/IpcBusRendererPreload';
 
 export { ActivateIpcBusTrace, ActivateServiceTrace, ConnectCloseState } from './IpcBus/IpcBusUtils';
 

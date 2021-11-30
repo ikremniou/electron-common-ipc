@@ -1,6 +1,6 @@
 import type { IpcBusClient } from './IpcBusClient';
 import type { ElectronProcessType } from 'electron-process-type/lib/v2';
-import { ElectronCommonIpcNamespace, PreloadElectronCommonIpcAutomatic } from './renderer/IpcBusRendererPreload';
+import { ElectronCommonIpcNamespace } from './renderer/IpcBusWindowNamespace';
 
 const windowLocal = window as any;
 /** @internal */
@@ -11,5 +11,3 @@ export function NewIpcBusClient(electronProcessType: ElectronProcessType): IpcBu
     }
     return null;
 };
-
-PreloadElectronCommonIpcAutomatic();

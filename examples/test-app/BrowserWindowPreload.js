@@ -3,8 +3,8 @@
 
 'use strict';
 
-const electronCommonIpc = require('electron-common-ipc');
-if (electronCommonIpc.PreloadElectronCommonIpc()) {
+const electronCommonIpcPreloadModule = require('electron-common-ipc/lib/IpcBus/renderer/IpcBusRendererPreload');
+if (electronCommonIpcPreloadModule.PreloadElectronCommonIpc()) {
   // electronCommonIpc.ActivateIpcBusTrace(true);
 }
 

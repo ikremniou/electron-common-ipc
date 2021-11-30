@@ -1,5 +1,6 @@
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 import type { IpcWindow } from './IpcBusConnectorRenderer';
+import { ElectronCommonIpcNamespace, IsElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
 
 let electron: any;
 try {
@@ -10,7 +11,6 @@ catch (err) {
 }
 
 const trace = false; // true;
-export const ElectronCommonIpcNamespace = 'ElectronCommonIpc';
 
 function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
     return {
@@ -68,16 +68,3 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     }
     return IsElectronCommonIpcAvailable();
 }
-
-export function IsElectronCommonIpcAvailable(): boolean {
-    try {
-        const windowLocal = window as any;
-        const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
-        return (electronCommonIpcSpace != null);
-    }
-    catch (err) {
-    }
-    return false;
-}
-
-

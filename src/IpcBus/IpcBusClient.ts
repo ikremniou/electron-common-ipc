@@ -1,5 +1,10 @@
 import type { EventEmitter } from 'events';
 
+declare namespace Electron {
+    class MessagePortMain extends EventEmitter {
+    }
+}
+
 // Special channels
 export const IPCBUS_CHANNEL = '/electron-ipc-bus';
 export const IPCBUS_CHANNEL_QUERY_STATE = `${IPCBUS_CHANNEL}/queryState`;
