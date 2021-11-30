@@ -63,7 +63,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this._messageChannel.port1.removeEventListener('message', this.onPortMessageReceived);
             this._messageChannel.port1.close();
             this._messageChannel = null;
-
+        }
+        if (this._commandChannel) {
             this._commandChannel.port1.removeEventListener('message', this.onPortCommandReceived);
             this._commandChannel.port1.close();
             this._commandChannel = null;
@@ -211,7 +212,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return this._connectCloseState.connect(() => {
-            // Keep IPC a primary media
+            // Keep IPC as primary media
             return this.onIPCHandshake(client, options);
         });
     }

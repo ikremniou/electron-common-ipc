@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 
 import type * as Client from '../IpcBusClient';
+import * as IpcBusUtils from '../IpcBusUtils';
+
 import * as Service from './IpcBusService';
 import * as ServiceUtils from './IpcBusServiceUtils';
-
-import * as IpcBusUtils from '../IpcBusUtils';
 
 /** @internal */
 class Deferred<T> {

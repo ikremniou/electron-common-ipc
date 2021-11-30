@@ -49,10 +49,11 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     if (!_PreloadElectronCommonIpcDone) {
         _PreloadElectronCommonIpcDone = true;
         if (electron && electron.ipcRenderer) {
+            const ipcRenderer = electron.ipcRenderer;
             const windowLocal = window as any;
             if (contextIsolation) {
                 try {
-                    electron.contextBridge.exposeInMainWorld(ElectronCommonIpcNamespace, CreateGlobals(windowLocal, electron.ipcRenderer));
+                    electron.contextBridge.exposeInMainWorld(ElectronCommonIpcNamespace, CreateGlobals(windowLocal, ipcRenderer));
                 }
                 catch (error) {
                     console.error(error);
@@ -61,7 +62,7 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
             }
 
             if (!contextIsolation) {
-                windowLocal[ElectronCommonIpcNamespace] = CreateGlobals(windowLocal, electron.ipcRenderer);
+                windowLocal[ElectronCommonIpcNamespace] = CreateGlobals(windowLocal, ipcRenderer);
             }
         }
     }
