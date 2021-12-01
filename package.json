@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "13.2.1",
+  "version": "13.3.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -63,6 +63,7 @@
     "expect": "^27.3.1",
     "minimist": "~1.2.5",
     "mocha": "^9.1.3",
+    "npm-dts": "^1.3.10",
     "npm-run-all": "~4.1.5",
     "sinon": "^12.0.1",
     "socket-port-helpers": "^2.1.0",
@@ -76,10 +77,12 @@
     "clean:test": "del-cli ./test/**/*.bundle.js",
     "build": "npm run build-js && npm run build-declaration && npm run browserify-test",
     "build-js": "tsc -p ./tools/tsconfig-js.json",
+    "_build-declaration": "",
     "build-declaration": "run-s build-declaration:*",
     "build-declaration:ts": "tsc -p ./tools/tsconfig-declaration.json",
     "build-declaration:dts-bundle": "dts-bundle --outputAsModuleFolder --name electron-common-ipc --main ./lib/electron-common-ipc.d.ts",
     "build-declaration:dts-bundle-browser": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-browser --main ./lib/electron-common-ipc-browser.d.ts",
+    "build-declaration:dts-bundle-preload": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-preload --main ./lib/electron-common-ipc-preload.d.ts",
     "build-declaration:clean-up": "del-cli ./lib/IpcBus/**/*.d.ts",
     "browserify-test": "run-p browserify-test:*",
     "browserify-test:preload": "browserify -o ./test/electron-tests/page-preload.bundle.js -x electron ./test/electron-tests/page-preload.js",
