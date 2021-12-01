@@ -7,6 +7,8 @@
     },
 	"files": [
 		"../src/electron-common-ipc.ts",
-		"../src/electron-common-ipc-browser.ts"
+		"../src/electron-common-ipc-common.ts",
+		"../src/electron-common-ipc-browser.ts",
+		"../src/electron-common-ipc-preload.ts"
 	]
 }

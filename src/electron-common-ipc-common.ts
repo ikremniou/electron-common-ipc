@@ -1,9 +1,12 @@
+export * from './electron-common-ipc-common';
+export * from './IpcBus/renderer/IpcBusWindowNamespace';
+
 export * from './IpcBus/IpcBusClient';
 
 export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
 
-// export * from './IpcBus/renderer/IpcBusRendererPreload';
+export * from './IpcBus/log/IpcBusLog';
 
 export { ActivateIpcBusTrace, ActivateServiceTrace, ConnectCloseState } from './IpcBus/IpcBusUtils';
 

@@ -1,7 +1,7 @@
-import type { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 
-declare namespace Electron {
-    class MessagePortMain extends EventEmitter {
+export namespace Electron {
+    export class MessagePortMain extends EventEmitter {
     }
 }
 

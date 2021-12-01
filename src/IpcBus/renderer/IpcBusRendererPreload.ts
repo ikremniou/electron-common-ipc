@@ -1,5 +1,7 @@
+import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 import type { IpcWindow } from './IpcBusConnectorRenderer';
+// import type { IpcWindow } from './IpcBusConnectorRenderer';
 import { ElectronCommonIpcNamespace, IsElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
 
 let electron: any;
@@ -38,7 +40,8 @@ export function PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
 
 const ContextIsolationDefaultValue = false;
 
-let _PreloadElectronCommonIpcDone = false;
+const g_preload_done_symbol_name = '_PreloadElectronCommonIpc';
+
 function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     // trace && console.log(`process.argv:${window.process?.argv}`);
     // trace && console.log(`process.env:${window.process?.env}`);
@@ -46,10 +49,13 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     if (contextIsolation == null) {
         contextIsolation = window.process?.argv?.includes('--context-isolation') ?? ContextIsolationDefaultValue;
     }
-    if (!_PreloadElectronCommonIpcDone) {
-        _PreloadElectronCommonIpcDone = true;
-        if (electron && electron.ipcRenderer) {
-            const ipcRenderer = electron.ipcRenderer;
+
+    const g_preloadDone = GetSingleton<boolean>(g_preload_done_symbol_name);
+    if (!g_preloadDone) {
+        RegisterSingleton(g_preload_done_symbol_name, true);
+        const ipcRenderer = electron && electron.ipcRenderer;
+        console.log(`ipcRenderer = ${JSON.stringify(ipcRenderer, null, 4)}`);
+        if (ipcRenderer) {
             const windowLocal = window as any;
             if (contextIsolation) {
                 try {

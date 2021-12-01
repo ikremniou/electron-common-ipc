@@ -137,7 +137,7 @@ const win = new BrowserWindow({
 
 preload-ipc.js
 ```js
-const electronCommonIPC = require('electron-common-ipc');
+const electronCommonIPC = require('electron-common-ipc/lib/electron-common-ipc-preload');
 electronCommonIPC.PreloadElectronCommonIPC();
 ```
 
