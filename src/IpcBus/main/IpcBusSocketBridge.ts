@@ -54,7 +54,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean {
-        if (ipcMessage.isRawData) {
+        if (ipcMessage.rawData) {
             const rawData = data as IpcPacketBuffer.RawData;
             if (rawData.buffer) {
                 return this._broadcastBuffers(ipcMessage, [rawData.buffer]);
