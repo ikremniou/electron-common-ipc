@@ -67,16 +67,6 @@ export interface IpcBusTarget extends IpcBusPeerProcess {
     peerid?: string;
 }
 
-export interface IpcBusCommandBase {
-    kind: IpcBusCommand.Kind;
-    channel?: string;
-}
-
-export interface IpcBusCommand extends IpcBusCommandBase {
-    peer?: IpcBusPeerProcess;
-    channels?: string[];
-}
-
 export interface IpcBusMessageStamp {
     // order 0
     id: string;
@@ -98,13 +88,23 @@ export interface IpcBusMessageStamp {
     timestamp_response_received?: number;
 }
 
+export interface IpcBusCommandBase {
+    kind: IpcBusCommand.Kind;
+    channel?: string;
+}
+
+export interface IpcBusCommand extends IpcBusCommandBase {
+    peer?: IpcBusPeerProcess;
+    channels?: string[];
+}
+
 export interface IpcBusMessage extends IpcBusCommandBase {
     channel: string;
 
     peer: IpcBusPeer;
     target?: IpcBusTarget;
 
-    rawData?: boolean;
+    isRawData?: boolean;
 
     request?: IpcBusCommand.Request;
     stamp?: IpcBusMessageStamp;

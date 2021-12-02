@@ -44,7 +44,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[]): boolean {
-        if (ipcMessage.rawData) {
+        if (ipcMessage.isRawData) {
             const rawData = data as IpcPacketBuffer.RawData;
             if (rawData.buffer) {
                 return this.broadcastBuffers(ipcMessage, [rawData.buffer]);

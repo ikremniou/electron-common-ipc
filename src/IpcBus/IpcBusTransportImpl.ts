@@ -80,8 +80,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name}`);
         if (this._logActivate) {
-            this._connector.ackMessage(ipcMessage, local, client.peer);
-            this._connector.postLogRoundtrip(ipcMessage, args);
+            this._connector.ackMessage(ipcMessage, args, local, client.peer);
         }
         let messageHandled = false;
         if (ipcMessage.target && ipcMessage.target.peerid) {
@@ -159,8 +158,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._requestFunctions.delete(ipcResponse.request.id);
             args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
-                this._connector.ackResponse(ipcResponse, local);
-                this._connector.postLogRoundtrip(ipcResponse, args);
+                this._connector.ackResponse(ipcResponse, args, local);
             }
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcCommand.channel}' from peer #${ipcCommand.peer.name} (replyChannel '${ipcCommand.request.replyChannel}')`);
             deferredRequest.settled(ipcResponse, args);

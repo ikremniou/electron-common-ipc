@@ -99,8 +99,8 @@ export class SerializeMessage {
 
     serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
         // args does not supporting Electron serialization !
-        if (!ipcMessage.rawData) {
-            ipcMessage.rawData = true;
+        if (!ipcMessage.isRawData) {
+            ipcMessage.isRawData = true;
             JSONParserV1.install();
             this._packetOut.serialize([ipcMessage, args]);
             JSONParserV1.uninstall();
@@ -111,7 +111,7 @@ export class SerializeMessage {
 
     writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: any[]) {
         // Args will be serialized by packetOut
-        ipcMessage.rawData = true;
+        ipcMessage.isRawData = true;
         this._packetOut.write(writer, [ipcMessage, args]);
     }
 
@@ -158,7 +158,7 @@ export class SmartMessageBag {
     set(ipcMessage: IpcBusMessage, data: any) {
         this._ipcMessage = ipcMessage;
         this._supportStructureClone = undefined;
-        if (this._ipcMessage.rawData) {
+        if (this._ipcMessage.isRawData) {
             this._rawData = data;
             this._data = null;
         }
@@ -170,8 +170,8 @@ export class SmartMessageBag {
 
     serialize(ipcMessage: IpcBusMessage, args?: any[]): IpcPacketBuffer | null {
         // args does not supporting Electron serialization !
-        if (!ipcMessage.rawData) {
-            ipcMessage.rawData = true;
+        if (!ipcMessage.isRawData) {
+            ipcMessage.isRawData = true;
             JSONParserV1.install();
             this._packetOut.serialize([ipcMessage, args]);
             JSONParserV1.uninstall();
@@ -185,9 +185,9 @@ export class SmartMessageBag {
             this._packetOut.write(writer, this._rawData);
         }
         else {
-            ipcMessage.rawData = true;
+            ipcMessage.isRawData = true;
             this._packetOut.write(writer, [ipcMessage, args]);
-            ipcMessage.rawData = false;
+            ipcMessage.isRawData = false;
         }
     }
 
@@ -208,7 +208,7 @@ export class SmartMessageBag {
                 }
             }
         }
-        this._ipcMessage.rawData = true;
+        this._ipcMessage.isRawData = true;
         if (this._rawData == null) {
             // maybe an arg does not supporting Electron serialization !
             JSONParserV1.install();
@@ -217,7 +217,7 @@ export class SmartMessageBag {
             this._rawData = this._packetOut.getRawData();
         }
         ipc.send(channel, this._ipcMessage, this._rawData);
-        this._ipcMessage.rawData = false;
+        this._ipcMessage.isRawData = false;
     }
 
     sendIPCMessageTo(ipc: IpcInterface, wcid: number, channel: string): void {
@@ -233,7 +233,7 @@ export class SmartMessageBag {
                 }
             }
         }
-        this._ipcMessage.rawData = true;
+        this._ipcMessage.isRawData = true;
         if (this._rawData == null) {
             // maybe an arg does not supporting Electron serialization !
             JSONParserV1.install();
@@ -242,7 +242,7 @@ export class SmartMessageBag {
             this._rawData = this._packetOut.getRawData();
         }
         ipc.sendTo(wcid, channel, this._ipcMessage, this._rawData);
-        this._ipcMessage.rawData = false;
+        this._ipcMessage.isRawData = false;
     }
 
     sendPortMessage(port: PortInterface, messagePorts?: ReadonlyArray<IpcMessagePortType>): void {
@@ -260,7 +260,7 @@ export class SmartMessageBag {
                 }
             }
         }
-        this._ipcMessage.rawData = true;
+        this._ipcMessage.isRawData = true;
         if (this._rawData == null) {
             // maybe an arg does not supporting Electron serialization !
             JSONParserV1.install();
@@ -269,6 +269,6 @@ export class SmartMessageBag {
             this._rawData = this._packetOut.getRawData();
         }
         port.postMessage([this._ipcMessage, this._rawData], messagePorts as any);
-        this._ipcMessage.rawData = false;
+        this._ipcMessage.isRawData = false;
     }
 }

@@ -1,9 +1,9 @@
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
-export namespace Electron {
-    export class MessagePortMain extends EventEmitter {
-    }
-}
+// export namespace Electron {
+//     export class MessagePortMain extends EventEmitter {
+//     }
+// }
 
 // Special channels
 export const IPCBUS_CHANNEL = '/electron-ipc-bus';

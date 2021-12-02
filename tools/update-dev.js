@@ -86,14 +86,14 @@ function CopyDir(libraryName, fromDir, toDirs) {
 
 const topDirs = CreateToDirs();
 {
-    const fromDir = path.join(__dirname, '..');
+    const fromDir = path.join(__dirname, '..', '..');
     CopyDir('electron-common-ipc', fromDir, topDirs);
 }
 {
-    const fromDir = path.join(__dirname, 'node_modules');
+    const fromDir = path.join(__dirname, '..', 'node_modules');
     CopyDir('socket-serializer', fromDir, topDirs);
 }
 {
-    const fromDir = path.join(__dirname, 'node_modules');
+    const fromDir = path.join(__dirname, '..', 'node_modules');
     CopyDir('json-helpers', fromDir, topDirs);
 }

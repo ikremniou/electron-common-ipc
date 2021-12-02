@@ -72,33 +72,39 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     protected onIPCMessageReceived(event: Electron.IpcRendererEvent, ipcMessage: IpcBusMessage, data: any) {
-        if (ipcMessage.rawData) {
-            // Electron IPC "corrupts" Buffer to a Uint8Array
-            IpcBusRendererContent.FixRawContent(data);
-            this._client.onConnectorRawDataReceived(ipcMessage, data);
-        }
-        else {
-            this._client.onConnectorArgsReceived(ipcMessage, data);
-        }
+        // It may happen Electron is breaking the JS context when messages are emitted very fast
+        // especially when processing of each takes time. So delay the code excecuted for an event.
+        process.nextTick(() => {
+            if (ipcMessage.isRawData) {
+                // Electron IPC "corrupts" Buffer to a Uint8Array
+                IpcBusRendererContent.FixRawContent(data);
+                this._client.onConnectorRawDataReceived(ipcMessage, data);
+            }
+            else {
+                this._client.onConnectorArgsReceived(ipcMessage, data);
+            }
+        });
     }
 
-    protected onPortMessageReceived(event?: MessageEvent) {
-        const [ipcMessage, data] = event.data;
-        if (ipcMessage.rawData) {
-            // Electron IPC "corrupts" Buffer to a Uint8Array
-            IpcBusRendererContent.FixRawContent(data);
-            this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);
-        }
-        else {
-            this._client.onConnectorArgsReceived(ipcMessage, data, event.ports);
-        }
+    protected onPortMessageReceived(event: MessageEvent) {
+        process.nextTick(() => {
+            const [ipcMessage, data] = event.data;
+            if (ipcMessage.rawData) {
+                // Electron IPC "corrupts" Buffer to a Uint8Array
+                IpcBusRendererContent.FixRawContent(data);
+                this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);
+            }
+            else {
+                this._client.onConnectorArgsReceived(ipcMessage, data, event.ports);
+            }
+        });
     }
 
     protected onIPCCommandReceived(event: Electron.IpcRendererEvent, ipcCommand: IpcBusCommand) {
         this.onCommandReceived(ipcCommand);
     }
 
-    protected onPortCommandReceived(event?: MessageEvent) {
+    protected onPortCommandReceived(event: MessageEvent) {
         const ipcCommand = event.data as IpcBusCommand;
         this.onCommandReceived(ipcCommand);
     }
@@ -159,7 +165,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             };
             this._messageChannel = new MessageChannel();
             this._ipcWindow.once(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onHandshake);
-            // this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand);
             this._ipcWindow.postMessage(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcCommand, [this._messageChannel.port2]);
         });
     }
@@ -248,9 +253,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]) {
-        const ipcBusLog: IpcBusMessage = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip });
-        ipcBusLog.stamp.kind = ipcMessage.kind;
-        this._messageBag.set(ipcBusLog, args);
+        this._messageBag.set(ipcMessage, args);
         this._messageBag.sendIPCMessage(this._ipcWindow, IPCBUS_TRANSPORT_RENDERER_LOGROUNDTRIP);
     }
 

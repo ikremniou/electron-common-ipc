@@ -52,8 +52,8 @@ export interface IpcBusConnector {
     stampMessage(ipcMessage: IpcBusMessage): void;
     stampResponse(ipcMessage: IpcBusMessage): void;
 
-    ackMessage(ipcMessage: IpcBusMessage, local: boolean, related_peer: Client.IpcBusPeer): void;
-    ackResponse(ipcMessage: IpcBusMessage, local: boolean): void;
+    ackMessage(ipcMessage: IpcBusMessage, args: any[], local: boolean, related_peer: Client.IpcBusPeer): void;
+    ackResponse(ipcMessage: IpcBusMessage, args: any[], local: boolean): void;
 
     postLogRoundtrip(ipcMessage: IpcBusMessage, args?: any[]): void;
 
