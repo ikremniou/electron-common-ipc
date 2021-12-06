@@ -84,7 +84,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     stampMessage(ipcMessage: IpcBusMessage) {
         const timestamp = this._log.now;
-        const id = `${CreateProcessID(this._peerProcess.process)}.${this._messageCount++}`;
+        const id = `${CreateProcessID(ipcMessage.peer.process)}.${this._messageCount++}`;
         ipcMessage.stamp = {
             local: false,
             id,
@@ -101,25 +101,36 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    ackMessage(ipcMessage: IpcBusMessage, args: any[], local: boolean, related_peer: Client.IpcBusPeer) {
-        if (ipcMessage.stamp) {
-            const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
-            ipcMessageClone.stamp.kind = ipcMessage.kind;
-            ipcMessageClone.stamp.timestamp_received = this._log.now;
-            ipcMessageClone.stamp.local = local;
-            ipcMessageClone.stamp.peer_received = related_peer;
-            this.postLogRoundtrip(ipcMessageClone, args);
+    ackMessage(ipcMessage: IpcBusMessage, args: any[], local: boolean, local_peer: Client.IpcBusPeer) {
+        let timestamp = this._log.now;
+        if (ipcMessage.stamp == null) {
+            local = false;
+            this.stampMessage(ipcMessage);
+            ipcMessage.stamp.timestamp = timestamp;
         }
+        ipcMessage.stamp.kind = ipcMessage.kind;
+        ipcMessage.stamp.timestamp_received = timestamp;
+        ipcMessage.stamp.local = local;
+        ipcMessage.stamp.peer_received = local_peer;
+        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
+        this.postLogRoundtrip(ipcMessageClone, args);
     }
 
-    ackResponse(ipcMessage: IpcBusMessage, args: any[], local: boolean) {
-        if (ipcMessage.stamp) {
-            const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
-            ipcMessageClone.stamp.kind = ipcMessage.kind;
-            ipcMessageClone.stamp.timestamp_response_received = this._log.now;
-            ipcMessageClone.stamp.response_local = local;
-            this.postLogRoundtrip(ipcMessageClone, args);
+    ackResponse(ipcMessage: IpcBusMessage, args: any[], local: boolean, local_peer: Client.IpcBusPeer) {
+        let timestamp = this._log.now;
+        if (ipcMessage.stamp == null) {
+            local = false;
+            this.stampMessage(ipcMessage);
+            ipcMessage.peer = local_peer;
+            ipcMessage.stamp.timestamp = timestamp;
+            this.stampResponse(ipcMessage);
+            ipcMessage.stamp.timestamp_response = timestamp;
         }
+        ipcMessage.stamp.kind = ipcMessage.kind;
+        ipcMessage.stamp.timestamp_response_received = timestamp;
+        ipcMessage.stamp.response_local = local;
+        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
+        this.postLogRoundtrip(ipcMessageClone, args);
     }
 
     onCommandReceived(ipcCommand: IpcBusCommand): void {
