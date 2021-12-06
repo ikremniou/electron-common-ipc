@@ -295,7 +295,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     private _onIPCLogReceived(_event: Electron.IpcMainEvent, ipcMessage: IpcBusMessage, args: any[]): void {
-        this._bridge._onLogReceived(ipcMessage, args);
+        this._bridge._onRendererLogReceived(ipcMessage, args);
     }
 
     private _onIPCCommandReceived(_event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): boolean {

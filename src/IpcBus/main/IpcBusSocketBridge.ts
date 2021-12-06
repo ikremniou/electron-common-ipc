@@ -102,6 +102,10 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         // call when closing the transport
     }
 
+    override onLogReceived(ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): void {
+        this._bridge._onSocketLogReceived(ipcMessage, ipcPacketBufferCore);
+    }
+
     override onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
         return this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
     }

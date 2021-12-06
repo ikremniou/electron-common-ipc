@@ -86,6 +86,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                     case IpcBusCommand.Kind.RequestResponse:
                         this._client.onRequestResponseReceived(false, ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
                         break;
+                    case IpcBusCommand.Kind.LogRoundtrip:
+                        this._client.onLogReceived(ipcCommandBase as IpcBusMessage, undefined, this._packetIn);
+                        break;
                     default: 
                         this.onCommandReceived(ipcCommandBase as IpcBusCommand);
                         break;

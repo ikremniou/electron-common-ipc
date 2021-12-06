@@ -119,19 +119,25 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         return message as IpcBusLog.Message;
     }
 
-    addLog(ipcMessage: IpcBusMessage, args: any[], payload?: number): boolean {
+    private _addLog(ipcMessage: IpcBusMessage, args: any[], payload?: number): boolean {
         this.buildMessage(ipcMessage, args, payload);
         return (ipcMessage.kind !== IpcBusCommand.Kind.LogRoundtrip);
+    }
+
+    addLog(ipcMessage: IpcBusMessage, args: any[]): boolean {
+        const packet = new IpcPacketBuffer();
+        const packetSize = packet.bytelength(args);
+        return this._addLog(ipcMessage, args, packetSize);
     }
 
     addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent): boolean {
         const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
-        return this.addLog(ipcMessage, ipcPacketBufferCore.parseArrayLength() > 1 ? ipcPacketBufferCore.parseArrayAt(1) : null, ipcPacketBufferCore.buffer.length);
+        return this._addLog(ipcMessage, ipcPacketBufferCore.parseArrayLength() > 1 ? ipcPacketBufferCore.parseArrayAt(1) : null, ipcPacketBufferCore.packetSize);
     }
 
     addLogPacket(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this.addLog(ipcMessage,  ipcPacketBuffer.parseArrayLength() > 1 ? ipcPacketBuffer.parseArrayAt(1) : null, ipcPacketBuffer.buffer.length);
+        return this._addLog(ipcMessage,  ipcPacketBuffer.parseArrayLength() > 1 ? ipcPacketBuffer.parseArrayAt(1) : null, ipcPacketBuffer.packetSize);
     }
 }
 

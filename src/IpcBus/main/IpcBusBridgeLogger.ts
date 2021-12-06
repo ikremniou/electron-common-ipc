@@ -17,7 +17,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
         this._ipcBusLog = ipcBusLog;
     }
 
-    override _onLogReceived(ipcMessage: IpcBusMessage, data: any) {
+    override _onRendererLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
         if (ipcMessage.rawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
             IpcBusRendererContent.FixRawContent(rawData);
@@ -28,7 +28,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
             this._ipcBusLog.addLog(ipcMessage, args);
         }
     }
-    
+
     override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
         if (ipcMessage.rawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
@@ -42,10 +42,18 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
         super._onRendererMessageReceived(ipcMessage, data, messagePorts);
     }
 
-    override _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
-        this._ipcBusLog.addLog(ipcMessage, data);
-        super._onMainMessageReceived(ipcMessage, data, messagePorts);
+    override _onMainLogReceived(ipcMessage: IpcBusMessage, args: any[]): void {
+        this._ipcBusLog.addLog(ipcMessage, args);
     }
+
+    override _onMainMessageReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]) {
+        this._ipcBusLog.addLog(ipcMessage, args);
+        super._onMainMessageReceived(ipcMessage, args, messagePorts);
+    }
+
+    override _onSocketLogReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): void {
+        this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)
+    };
 
     override _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (this._ipcBusLog.addLogPacket(ipcMessage, ipcPacketBuffer)) {

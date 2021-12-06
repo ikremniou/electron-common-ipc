@@ -16,9 +16,6 @@ export namespace IpcBusCommand {
         RemoveChannelAllListeners   = 'LICRA',
         RemoveListeners             = 'LIR',
 
-        LogGetMessage               = 'LOGGET',
-        LogLocalSendRequest         = 'LOGMES',
-        LogLocalRequestResponse     = 'LOGRQR',
         LogRoundtrip                = 'LOGRT',
 
         BridgeConnect               = 'BICOO',

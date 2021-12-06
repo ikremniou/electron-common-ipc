@@ -7,12 +7,16 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import { ChannelsRefCount } from '../IpcBusChannelMap';
 import * as IpcBusCommandHelpers from '../IpcBusCommand-helpers';
+import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
+import type { IpcBusLogConfig } from '../log/IpcBusLogConfig';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */
 export class IpcBusBrokerNode extends IpcBusBrokerImpl {
+    private _logger: IpcBusLogConfig;
+
     private _socketWriter: SocketWriter;
     private _packetOut: IpcPacketWriter;
 
@@ -24,6 +28,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         this._packetOut = new IpcPacketWriter();
         this._packetOut.JSON = JSONParserV1;
         this._subscribedChannels = new ChannelsRefCount();
+
+        this._logger = CreateIpcBusLog();
     }
 
     protected override _reset(closeServer: boolean) {
@@ -93,9 +99,11 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     protected override broadcastToBridgeMessage(socket: net.Socket, ipcMessage: IpcBusMessage, ipcPacketBufferList: IpcPacketBufferList) {
         // if we have channels, it would mean we have a socketBridge, so do not test it
-        if (this.isTarget(ipcMessage)) {
+        if (this._socketWriter) {
             if (socket !== this._socketWriter.socket) {
-                WriteBuffersToSocket(this._socketWriter.socket, ipcPacketBufferList.buffers);
+                if (this.isTarget(ipcMessage) || (this._logger.level > 0)) {
+                    WriteBuffersToSocket(this._socketWriter.socket, ipcPacketBufferList.buffers);
+                }
             }
         }
     }

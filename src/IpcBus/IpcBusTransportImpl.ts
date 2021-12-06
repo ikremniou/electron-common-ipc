@@ -56,6 +56,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return name;
     }
 
+    onLogReceived(ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): void {
+    }
+
     onCommandReceived(ipcCommand: IpcBusCommand): void {
         switch (ipcCommand.kind) {
             case IpcBusCommand.Kind.QueryState: {

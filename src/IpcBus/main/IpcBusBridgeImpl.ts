@@ -33,21 +33,22 @@ export interface IpcBusBridgeClient {
 }
 
 export interface IpcBusBridgeDispatcher {
-    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void;
-
     // This is coming from the Electron Renderer Process (Electron renderer ipc)
     // =================================================================================================
     _onRendererCommandReceived(ipcCommand: IpcBusCommand): void;
+    _onRendererLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void;
     _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]): void;
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
     _onMainCommandReceived(ipcCommand: IpcBusCommand): void;
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]): void;
+    _onMainLogReceived(ipcMessage: IpcBusMessage, args: any[]): void;
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]): void;
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onSocketCommandReceived(ipcCommand: IpcBusCommand): void;
+    _onSocketLogReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void;
     _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
     _onSocketRequestResponseReceived(ipcResponse: IpcBusMessage, ipcPacketBufferCore?: IpcPacketBufferCore): boolean;
 }
@@ -142,9 +143,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
         return rendererChannels.concat(mainChannels);
     }
 
-    _onLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
-    }
-
     // This is coming from the Electron Main Process (Electron main ipc)
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================
@@ -165,6 +163,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
                 break;
             }
         }
+    }
+
+    _onRendererLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
     }
 
     _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
@@ -205,16 +206,19 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
         }
     }
 
-    _onMainMessageReceived(ipcMessage: IpcBusMessage, data: any, messagePorts?: Electron.MessagePortMain[]) {
-        if (this._rendererConnector.broadcastData(ipcMessage, data, messagePorts) === false) {
+    _onMainLogReceived(ipcMessage: IpcBusMessage, args: any[]): void {
+    }
+
+    _onMainMessageReceived(ipcMessage: IpcBusMessage, args: any[], messagePorts?: Electron.MessagePortMain[]) {
+        if (this._rendererConnector.broadcastData(ipcMessage, args, messagePorts) === false) {
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             if (hasSocketChannel) {
                 // A message coming from main should be never a rawData but who knowns
                 if (ipcMessage.rawData) {
-                    this._socketTransport.broadcastData(ipcMessage, data);
+                    this._socketTransport.broadcastData(ipcMessage, args);
                 }
                 else {
-                    const packet = this._serializeMessage.serialize(ipcMessage, data);
+                    const packet = this._serializeMessage.serialize(ipcMessage, args);
                     this._socketTransport.broadcastPacket(ipcMessage, packet);
                 }
             }
@@ -231,6 +235,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
                 break;
             }
         }
+    }
+
+    _onSocketLogReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): void {
     }
 
     _onSocketMessageReceived(ipcMessage: IpcBusMessage, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
