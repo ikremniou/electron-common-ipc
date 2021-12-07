@@ -368,10 +368,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const channelConns = this._subscriptions.getChannelConns(channel);
             channelConns.forEach((clientRef) => {
                 processChannelJSON.refCount += clientRef.refCount;
-                const peer = clientRef.data;
-                const peerid = IpcBusUtils.CreateProcessID(peer.process);
-                const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
-                    peer,
+                const endpoint = clientRef.data;
+                const processID = IpcBusUtils.CreateProcessID(endpoint.process);
+                const peerJSON = peersJSON[processID] = peersJSON[processID] || {
+                    peer: endpoint,
                     channels: {}
                 };
                 const peerChannelJSON = peerJSON.channels[channel] = peerJSON.channels[channel] || {
