@@ -88,8 +88,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         let timestamp = this._log.now;
         if (ipcMessage.stamp == null) {
             local = false;
+            // const ipcMessageMissing = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
             this.stampMessage(ipcMessage);
             ipcMessage.stamp.timestamp = timestamp;
+            // this.postLogRoundtrip(ipcMessage, args);
         }
         ipcMessage.stamp.kind = ipcMessage.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE,
         ipcMessage.stamp.timestamp_received = timestamp;
@@ -102,10 +104,17 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     ackResponse(ipcMessage: IpcBusMessage, args: any[], local: boolean, local_peer: Client.IpcBusPeer) {
         let timestamp = this._log.now;
         if (ipcMessage.stamp == null) {
+            // ackMessage simulation
             local = false;
-            this.stampMessage(ipcMessage, IpcBusLog.Kind.SEND_REQUEST);
-            ipcMessage.peer = local_peer;
-            ipcMessage.stamp.timestamp = timestamp;
+            this.stampMessage(ipcMessage);
+            timestamp = ipcMessage.stamp.timestamp;
+            // Who receives the response is who sent the request
+            ipcMessage.stamp.peer = local_peer;
+
+            ipcMessage.stamp.timestamp_received = timestamp;
+            // Who sent the response is who received the request
+            ipcMessage.stamp.peer_received = ipcMessage.peer;
+
             this.stampResponse(ipcMessage);
             ipcMessage.stamp.timestamp_response = timestamp;
         }
