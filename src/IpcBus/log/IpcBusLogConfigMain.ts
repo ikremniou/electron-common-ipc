@@ -59,29 +59,32 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         if (ipcMessage.stamp == null) {
             return null;
         }
+        let kind: IpcBusLog.Kind;
+        switch (ipcMessage.kind) {
+            case IpcBusCommand.Kind.SendMessage:
+                kind = ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                break;
+            case IpcBusCommand.Kind.RequestResponse:
+                kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+                break;
+            case IpcBusCommand.Kind.LogRoundtrip:
+                kind = ipcMessage.stamp.kind;
+                break;
+            default:
+                 return null;
+        }
         let needArgs = (this._level & IpcBusLogConfig.Level.Args) === IpcBusLogConfig.Level.Args;
         const local = ipcMessage.stamp.local || ipcMessage.stamp.response_local;
         const message: Partial<IpcBusLog.Message> = {
+            kind,
             id: ipcMessage.stamp.id,
-            peer: ipcMessage.stamp.peer, 
+            peer: ipcMessage.stamp.peer,
             related_peer: ipcMessage.stamp.peer_received,
             local,
             payload,
             args: needArgs ? this.getArgs(args) : undefined
         };
 
-        switch (ipcMessage.kind) {
-            case IpcBusCommand.Kind.SendMessage:
-                message.kind = ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
-                break;
-            case IpcBusCommand.Kind.RequestResponse: {
-                message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
-                break;
-            }
-            case IpcBusCommand.Kind.LogRoundtrip:
-                message.kind = ipcMessage.stamp.kind;
-                break;
-        }
         switch (message.kind) {
             case IpcBusLog.Kind.SEND_REQUEST:
             case IpcBusLog.Kind.SEND_MESSAGE: {

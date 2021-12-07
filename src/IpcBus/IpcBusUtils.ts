@@ -11,17 +11,17 @@ const win32prefix2 = '\\\\?\\pipe';
 export function CreateProcessID(ipcProcess: IpcBusProcess) {
     // static part
     let name = `${ipcProcess.type}`;
-    if (ipcProcess.wcid) {
-        name += `-${ipcProcess.wcid}`;
+    if (ipcProcess.pid) {
+        name += `-p${ipcProcess.pid}`;
     }
-    if (ipcProcess.frameid) {
-        name += `-f${ipcProcess.frameid}`;
+    if (ipcProcess.wcid) {
+        name += `-wc${ipcProcess.wcid}`;
     }
     if (ipcProcess.rid && (ipcProcess.rid !== ipcProcess.wcid)) {
         name += `-r${ipcProcess.rid}`;
     }
-    if (ipcProcess.pid) {
-        name += `-p${ipcProcess.pid}`;
+    if (ipcProcess.frameid) {
+        name += `-f${ipcProcess.frameid}`;
     }
     return name;
 }
@@ -147,7 +147,7 @@ export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) =
 // https://derickbailey.com/2016/03/09/creating-a-true-singleton-in-node-js-with-es6-symbols/
 
 const PrefixSymbol = 'ecipc:';
-export function GetSingleton<T>(symbolName: string): T {
+export function GetSingleton<T>(symbolName: string): T | null | undefined {
     const symbolRef = Symbol.for(`${PrefixSymbol}${symbolName}`);
     return (globalThis as any)[symbolRef];
 }
