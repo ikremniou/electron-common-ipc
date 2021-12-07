@@ -25,6 +25,7 @@ export class CSVLogger extends JSONLoggerBase {
 
         const options: any = {
             header: true,
+            quoted: true,
             columns: [
                 { key: 'timestamp', header: 'timestamp' },
                 { key: 'id', header: 'id' },

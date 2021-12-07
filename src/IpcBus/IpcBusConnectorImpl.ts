@@ -65,15 +65,16 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._client = null;
     }
 
-    stampMessage(ipcMessage: IpcBusMessage, kindOverriden?: IpcBusLog.Kind) {
+    stampMessage(ipcMessage: IpcBusMessage, local_peer?: Client.IpcBusPeer) {
+        const peer = local_peer || ipcMessage.peer;
         const timestamp = this._log.now;
         const id = `${ipcMessage.peer.id}.m${this._messageCount++}`;
         ipcMessage.stamp = {
             local: false,
             id,
-            kind: kindOverriden || ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE,
+            kind: ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE,
             timestamp,
-            peer: ipcMessage.peer
+            peer
         }
     }
 
@@ -106,10 +107,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         if (ipcMessage.stamp == null) {
             // ackMessage simulation
             local = false;
-            this.stampMessage(ipcMessage);
-            timestamp = ipcMessage.stamp.timestamp;
+
             // Who receives the response is who sent the request
-            ipcMessage.stamp.peer = local_peer;
+            this.stampMessage(ipcMessage, local_peer);
+            timestamp = ipcMessage.stamp.timestamp;
 
             ipcMessage.stamp.timestamp_received = timestamp;
             // Who sent the response is who received the request
