@@ -13,7 +13,6 @@ import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 
 import { IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 import type { QueryStateBase, QueryStateBroker, QueryStateChannels, QueryStatePeerProcesses } from '../IpcBusQueryState';
-import { CreateProcessId } from '../IpcBusConnectorImpl';
 
 interface IpcBusPeerProcessEndpoint extends Client.IpcBusPeerProcess {
     socket?: net.Socket;
@@ -265,7 +264,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             channelConns.forEach((clientRef) => {
                 processChannelJSON.refCount += clientRef.refCount;
                 const peer = clientRef.data;
-                const peerid = CreateProcessId(peer.process);
+                const peerid = IpcBusUtils.CreateProcessID(peer.process);
                 const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
                     peer,
                     channels: {}

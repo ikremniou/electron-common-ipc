@@ -7,21 +7,22 @@ export const IPC_BUS_TIMEOUT = 2000;// 20000;
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
 
+
 /** @internal */
 export function CreateProcessID(ipcProcess: IpcBusProcess) {
     // static part
     let name = `${ipcProcess.type}`;
-    if (ipcProcess.pid) {
-        name += `-p${ipcProcess.pid}`;
-    }
     if (ipcProcess.wcid) {
-        name += `-wc${ipcProcess.wcid}`;
+        name += `-${ipcProcess.wcid}`;
     }
     if (ipcProcess.rid && (ipcProcess.rid !== ipcProcess.wcid)) {
         name += `-r${ipcProcess.rid}`;
     }
     if (ipcProcess.frameid) {
-        name += `-f${ipcProcess.frameid}`;
+        name += `-f${ipcProcess.isMainFrame ? 'm' : 's'}${ipcProcess.frameid}`;
+    }
+    if (ipcProcess.pid) {
+        name += `-p${ipcProcess.pid}`;
     }
     return name;
 }

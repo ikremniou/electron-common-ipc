@@ -11,10 +11,9 @@ import { JSONParserV1 } from 'json-helpers';
 import { CastToMessagePort, DeferredRequestPromise } from './IpcBusTransport-helpers';
 import type { QueryStateTransport } from './IpcBusQueryState';
 
+const g_clientNumber_symbol_name = 'IpcBusTransportID';
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
-    private static s_clientNumber: number = 0;
-
     protected _connector: IpcBusConnector;
 
     protected _logActivate: boolean;
@@ -36,24 +35,23 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer {
+        let clientNumber = IpcBusUtils.GetSingleton<number>(g_clientNumber_symbol_name);
+        if (clientNumber == null) {
+            clientNumber = 1;
+        }
+        else {
+            ++clientNumber;
+        }
+        //        [static part -------------------------].[dynamic part ]
+        let id = `${IpcBusUtils.CreateProcessID(process)}.${clientNumber}`;
+        IpcBusUtils.RegisterSingleton(g_clientNumber_symbol_name, clientNumber);
+        name = name || id;
         const peer: Client.IpcBusPeer = {
-            id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
+            id,
             process,
-            name: ''
+            name
         }
-        peer.name = this.generateName(peer, name);
         return peer;
-    }
-
-    protected generateName(peer: Client.IpcBusPeer, name?: string): string {
-        if (name == null) {
-            // static part
-            name = IpcBusUtils.CreateProcessID(peer.process);
-            // dynamic part
-            ++IpcBusTransportImpl.s_clientNumber;
-            name += `.${IpcBusTransportImpl.s_clientNumber}`;
-        }
-        return name;
     }
 
     onLogReceived(ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): void {

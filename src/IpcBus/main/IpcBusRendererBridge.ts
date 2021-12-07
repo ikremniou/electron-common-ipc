@@ -3,6 +3,7 @@
 import type { IpcPacketBufferCore } from 'socket-serializer';
 import type { IpcPacketBuffer } from 'socket-serializer';
 
+import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand, IpcBusMessage } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
@@ -13,7 +14,6 @@ import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_COMMAND,
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
-import { CreateProcessId } from '../IpcBusConnectorImpl';
 
 let electron: any;
 try {
@@ -369,7 +369,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             channelConns.forEach((clientRef) => {
                 processChannelJSON.refCount += clientRef.refCount;
                 const peer = clientRef.data;
-                const peerid = CreateProcessId(peer.process);
+                const peerid = IpcBusUtils.CreateProcessID(peer.process);
                 const peerJSON = peersJSON[peerid] = peersJSON[peerid] || {
                     peer,
                     channels: {}

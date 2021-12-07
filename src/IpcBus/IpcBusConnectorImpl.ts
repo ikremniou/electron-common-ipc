@@ -4,27 +4,9 @@ import { IpcBusCommand, IpcBusMessage } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
 import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
-import { ConnectCloseState, CreateProcessID } from './IpcBusUtils';
+import { ConnectCloseState } from './IpcBusUtils';
 import { IpcBusLog } from './log/IpcBusLog';
 
-export function CreateProcessId(process: Client.IpcBusProcess): string {
-    let name = `${process.type}`;
-    if (process.wcid) {
-        name += `-${process.wcid}`;
-    }
-    if (process.frameid) {
-        name += `-f${process.frameid}`;
-    }
-    if (process.rid && (process.rid !== process.wcid)) {
-        name += `-r${process.rid}`;
-    }
-    if (process.pid) {
-        name += `-p${process.pid}`;
-    }
-    return name;
-}
-
-// Implementation for renderer process
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
@@ -85,7 +67,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     stampMessage(ipcMessage: IpcBusMessage, kindOverriden?: IpcBusLog.Kind) {
         const timestamp = this._log.now;
-        const id = `${CreateProcessID(ipcMessage.peer.process)}.${this._messageCount++}`;
+        const id = `${ipcMessage.peer.id}.m${this._messageCount++}`;
         ipcMessage.stamp = {
             local: false,
             id,
