@@ -93,33 +93,12 @@ export function JSON_stringify(data: any, maxLen: number): string {
 export function CutData(data: any, maxLen: number): any {
     switch (typeof data) {
         case 'object':
-            if (Buffer.isBuffer(data)) {
-                if (data.length > maxLen * 2) {
-                    data = data.toString('utf8', 0, maxLen) + CutMarker;
-                }
-                else {
-                    data = data.toString('utf8', 0, maxLen);
-                }
-            }
-            else if (Array.isArray(data)) {
-                data = JSON_stringify_array(data, maxLen, '');
-            }
-            else if (util.types.isDate(data)) {
-                return data;
-            }
-            else {
-                return JSON_stringify_object(data, maxLen, '');
-            }
-            break;
         case 'string':
-            data = JSON_stringify_string(data, maxLen);
-            break;
-        case 'number':
-            return data;
-        case 'boolean':
-            return data;
-        case 'undefined':
+            return JSON_stringify(data, maxLen);
+        // case 'number':
+        // case 'boolean':
+        // case 'undefined':
+        default:
             return data;
     }
-    return data;
 }
