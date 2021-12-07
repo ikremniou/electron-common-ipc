@@ -5,6 +5,7 @@ import type * as Client from './IpcBusClient';
 import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
 import { ConnectCloseState, CreateProcessID } from './IpcBusUtils';
+import { IpcBusLog } from './log/IpcBusLog';
 
 export function CreateProcessId(process: Client.IpcBusProcess): string {
     let name = `${process.type}`;
@@ -82,13 +83,13 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._client = null;
     }
 
-    stampMessage(ipcMessage: IpcBusMessage) {
+    stampMessage(ipcMessage: IpcBusMessage, kindOverriden?: IpcBusLog.Kind) {
         const timestamp = this._log.now;
         const id = `${CreateProcessID(ipcMessage.peer.process)}.${this._messageCount++}`;
         ipcMessage.stamp = {
             local: false,
             id,
-            kind: ipcMessage.kind,
+            kind: kindOverriden || ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE,
             timestamp,
             peer: ipcMessage.peer
         }
@@ -97,7 +98,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     stampResponse(ipcMessage: IpcBusMessage) {
         if (ipcMessage.stamp) {
             ipcMessage.stamp.timestamp_response = this._log.now;
-            ipcMessage.stamp.kind = ipcMessage.kind;
+            ipcMessage.stamp.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
         }
     }
 
@@ -108,7 +109,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             this.stampMessage(ipcMessage);
             ipcMessage.stamp.timestamp = timestamp;
         }
-        ipcMessage.stamp.kind = ipcMessage.kind;
+        ipcMessage.stamp.kind = ipcMessage.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE,
         ipcMessage.stamp.timestamp_received = timestamp;
         ipcMessage.stamp.local = local;
         ipcMessage.stamp.peer_received = local_peer;
@@ -120,13 +121,13 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         let timestamp = this._log.now;
         if (ipcMessage.stamp == null) {
             local = false;
-            this.stampMessage(ipcMessage);
+            this.stampMessage(ipcMessage, IpcBusLog.Kind.SEND_REQUEST);
             ipcMessage.peer = local_peer;
             ipcMessage.stamp.timestamp = timestamp;
             this.stampResponse(ipcMessage);
             ipcMessage.stamp.timestamp_response = timestamp;
         }
-        ipcMessage.stamp.kind = ipcMessage.kind;
+        ipcMessage.stamp.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
         ipcMessage.stamp.timestamp_response_received = timestamp;
         ipcMessage.stamp.response_local = local;
         const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });

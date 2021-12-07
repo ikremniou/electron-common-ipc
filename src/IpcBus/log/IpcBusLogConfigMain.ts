@@ -71,8 +71,20 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         };
 
         switch (ipcMessage.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.SendMessage:
                 message.kind = ipcMessage.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                break;
+            case IpcBusCommand.Kind.RequestResponse: {
+                message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+                break;
+            }
+            case IpcBusCommand.Kind.LogRoundtrip:
+                message.kind = ipcMessage.stamp.kind;
+                break;
+        }
+        switch (message.kind) {
+            case IpcBusLog.Kind.SEND_REQUEST:
+            case IpcBusLog.Kind.SEND_MESSAGE: {
                 message.order = 0;
                 message.timestamp = ipcMessage.stamp.timestamp - this._baseTime;
                 message.delay = 0,
@@ -81,8 +93,17 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 message.responseChannel = ipcMessage.request && ipcMessage.request.id;
                 break;
             }
-            case IpcBusCommand.Kind.RequestResponse: {
-                message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+            case IpcBusLog.Kind.GET_REQUEST:
+            case IpcBusLog.Kind.GET_MESSAGE: {
+                message.order = 1;
+                message.timestamp = ipcMessage.stamp.timestamp_received - this._baseTime;
+                message.delay = ipcMessage.stamp.timestamp_received - ipcMessage.stamp.timestamp;
+
+                message.channel = ipcMessage.channel;
+                message.responseChannel = ipcMessage.request && ipcMessage.request.id;
+                break;
+            }
+            case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
                 message.order = 2;
                 message.timestamp = ipcMessage.stamp.timestamp_response - this._baseTime;
                 message.delay = ipcMessage.stamp.timestamp_response - ipcMessage.stamp.timestamp_received;
@@ -92,26 +113,14 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
                 break;
             }
-            case IpcBusCommand.Kind.LogRoundtrip: {
-                if (ipcMessage.stamp.kind === IpcBusCommand.Kind.SendMessage) {
-                    message.kind = ipcMessage.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
-                    message.order = 1;
-                    message.timestamp = ipcMessage.stamp.timestamp_received - this._baseTime;
-                    message.delay = ipcMessage.stamp.timestamp_received - ipcMessage.stamp.timestamp;
+            case IpcBusLog.Kind.GET_REQUEST_RESPONSE: {
+                message.order = 3;
+                message.timestamp = ipcMessage.stamp.timestamp_response_received - this._baseTime;
+                message.delay = ipcMessage.stamp.timestamp_response_received - ipcMessage.stamp.timestamp_response;
 
-                    message.channel = ipcMessage.channel;
-                    message.responseChannel = ipcMessage.request && ipcMessage.request.id;
-                }
-                 else if (ipcMessage.stamp.kind === IpcBusCommand.Kind.RequestResponse) {
-                    message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-                    message.order = 3;
-                    message.timestamp = ipcMessage.stamp.timestamp_response_received - this._baseTime;
-                    message.delay = ipcMessage.stamp.timestamp_response_received - ipcMessage.stamp.timestamp_response;
-
-                    message.channel = ipcMessage.request.channel;
-                    message.responseChannel = ipcMessage.request.id;
-                    message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
-                }
+                message.channel = ipcMessage.request.channel;
+                message.responseChannel = ipcMessage.request.id;
+                message.responseStatus = ipcMessage.request.resolve ? 'resolved' : 'rejected';
                 break;
             }
         }

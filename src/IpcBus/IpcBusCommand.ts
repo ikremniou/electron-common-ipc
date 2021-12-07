@@ -1,4 +1,5 @@
 import type { IpcBusPeer, IpcBusPeerProcess } from './IpcBusClient';
+import type { IpcBusLog } from './log/IpcBusLog';
 
 /** @internal */
 export namespace IpcBusCommand {
@@ -67,7 +68,7 @@ export interface IpcBusTarget extends IpcBusPeerProcess {
 export interface IpcBusMessageStamp {
     // order 0
     id: string;
-    kind: IpcBusCommand.Kind;
+    kind: IpcBusLog.Kind;
     local: boolean;
 
     peer: IpcBusPeer;
