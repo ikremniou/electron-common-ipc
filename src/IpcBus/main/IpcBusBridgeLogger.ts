@@ -18,7 +18,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
     }
 
     override _onRendererLogReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[]): void {
-        if (ipcMessage.rawData) {
+        if (ipcMessage.isRawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
             IpcBusRendererContent.FixRawContent(rawData);
             this._ipcBusLog.addLogRawContent(ipcMessage, rawData);
@@ -30,7 +30,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl implements IpcBusBridge
     }
 
     override _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
-        if (ipcMessage.rawData) {
+        if (ipcMessage.isRawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
             IpcBusRendererContent.FixRawContent(rawData);
             this._ipcBusLog.addLogRawContent(ipcMessage, rawData);

@@ -1,7 +1,6 @@
-import { IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferList, IpcPacketBufferCore } from 'socket-serializer';
 
 import type { IpcBusMessage } from '../IpcBusCommand';
-import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
@@ -16,7 +15,7 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
     setCallback(cb?: IpcBusLog.Callback): void;
     addLog(command: IpcBusMessage, args: any[], payload?: number): boolean;
-    addLogRawContent(ipcMessage: IpcBusMessage, IpcBusRendererContent: IpcBusRendererContent): boolean;
+    addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcPacketBufferCore.RawData): boolean;
     addLogPacket(ipcMessage: IpcBusMessage, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
 
@@ -142,7 +141,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         return this._addLog(ipcMessage, args, packetSize);
     }
 
-    addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcBusRendererContent): boolean {
+    addLogRawContent(ipcMessage: IpcBusMessage, rawData: IpcPacketBufferCore.RawData): boolean {
         const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
         ipcPacketBufferCore.JSON = JSONParserV1;
         return this._addLog(ipcMessage, ipcPacketBufferCore.parseArrayLength() > 1 ? ipcPacketBufferCore.parseArrayAt(1) : null, ipcPacketBufferCore.packetSize);

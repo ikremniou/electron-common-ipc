@@ -75,7 +75,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // It may happen Electron is breaking the JS context when messages are emitted very fast
         // especially when processing of each takes time. So delay the code excecuted for an event.
         process.nextTick(() => {
-            if (ipcMessage.rawData) {
+            if (ipcMessage.isRawData) {
                 // Electron IPC "corrupts" Buffer to a Uint8Array
                 IpcBusRendererContent.FixRawContent(data);
                 this._client.onConnectorRawDataReceived(ipcMessage, data);
@@ -89,7 +89,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected onPortMessageReceived(event: MessageEvent) {
         process.nextTick(() => {
             const [ipcMessage, data] = event.data;
-            if (ipcMessage.rawData) {
+            if (ipcMessage.isRawData) {
                 // Electron IPC "corrupts" Buffer to a Uint8Array
                 IpcBusRendererContent.FixRawContent(data);
                 this._client.onConnectorRawDataReceived(ipcMessage, data, event.ports);

@@ -102,7 +102,7 @@ export interface IpcBusMessage extends IpcBusCommandBase {
     peer: IpcBusPeer;
     target?: IpcBusTarget;
 
-    rawData?: boolean;
+    isRawData?: boolean;
 
     request?: IpcBusCommand.Request;
     stamp?: IpcBusMessageStamp;

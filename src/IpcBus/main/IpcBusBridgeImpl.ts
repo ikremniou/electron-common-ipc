@@ -169,7 +169,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
     }
 
     _onRendererMessageReceived(ipcMessage: IpcBusMessage, data: IpcPacketBufferCore.RawData | any[], messagePorts?: Electron.MessagePortMain[]) {
-        if (ipcMessage.rawData) {
+        if (ipcMessage.isRawData) {
             const rawData = data as IpcPacketBufferCore.RawData;
             // Electron IPC "corrupts" Buffer to a Uint8Array
             IpcBusRendererContent.FixRawContent(rawData);
@@ -214,7 +214,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
             const hasSocketChannel = this._socketTransport && this._socketTransport.isTarget(ipcMessage);
             if (hasSocketChannel) {
                 // A message coming from main should be never a rawData but who knowns
-                if (ipcMessage.rawData) {
+                if (ipcMessage.isRawData) {
                     this._socketTransport.broadcastData(ipcMessage, args);
                 }
                 else {

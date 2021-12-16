@@ -89,7 +89,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         let timestamp = this._log.now;
         if (ipcMessage.stamp == null) {
             local = false;
-            // const ipcMessageMissing = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
+            // const ipcMessageMissing = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, isRawData: false });
             this.stampMessage(ipcMessage);
             ipcMessage.stamp.timestamp = timestamp;
             // this.postLogRoundtrip(ipcMessage, args);
@@ -98,7 +98,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         ipcMessage.stamp.timestamp_received = timestamp;
         ipcMessage.stamp.local = local;
         ipcMessage.stamp.peer_received = local_peer;
-        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
+        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, isRawData: false });
         this.postLogRoundtrip(ipcMessageClone, args);
     }
 
@@ -122,7 +122,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         ipcMessage.stamp.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
         ipcMessage.stamp.timestamp_response_received = timestamp;
         ipcMessage.stamp.response_local = local;
-        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, rawData: false });
+        const ipcMessageClone = Object.assign({}, ipcMessage, { kind: IpcBusCommand.Kind.LogRoundtrip, isRawData: false });
         this.postLogRoundtrip(ipcMessageClone, args);
     }
 
