@@ -1,5 +1,7 @@
 /// <reference types='electron' />
 
+const processPolyfill = require('process/browser');
+
 import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 
@@ -74,7 +76,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected onIPCMessageReceived(event: Electron.IpcRendererEvent, ipcMessage: IpcBusMessage, data: any) {
         // It may happen Electron is breaking the JS context when messages are emitted very fast
         // especially when processing of each takes time. So delay the code excecuted for an event.
-        process.nextTick(() => {
+        processPolyfill.nextTick(() => {
             if (ipcMessage.isRawData) {
                 // Electron IPC "corrupts" Buffer to a Uint8Array
                 IpcBusRendererContent.FixRawContent(data);
@@ -87,7 +89,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     protected onPortMessageReceived(event: MessageEvent) {
-        process.nextTick(() => {
+        processPolyfill.nextTick(() => {
             const [ipcMessage, data] = event.data;
             if (ipcMessage.isRawData) {
                 // Electron IPC "corrupts" Buffer to a Uint8Array
