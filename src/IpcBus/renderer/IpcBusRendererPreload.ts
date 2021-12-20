@@ -47,7 +47,7 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     // trace && console.log(`process.env:${window.process?.env}`);
     // trace && console.log(`contextIsolation:${contextIsolation}`);
     if (contextIsolation == null) {
-        contextIsolation = window.process?.argv?.includes('--context-isolation') ?? ContextIsolationDefaultValue;
+        contextIsolation = /* window.process?.argv?.includes('--context-isolation') ?? */ ContextIsolationDefaultValue;
     }
 
     const g_preloadDone = GetSingleton<boolean>(g_preload_done_symbol_name);
