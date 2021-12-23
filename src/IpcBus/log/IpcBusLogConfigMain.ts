@@ -76,6 +76,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         const local = ipcMessage.stamp.local || ipcMessage.stamp.response_local;
         const message: Partial<IpcBusLog.Message> = {
             kind,
+            kindStr: IpcBusLog.KindToStr(kind),
             id: ipcMessage.stamp.id,
             peer: ipcMessage.stamp.peer,
             related_peer: ipcMessage.stamp.peer_received,

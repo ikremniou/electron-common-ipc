@@ -13,22 +13,6 @@ export namespace IpcBusLog {
         GET_CLOSE_REQUEST,
     }
 
-    export interface Message {
-        id: string;
-        order: number;
-        peer: IpcBusPeer;
-        related_peer: IpcBusPeer;
-        timestamp: number;
-        delay: number;
-        channel: string;
-        kind: Kind;
-        responseChannel?: string;
-        responseStatus?: 'resolved' | 'rejected' | 'cancelled';
-        local?: boolean;
-        payload?: number;
-        args?: any[];
-    }
-
     export function KindToStr(kind: Kind): string {
         switch (kind) {
             case Kind.SEND_MESSAGE:
@@ -47,11 +31,32 @@ export namespace IpcBusLog {
                 return 'SendCloseRequest';
             case Kind.GET_CLOSE_REQUEST:
                 return 'GetCloseRequest';
-            }
+        }
+    }
+
+    export interface Message {
+        id: string;
+        order: number;
+        peer: IpcBusPeer;
+        related_peer: IpcBusPeer;
+        timestamp: number;
+        delay: number;
+        channel: string;
+        kind: Kind;
+        kindStr: string;
+        responseChannel?: string;
+        responseStatus?: 'resolved' | 'rejected' | 'cancelled';
+        local?: boolean;
+        payload?: number;
+        args?: any[];
     }
 
     export interface Callback {
         (message: IpcBusLog.Message): void;
+    }
+
+    export interface Logger {
+        writeLog: Callback;
     }
 
     export let SetLogLevel: (level: IpcBusLogConfig.Level, cb: IpcBusLog.Callback, argContentLen?: number) => void;

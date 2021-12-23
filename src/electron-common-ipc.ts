@@ -11,8 +11,8 @@ export * from './IpcBus/main/IpcBusBridge';
 export * from './IpcBus/main/IpcBusBridge-factory';
 
 export * from './IpcBus/log/IpcBusLogConfig';
-export * from './IpcBus/log/IpcBusCSVLogger';
-export * from './IpcBus/log/IpcBusJSONLogger';
+export * from './IpcBus/log/IpcBusCSVLogger-main';
+export * from './IpcBus/log/IpcBusJSONLogger-main';
 
 export * from './IpcBus/log/IpcBusLog-factory';
 
@@ -28,9 +28,9 @@ import './IpcBus/main/IpcBusBridge-factory';
 /** @internal */
 import './IpcBus/node/IpcBusClientSocket-factory';
 /** @internal */
-import './IpcBus/log/IpcBusCSVLogger';
+import './IpcBus/log/IpcBusCSVLogger-main';
 /** @internal */
-import './IpcBus/log/IpcBusJSONLogger';
+import './IpcBus/log/IpcBusJSONLogger-main';
 /** @internal */
 import './IpcBus/log/IpcBusLogConfigMain';
 

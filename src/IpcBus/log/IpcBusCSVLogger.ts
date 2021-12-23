@@ -4,19 +4,13 @@ import * as fse from 'fs-extra';
 // import CVS_stringify from 'csv-stringify';
 import { stringify } from 'csv-stringify';
 
-import { GetSingleton, RegisterSingleton } from '../IpcBusUtils';
-
-import { IpcBusLog } from './IpcBusLog';
-import { IpcBusLogConfig } from './IpcBusLogConfig';
-import { JSONLoggerBase, JSONLog } from './IpcBusJSONLogger';
+import type { IpcBusLog } from './IpcBusLog';
 
 /** @internal */
-export class CSVLogger extends JSONLoggerBase {
+export class CSVLogger implements IpcBusLog.Logger {
     private _stringifyer: any; // CVS_stringify.Stringifier;
 
     constructor(filename: string) {
-        super();
-
         fse.ensureDirSync(path.dirname(filename));
         try {
             fse.unlinkSync(filename);
@@ -31,7 +25,7 @@ export class CSVLogger extends JSONLoggerBase {
                 { key: 'id', header: 'id' },
                 { key: 'order', header: 'order' },
                 { key: 'channel', header: 'channel' },
-                { key: 'kind', header: 'kind' },
+                { key: 'kindStr', header: 'kind' },
                 { key: 'peer_id', header: 'peer id' },
                 { key: 'delay', header: 'delay' },
                 { key: 'local', header: 'local' },
@@ -44,7 +38,8 @@ export class CSVLogger extends JSONLoggerBase {
                 { key: 'arg2', header: 'arg2' },
                 { key: 'arg3', header: 'arg3' },
                 { key: 'arg4', header: 'arg4' },
-                { key: 'arg5', header: 'arg5' }
+                { key: 'arg5', header: 'arg5' },
+                { key: 'arg6', header: 'arg6' }
             ]
         };
 
@@ -52,24 +47,17 @@ export class CSVLogger extends JSONLoggerBase {
         this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
     }
 
-    override writeLog(jsonLog: JSONLog): void {
-        const csvJsonLog = jsonLog as any;
-        csvJsonLog.local = jsonLog.local ? 'local' : '';
-        csvJsonLog.request = jsonLog.responseChannel ? `${jsonLog.responseChannel} => ${jsonLog.responseStatus}` : '';
+    writeLog(message: IpcBusLog.Message): void {
+        const csvJsonLog = message as any;
+        csvJsonLog.local = message.local ? 'local' : '';
+        const args = message.args;
+        if (args) {
+            for (let i = 0, l = Math.min(args.length, 7); i < l; ++i) {
+                csvJsonLog[`arg${i}`] = args[i];
+            }
+        }
+        csvJsonLog.request = message.responseChannel ? `${message.responseChannel} => ${message.responseStatus}` : '';
         this._stringifyer.write(csvJsonLog);
     }
 }
 
-const g_cvslogger_symbol_name = 'CSVLogger';
-
-IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
-    if (level >= IpcBusLogConfig.Level.None) {
-        let g_cvsLogger = GetSingleton<CSVLogger>(g_cvslogger_symbol_name);
-        if (g_cvsLogger == null) {
-            g_cvsLogger = new CSVLogger(filename);
-            RegisterSingleton(g_cvslogger_symbol_name, g_cvsLogger);
-            const cb = g_cvsLogger.addLog.bind(g_cvsLogger);
-            IpcBusLog.SetLogLevel(level, cb, argContentLen);
-        }
-    }
-}
