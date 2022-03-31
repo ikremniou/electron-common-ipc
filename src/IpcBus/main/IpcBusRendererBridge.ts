@@ -41,6 +41,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
     private _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
+    // See https://github.com/electron/electron/issues/25119
     private _earlyIPCIssueFixed: boolean;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
@@ -188,8 +189,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
         }
         else {
-            // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-            // See https://github.com/electron/electron/issues/25119
             if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
                 webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
             }
