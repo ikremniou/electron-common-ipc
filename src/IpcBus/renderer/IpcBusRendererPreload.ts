@@ -54,7 +54,7 @@ function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     if (!g_preloadDone) {
         RegisterSingleton(g_preload_done_symbol_name, true);
         const ipcRenderer = electron && electron.ipcRenderer;
-        console.log(`ipcRenderer = ${JSON.stringify(ipcRenderer, null, 4)}`);
+        // console.log(`ipcRenderer = ${JSON.stringify(ipcRenderer, null, 4)}`);
         if (ipcRenderer) {
             const windowLocal = window as any;
             if (contextIsolation) {

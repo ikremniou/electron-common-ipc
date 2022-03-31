@@ -2,6 +2,7 @@
 
 import type { IpcPacketBufferCore } from 'socket-serializer';
 import type { IpcPacketBuffer } from 'socket-serializer';
+import * as semver from 'semver';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -40,12 +41,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _subscriptions: ChannelConnectionMap<IpcBusPeerProcessEndpoint, number>;
     private _endpoints: Map<number, IpcBusPeerProcessEndpoint>;
 
+    private _earlyIPCIssueFixed: boolean;
+
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
         this._contextType = contextType;
     
         this._bridge = bridge;
 
         this._ipcMain = electron.ipcMain;
+
+        const electronVersion = process.versions.electron;
+        this._earlyIPCIssueFixed = semver.gte(electronVersion, '12.0.0');
 
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');
         this._endpoints = new Map();
@@ -139,7 +145,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         handshake.process.frameid = event.frameId;
         // Following functions are not implemented in all Electrons
         try {
-            handshake.process.rid = webContents.getProcessId();
+            handshake.process.rid = event.processId || webContents.getProcessId();
         }
         catch (err) {
             handshake.process.rid = -1;
@@ -177,15 +183,21 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // We get back to the webContents
         // - to confirm the connection
         // - to provide id/s
-        // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        // See https://github.com/electron/electron/issues/25119
-        if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-            webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+        const frameTarget: [number, number] = [event.processId, event.frameId];
+        if (this._earlyIPCIssueFixed) {
+            webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
         }
         else {
-            webContents.on('did-finish-load', () => {
-                webContents.sendToFrame(event.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
-            });
+            // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+            // See https://github.com/electron/electron/issues/25119
+            if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+                webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+            }
+            else {
+                webContents.on('did-finish-load', () => {
+                    webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+                });
+            }
         }
     }
 
@@ -234,7 +246,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     broadcastCommand(ipcCommand: IpcBusCommand): void {
         this._endpoints.forEach((endpoint) => {
             // endpoint.commandPort.postMessage(ipcCommand);
-            endpoint.webContents.sendToFrame(endpoint.process.frameid, IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
+            const frameTarget: [number, number] = [endpoint.process.rid, endpoint.process.frameid];
+            endpoint.webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
         });
     }
 
@@ -261,7 +274,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
                 if (messagePorts == null) {
-                    endpoint.webContents.sendToFrame(endpoint.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
+                    const frameTarget: [number, number] = [endpoint.process.rid, endpoint.process.frameid];
+                    endpoint.webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
                 }
                 else {
                     endpoint.messagePort.postMessage([ipcMessage, data], messagePorts);
@@ -277,7 +291,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     channelConns.forEach((entry) => {
                         // Prevent echo message
                         if (entry.key !== key) {
-                            entry.data.webContents.sendToFrame(entry.data.process.frameid, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
+                            const frameTarget: [number, number] = [entry.data.process.rid, entry.data.process.frameid];
+                            entry.data.webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_MESSAGE, ipcMessage, data);
                         }
                     });
                 }
