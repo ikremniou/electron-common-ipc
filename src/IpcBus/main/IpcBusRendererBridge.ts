@@ -53,6 +53,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         const electronVersion = process.versions.electron;
         this._earlyIPCIssueFixed = semver.gte(electronVersion, '12.0.0');
+        this._earlyIPCIssueFixed = false; // STIL NOT FIXED !!!
 
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');
         this._endpoints = new Map();
