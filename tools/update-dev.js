@@ -35,7 +35,7 @@ function LongestCommonPrefix(arr) {
 }
 
 function CreateToDirs() {
-    const WorkspaceDir = 'C:\\kobra-local\\UniversalContainer\\dev';
+    const WorkspaceDir = 'C:\\kobra-local\\UniversalContainer\\dev_bis';
     const DesktopFrameworkDir = WorkspaceDir;
     const EikonOnElectronDir = `${WorkspaceDir}\\src\\products\\eikon-on-electron`;
 

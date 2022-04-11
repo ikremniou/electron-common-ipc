@@ -53,7 +53,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         const electronVersion = process.versions.electron;
         this._earlyIPCIssueFixed = semver.gte(electronVersion, '12.0.0');
-        this._earlyIPCIssueFixed = false; // STIL NOT FIXED !!!
 
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');
         this._endpoints = new Map();
@@ -186,19 +185,19 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         const frameTarget: [number, number] = [event.processId, event.frameId];
-        if (this._earlyIPCIssueFixed) {
-            webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
-        }
-        else {
-            if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+        if (webContents.getURL()) {
+            if (this._earlyIPCIssueFixed) {
                 webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+                return;
             }
-            else {
-                webContents.on('did-finish-load', () => {
-                    webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
-                });
+            if (!webContents.isLoadingMainFrame()) {
+                webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+                return;
             }
         }
+        webContents.on('did-finish-load', () => {
+            webContents.sendToFrame(frameTarget, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
+        });
     }
 
     private _trackRendererDestruction(webContents: Electron.WebContents): void {

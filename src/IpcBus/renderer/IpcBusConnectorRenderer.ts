@@ -1,6 +1,5 @@
 /// <reference types='electron' />
 
-import * as assert from 'assert';
 import type { EventEmitter } from 'events';
 const queueMicrotask = require('queue-microtask');
 
@@ -35,7 +34,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _commandChannel: MessageChannel;
 
     constructor(contextType: Client.IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow) {
-        assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
+        // assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._peerProcess.process.isMainFrame = isMainFrame;

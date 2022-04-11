@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as net from 'net';
 
 import { IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
@@ -29,7 +28,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
+        // assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
         super(contextType);
 
         this._bufferListReader = new BufferListReader();
