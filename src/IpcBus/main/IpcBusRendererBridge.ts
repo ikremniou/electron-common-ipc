@@ -324,7 +324,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.AddChannelListener: {
                 const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointWC = this._endpoints.get(key);
-                this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
+                if (endpointWC) {
+                    this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
+                }
                 return true;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {

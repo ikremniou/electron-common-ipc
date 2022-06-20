@@ -300,7 +300,9 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             case IpcBusCommand.Kind.AddChannelListener: {
                 const key = IpcBusCommandHelpers.CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointSocket = this._endpoints.get(key);
-                this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
+                if (endpointSocket) {
+                    this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
+                }
                 break;
             }
             case IpcBusCommand.Kind.RemoveChannelListener: {

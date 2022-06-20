@@ -188,7 +188,7 @@ export function ActivateServiceTrace(enable: boolean): void {
 }
 
 export class ConnectCloseState<T> {
-    protected _waitForConnected: Promise<T>;
+    protected _waitForConnected: Promise<T> | null;
     protected _waitForClosed: Promise<void>;
     protected _connected: boolean;
     // protected _t: T | null;
@@ -217,7 +217,7 @@ export class ConnectCloseState<T> {
                 return t;
             })
             .catch((err) => {
-                this._waitForConnected = null;
+                this.shutdown();
                 throw err;
             });
         }
@@ -230,9 +230,10 @@ export class ConnectCloseState<T> {
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
-                // this._t = null;
-                this._connected = false;
                 return cb();
+            })
+            .finally(() => {
+                this.shutdown();
             });
         }
         return this._waitForClosed;
