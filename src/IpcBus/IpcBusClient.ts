@@ -12,13 +12,17 @@ export const IPCBUS_CHANNEL_QUERY_STATE = `${IPCBUS_CHANNEL}/queryState`;
 // see { ElectronProcessType } from 'electron-process-type/lib/v2'
 export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
 
-export interface IpcBusProcess {
-    type: IpcBusProcessType;
-    pid: number;    // Process Id
-    rid?: number;   // Routing Id
+// These information are relative to Electron renderer process only
+export interface IpcBusProcessContext {
     wcid?: number;  // WebContent Id
     frameid?: number; // Frame Id
     isMainFrame?: boolean;
+}
+
+export interface IpcBusProcess extends IpcBusProcessContext {
+    type: IpcBusProcessType;
+    pid: number;    // Process Id
+    rid?: number;   // Process Electron/Chromium IPC Routing Id
 }
 
 export interface IpcBusPeerProcess {
