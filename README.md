@@ -1,5 +1,5 @@
 # electron-common-ipc
-An IPC (Inter-Process Communication) bus for applications built for [Node](https://nodejs.org/en/) and/or [Electron](https://electronjs.org/). 
+An IPC (Inter-Process Communication) bus for applications built for [Node.js](https://nodejs.org/en/) and/or [Electron.js](https://electronjs.org/). 
 
 This bus offers an EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Main and Electron Renderer process/s).
 * Node to Node, 
@@ -7,7 +7,7 @@ This bus offers an EventEmitter-like API for exchanging data between any process
 * Electron to Node, 
 * Electron to Electron.
 
-You can exchange a lot of different kinds of data and transfer MessagePort/s between 2 renderers.
+You can exchange a lot of different kinds of data and even transfer [MessagePort/s](https://www.electronjs.org/docs/latest/tutorial/message-ports) between 2 renderers.
 
 For Node processes support, you need to instanciate a "BusBroker" (Net socket server) in charge to commute messages to right listeners.  
 For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers WebPage and WebFrame, Master and Node.
@@ -25,6 +25,7 @@ A WebPage is then able to dialog with a node process and vice-versa.
 * Support for Electron renderer affinity (several webpages hosted in the same renderer process)
 * Basic remote API calls/events and pending messages management with Services
 * ContextIsolation not yet supported, in progress
+* Support broadcast and peer2peer message
 
 # Installation
 ```Batchfile

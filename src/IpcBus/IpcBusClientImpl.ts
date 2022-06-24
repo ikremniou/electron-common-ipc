@@ -8,7 +8,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 // Implementation for a common IpcBusClient
 /** @internal */
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient, IpcBusTransport.Client {
-    protected _peer: Client.IpcBusPeer;
+    protected _peer: Client.IpcBusPeer | null;
     protected _transport: IpcBusTransport;
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
@@ -32,7 +32,11 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.createDirectChannel(this);
     }
 
-    connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    connect(options?: Client.IpcBusClient.ConnectOptions): Promise<void>;
+    connect(path?: string, options?:  Client.IpcBusClient.ConnectOptions): Promise<void>;
+    connect(port?: number, options?:  Client.IpcBusClient.ConnectOptions): Promise<void>;
+    connect(port?: number, hostname?: string, options?: Client.IpcBusClient. ConnectOptions): Promise<void>;
+    connect(arg1?: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.connect(() => {
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
             return this._transport.connect(this, options)

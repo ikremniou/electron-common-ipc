@@ -1,4 +1,4 @@
-import type { IpcBusProcessType, IpcBusClient } from '../IpcBusClient';
+import type { IpcBusProcessType, IpcBusClient, IpcBusPeerProcess } from '../IpcBusClient';
 
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
@@ -26,10 +26,10 @@ export function Create(contextType: IpcBusProcessType): IpcBusClient {
     return ipcClient;
 }
 
-// export function GetWindowTarget(window: any): IpcBusPeerProcess | undefined {
-//     const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
-//     return bridge.getWindowTarget(window as Electron.BrowserWindow);
-// }
+export function GetWindowTarget(window: any, frameId?: number): IpcBusPeerProcess | undefined {
+    const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
+    return bridge.getWindowTarget(window as Electron.BrowserWindow, frameId);
+}
 
 // export function GetProcessTarget(pid: number): IpcBusPeerProcess | undefined {
 //     return undefined;

@@ -85,8 +85,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
         return this._rendererConnector;
     }
 
-    getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
-        return this._rendererConnector.getWindowTarget(window);
+    getWindowTarget(window: Electron.BrowserWindow, frameId?: number): Client.IpcBusPeerProcess | undefined {
+        return this._rendererConnector.getWindowTarget(window, frameId);
     }
 
     // IpcBusBridge API

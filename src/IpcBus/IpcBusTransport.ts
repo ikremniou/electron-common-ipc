@@ -8,7 +8,7 @@ import type { QueryStateTransport } from './IpcBusQueryState';
 export namespace IpcBusTransport {
     /** @internal */
     export interface Client extends EventEmitter {
-        peer: Client.IpcBusPeer;
+        peer: Client.IpcBusPeer | null;
     }
 }
 

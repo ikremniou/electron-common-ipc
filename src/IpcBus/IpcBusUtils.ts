@@ -79,7 +79,7 @@ export function CheckTimeout(val: any): number {
 }
 
 /** @internal */
-export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | string | number, arg2?: T | string, arg3?: T): T | null {
+export function CheckConnectOptions<T extends IpcConnectOptions>(arg1?: T | string | number, arg2?: T | string, arg3?: T): T {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
     const options: T = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {}) as T;
@@ -106,7 +106,8 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     if (options.timeoutDelay == null) {
         options.timeoutDelay = IPC_BUS_TIMEOUT;
     }
-    return options;
+    // do no return a 'null' options
+    return Object.assign({}, options);
 }
 
 // let uniqNumber = 0;

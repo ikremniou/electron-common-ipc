@@ -84,12 +84,22 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._onIPCLogReceived = this._onIPCLogReceived.bind(this);
     }
 
-    getWindowTarget(window: Electron.BrowserWindow): Client.IpcBusPeerProcess | undefined {
+    getWindowTarget(window: Electron.BrowserWindow, frameId?: number): Client.IpcBusPeerProcess | undefined {
         let result: Client.IpcBusPeerProcess;
-        for (const endpoint of this._endpoints.values()) {
-            if (endpoint.process.wcid === window.webContents.id && endpoint.process.isMainFrame) {
-                result = endpoint;
-                break;
+        if (frameId === undefined ) {
+            for (const endpoint of this._endpoints.values()) {
+                if (endpoint.process.wcid === window.webContents.id && endpoint.process.isMainFrame) {
+                    result = endpoint;
+                    break;
+                }
+            }
+        }
+        else {
+            for (const endpoint of this._endpoints.values()) {
+                if (endpoint.process.wcid === window.webContents.id && (endpoint.process.frameid === frameId)) {
+                    result = endpoint;
+                    break;
+                }
             }
         }
         return result;

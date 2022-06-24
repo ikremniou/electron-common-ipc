@@ -131,7 +131,7 @@ export namespace IpcBusClient {
 }
 
 export interface IpcBusClient extends EventEmitter {
-    readonly peer: IpcBusPeer;
+    readonly peer: IpcBusPeer | null;
 
     connect: IpcBusClient.ConnectFunction;
     close: IpcBusClient.CloseFunction;
