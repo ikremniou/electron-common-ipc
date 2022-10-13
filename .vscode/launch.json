@@ -122,12 +122,12 @@
             "runtimeArgs": [
                 "${workspaceRoot}/test/electron-tests/app.js",
                 "--remote-debugging-port=8315",
-                "--inspect-brk=5828",
+                "--inspect-brk=5828"
                 // "--disable-sandbox",
                 // "--enable-sandbox",
             ],
             "env": {
-                "NODE_ENV": "development",
+                "NODE_ENV": "development"
             },
             "console": "internalConsole",
             "sourceMaps": true,
@@ -142,7 +142,7 @@
             "protocol": "inspector",
             "name": "Attach to Client Node process",
             "address": "localhost",
-            "port": 9000,
+            "port": 9000
         },
         {
             "type": "node",
@@ -150,7 +150,7 @@
             "protocol": "inspector",
             "name": "Attach to Broker Node process",
             "address": "localhost",
-            "port": 9001,
+            "port": 9001
         },
         {
             "type": "node",
@@ -160,7 +160,7 @@
             "protocol": "inspector",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "runtimeArgs": [
-                "--inspect-brk=5858",
+                "--inspect-brk=5858"
             ],
             "args": [
                 "--timeout", "999999",
@@ -169,7 +169,7 @@
                 // "${workspaceFolder}/lib-test/unit-test.misc.js"
                 // "${workspaceFolder}/lib-test/unit-test.engine.js"
                 // "${workspaceRoot}/test/perf.test.js",
-                "${workspaceRoot}/test/service.test.js",
+                "${workspaceRoot}/test/service.test.js"
             ],
             "outFiles": [
                 // "!${workspaceFolder}/node-modules/**/*.js",
@@ -202,7 +202,7 @@
                 // "${workspaceRoot}/test/serviceLifeCycle.test.js",
                 // "--recursive",
                 "--reporter", "spec",
-                "--no-timeouts",
+                "--no-timeouts"
                 // "--colors",
                 // "--debug",
                 // "--inspect-brk=5858",
@@ -212,19 +212,19 @@
             "windows": {
                 "env": {
                     "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron.cmd",
-                    "NODE_ENV": "development",
+                    "NODE_ENV": "development"
                 }
             },
             "osx": {
                 "env": {
                     "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
-                    "NODE_ENV": "development",
+                    "NODE_ENV": "development"
                 }
             },
             "linux": {
                 "env": {
                     "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
-                    "NODE_ENV": "development",
+                    "NODE_ENV": "development"
                 }
             },
             "outputCapture": "std",
@@ -261,13 +261,13 @@
             "outputCapture": "std",
             "runtimeArgs": [
                 "${workspaceRoot}/test/performance/app.js",
-                "--remote-debugging-port=8315",
+                "--remote-debugging-port=8315"
                 // "--inspect-brk=5828",
                 // "--disable-sandbox",
                 // "--enable-sandbox",
             ],
             "env": {
-                "NODE_ENV": "development",
+                "NODE_ENV": "development"
             },
             "console": "internalConsole",
             "sourceMaps": true,
@@ -286,6 +286,6 @@
             ],
             "skipFiles": [
             ]
-        },
+        }
     ]
 }

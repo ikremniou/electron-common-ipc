@@ -23,5 +23,4 @@ Thumbs.db
 debug.log
 *.key
 *.tgz
-Bundled*.js
-test/**/*.bundle.*
+.npmrc
