@@ -1,0 +1,25 @@
+{
+  "name": "ipc-basic-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Basic App for IPC subsystem",
+  "main": "Main.js",
+  "scripts": {
+    "start": "electron app.js",
+    "start-sandboxed": "electron . --enable-sandbox",
+    "build": "npm run build-bundle",
+    "build-bundle": "npm run build-bundle:preload && npm run build-bundle:renderer",
+    "build-bundle:preload": "browserify -o ./build/renderer-preload.bundle.js -x electron ./renderer-preload.js",
+    "build-bundle:renderer": "browserify -o ./build/renderer.bundle.js -x electron ./renderer.js"
+  },
+  "author": "Emmanuel Kimmerlin",
+  "devDependencies": {
+    "browserify": "^17.0.0"
+  },
+  "dependencies": {
+    "electron-common-ipc": "*",
+    "bootstrap": "^3.3.7",
+    "electron": "~11.3.0",
+    "uuid": "^8.3.2"
+  }
+}

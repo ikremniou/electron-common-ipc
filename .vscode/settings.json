@@ -1,5 +1,14 @@
 {
     "typescript.tsdk": "./node_modules/typescript/lib",
     "vsicons.presets.angular": false,
-    "debug.node.autoAttach": "off"
+    "debug.node.autoAttach": "off",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/node_modules": true,
+    }
 }
