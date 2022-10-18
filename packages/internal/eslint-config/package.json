@@ -1,0 +1,11 @@
+{
+  "name": "@electron-common-ipc/eslint-config",
+  "main": "eslint-config.js",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
+    "@typescript-eslint/parser": "^5.40.0",
+    "eslint-plugin-import": "^2.26.0"
+  }
+}
