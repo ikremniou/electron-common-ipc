@@ -9,7 +9,7 @@
   ],
   "command": {
     "version": {
-      "allowBranch": "master"
+      "allowBranch": [ "master", "dev", "lerna-test" ]
     }
   },
   "registry": "https://registry.npmjs.org"
