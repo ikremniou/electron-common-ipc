@@ -2,14 +2,15 @@
   "name": "root",
   "private": true,
   "scripts": {
-    "postinstall": "lerna bootstrap --force-local",
+    "postinstall": "lerna bootstrap --force-local --hoist",
     "build": "lerna run build",
     "publish": "lerna publish from-package --no-private",
     "clean": "run-s clean:*",
     "clean:build": "lerna run clean",
     "clean:nm": "rimraf ./packages/**/node_modules",
     "clean:pl": "rimraf ./packages/**/package-lock.json",
-    "test": "lerna run test"
+    "test": "lerna run test",
+    "lint": "lerna run lint"
   },
   "devDependencies": {
     "lerna": "^5.6.2",

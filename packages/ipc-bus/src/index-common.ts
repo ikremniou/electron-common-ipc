@@ -1,4 +1,3 @@
-export * from './index-common';
 export * from './renderer/IpcBusWindowNamespace';
 
 export * from './client/IpcBusClient';

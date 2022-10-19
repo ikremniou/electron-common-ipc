@@ -1,7 +1,11 @@
 {
+    "eslint.workingDirectories": [
+        {
+            "pattern": "./packages/*",
+            "changeProcessCWD": true
+        }
+    ],
     "typescript.tsdk": "./node_modules/typescript/lib",
-    "vsicons.presets.angular": false,
-    "debug.node.autoAttach": "off",
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,

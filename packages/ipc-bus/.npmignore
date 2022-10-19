@@ -15,4 +15,5 @@ webpack.*
 *.code-workspace
 .npmignore
 .gitignore
+.eslintrc
 
