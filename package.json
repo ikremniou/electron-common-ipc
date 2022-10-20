@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "postinstall": "lerna bootstrap --force-local --hoist",
+    "publish:local": "lerna publish from-package --no-private",
     "build": "lerna run build",
-    "publish": "lerna publish from-package --no-private",
     "clean": "run-s clean:*",
     "clean:build": "lerna run clean",
     "clean:nm": "rimraf ./packages/**/node_modules",
