@@ -13,7 +13,8 @@ on:
 
 jobs:
   publish-npm:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
