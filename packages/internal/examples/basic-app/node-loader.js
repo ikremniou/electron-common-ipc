@@ -1,5 +1,5 @@
 const minimist = require('minimist');
-const ipcBusModule = require('electron-common-ipc');
+const ipcBusModule = require('electron-common-ipc-ik');
 
 console.log(`Node client: start`);
 

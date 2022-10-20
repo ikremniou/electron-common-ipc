@@ -1,6 +1,6 @@
 {
     "extends": [
-        "@electron-common-ipc/eslint-config"
+        "@electron-common-ipc-ik/eslint-config"
     ],
     "parserOptions": {
         "project": [ "./tools/tsconfig-js.json" ]

@@ -1,7 +1,7 @@
-const electronCommonIpcPreloadModule = require('electron-common-ipc/lib/index-preload');
+const electronCommonIpcPreloadModule = require('electron-common-ipc-ik/lib/index-preload');
 electronCommonIpcPreloadModule.PreloadElectronCommonIpc();
 
-const electronCommonIpcModule = require('electron-common-ipc');
+const electronCommonIpcModule = require('electron-common-ipc-ik');
 console.log(`IsElectronCommonIpcAvailable=${electronCommonIpcModule.IsElectronCommonIpcAvailable()}`);
 
 const electron = require('electron');

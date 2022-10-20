@@ -22,7 +22,7 @@ export function NewIpcBusBridge(electronProcessType: ElectronProcessType): IpcBu
         if (logger.argMaxContentLen < 0) {
             logger.argMaxContentLen = 255;
         }
-        const filename = path.join(process.env['ELECTRON_IPC_LOG_CSV'], 'electron-common-ipc.csv');
+        const filename = path.join(process.env['ELECTRON_IPC_LOG_CSV'], 'electron-common-ipc-ik.csv');
         IpcBusLog.SetLogLevelCVS(logger.level, filename, logger.argMaxContentLen);
     }
     // For backward
@@ -33,7 +33,7 @@ export function NewIpcBusBridge(electronProcessType: ElectronProcessType): IpcBu
         if (logger.argMaxContentLen < 0) {
             logger.argMaxContentLen = 255;
         }
-        const filename = path.join(process.env['ELECTRON_IPC_LOG_JSON'], 'electron-common-ipc.json');
+        const filename = path.join(process.env['ELECTRON_IPC_LOG_JSON'], 'electron-common-ipc-ik.json');
         IpcBusLog.SetLogLevelJSON(logger.level, filename, logger.argMaxContentLen);
     }
     let bridge: IpcBusBridge;

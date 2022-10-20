@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const child_process = require('child_process');
-const ipcBusModule = require('electron-common-ipc');
+const ipcBusModule = require('electron-common-ipc-ik');
 
 const busPath = 49158; // '/tr-ipc-bus/' + uuid.v4();
 const busTimeout = 1000;
