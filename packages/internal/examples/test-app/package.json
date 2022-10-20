@@ -17,7 +17,7 @@
   "dependencies": {
     "bootstrap": "^3.3.7",
     "electron": "~11.3.0",
-    "electron-common-ipc": "*",
+    "electron-common-ipc-ik": "*",
     "lodash.clonedeep": "^4.5.0",
     "uuid": "^8.3.2"
   }

@@ -17,7 +17,7 @@
     "browserify": "^17.0.0"
   },
   "dependencies": {
-    "electron-common-ipc": "*",
+    "electron-common-ipc-ik": "*",
     "bootstrap": "^3.3.7",
     "electron": "~11.3.0",
     "uuid": "^8.3.2"
