@@ -11,7 +11,7 @@
     "clean:pl": "rimraf ./packages/**/package-lock.json",
     "test": "lerna run test",
     "lint": "lerna run lint",
-    "test2": "test str3"
+    "test2": "test str4"
   },
   "devDependencies": {
     "lerna": "^5.6.2",
