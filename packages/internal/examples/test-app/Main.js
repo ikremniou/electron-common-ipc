@@ -31,7 +31,7 @@ const busPath = 49158; // '/tr-ipc-bus/' + uuid.v4();
 console.log('IPC Bus Path : ' + busPath);
 
 // IPC Bus
-const ipcBusModule = require('electron-common-ipc');
+const ipcBusModule = require('electron-common-ipc-ik');
 // const ipcBusClient = ipcBusModule.IpcBusClient.Create(busPath);
 const ipcBusClient = ipcBusModule.CreateIpcBusClient();
 // ipcBusModule.ActivateIpcBusTrace(true);

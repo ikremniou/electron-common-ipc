@@ -1,4 +1,4 @@
-# electron-common-ipc
+# electron-common-ipc-ik
 An IPC (Inter-Process Communication) bus for applications built for [Node.js](https://nodejs.org/en/) and/or [Electron.js](https://electronjs.org/). 
 
 This bus offers an EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Main and Electron Renderer process/s).
@@ -29,7 +29,7 @@ A WebPage is then able to dialog with a node process and vice-versa.
 
 # Installation
 ```Batchfile
-npm install electron-common-ipc
+npm install electron-common-ipc-ik
 ```
 
 Dependencies
@@ -42,7 +42,7 @@ Dependencies
 # Technical Overview
 
 ## Objective
-![Electron's processes](https://raw.githubusercontent.com/emmkimme/electron-common-ipc/Doc_Update/doc/electron_processes.svg)
+![Electron's processes](https://raw.githubusercontent.com/emmkimme/electron-common-ipc-ik/Doc_Update/doc/electron_processes.svg)
 
 
 # Usage
@@ -138,7 +138,7 @@ const win = new BrowserWindow({
 
 preload-ipc.js
 ```js
-const electronCommonIPC = require('electron-common-ipc/lib/electron-common-ipc-preload');
+const electronCommonIPC = require('electron-common-ipc-ik/lib/electron-common-ipc-ik-preload');
 electronCommonIPC.PreloadElectronCommonIPC();
 ```
 
@@ -288,7 +288,7 @@ interface IpcBusBroker {
 ## Initialization of the Broker (in a node process)
 
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 const ipcBusBroker = ipcBusModule.IpcBusBroker.Create([busPath]);
 ```
 
@@ -334,7 +334,7 @@ var queryState = ipcBusBroker.queryState()
 ````
 
 Returns the list of pair <channel, peer> subscriptions. Format may change from one version to another.
-This information can be retrieved from an IpcBusClient through the channel : /electron-common-ipc/queryState
+This information can be retrieved from an IpcBusClient through the channel : /electron-common-ipc-ik/queryState
 
 ### isServiceAvailable(serviceName): boolean 
 - ***serviceName***: string
@@ -344,7 +344,7 @@ ipcBusBroker.isServiceAvailable('mySettings')
 ```
 
 Test if a service is started.
-This information can be retrieved from an IpcBusClient through the channel : /electron-common-ipc/serviceAvailable
+This information can be retrieved from an IpcBusClient through the channel : /electron-common-ipc-ik/serviceAvailable
 
 
 # IpcBusBridge
@@ -361,7 +361,7 @@ interface IpcBusBridge {
 ## Initialization of the Bridge (in the master process)
 
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 const ipcBusBridge = ipcBusModule.IpcBusBridge.Create();
 ```
 
@@ -426,7 +426,7 @@ interface IpcBusClient extends events.EventEmitter {
 ## Initialization in the Main/Browser Node process
 
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 const ipcBus = ipcBusModule.IpcBusClient.Create();
 ````
 
@@ -445,7 +445,7 @@ ipcBus.connect('/my-ipc-bus-path');
 ## Initialization in a Renderer process (either sandboxed or not)
 if use ***sandbox*** you have to preload code like this:
 ```js
-const electronCommonIPC = require('electron-common-ipc');
+const electronCommonIPC = require('electron-common-ipc-ik');
 if (electronCommonIPC.PreloadElectronCommonIPC()) {
   electronCommonIPC.ActivateIpcBusTrace(true);
   window.ipcBus = window.ElectronCommonIPC.CreateIpcBusClient();
@@ -667,7 +667,7 @@ interface IpcBusServiceCallHandler {
 
 ## Creation (without an outer implementation)
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 ...
 // ipcBusClient is a connected instance of IpcBusClient
 const ipcMyService = ipcBusModule.IpcBusService.Create(ipcBusClient, 'myService');
@@ -675,7 +675,7 @@ const ipcMyService = ipcBusModule.IpcBusService.Create(ipcBusClient, 'myService'
 
 ## Creation (with an outer instance)
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 ...
 const myOuterServiceInstance = {};
 myOuterServiceInstance.test = () => { return 'This is a test'; };
@@ -758,7 +758,7 @@ interface IpcBusServiceEventHandler {
 
 ## Creation
 ```js
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-common-ipc-ik");
 ...
 // ipcBusClient is a connected instance of IpcBusClient
 const ipcMyServiceProxy = ipcBusModule.IpcBusServiceProxy.Create(ipcBusClient, 'myService', 2000); // 2000 ms for call timeout (default is 1000 ms)

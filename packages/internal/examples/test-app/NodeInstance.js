@@ -26,7 +26,7 @@ console.log(busPath);
 let nodeCount = GetCmdLineArgValue('nodeCount');
 console.log(nodeCount);
 
-const ipcBusModule = require('electron-common-ipc');
+const ipcBusModule = require('electron-common-ipc-ik');
 const ipcBus = ipcBusModule.IpcBusClient.Create();
 // ipcBusModule.ActivateIpcBusTrace(true);
 

@@ -1,5 +1,5 @@
 {
-  "name": "@electron-common-ipc/eslint-config",
+  "name": "@electron-common-ipc-ik/eslint-config",
   "main": "eslint-config.js",
   "version": "1.0.0",
   "private": true,

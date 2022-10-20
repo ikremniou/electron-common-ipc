@@ -289,7 +289,7 @@ var PerfTests = function _PerfTests(type, busPath) {
         return _uuidFactory();
     }
 
-    const _ipcBusModule = require('electron-common-ipc');
+    const _ipcBusModule = require('electron-common-ipc-ik');
     const _uuidFactory = require('nanoid').nanoid;
     var _ipcBus = _ipcBusModule.IpcBusClient.Create();
     var _uuid = createUuid();

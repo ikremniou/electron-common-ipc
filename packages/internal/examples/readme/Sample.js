@@ -1,4 +1,4 @@
-const ipcBusModule = require('electron-common-ipc');
+const ipcBusModule = require('electron-common-ipc-ik');
 ipcBusModule.ActivateIpcBusTrace(true);
 
 // Load modules

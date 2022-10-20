@@ -4,7 +4,7 @@
     "description": "A safe IPC bus for applications built on Node or Electron.",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/emmkimme/electron-common-ipc.git"
+        "url": "git+https://github.com/emmkimme/electron-common-ipc-ik.git"
     },
     "keywords": [
         "electron",
@@ -27,9 +27,9 @@
     "author": "Emmanuel Kimmerlin",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/emmkimme/electron-common-ipc/issues"
+        "url": "https://github.com/emmkimme/electron-common-ipc-ik/issues"
     },
-    "homepage": "https://github.com/emmkimme/electron-common-ipc#readme",
+    "homepage": "https://github.com/emmkimme/electron-common-ipc-ik#readme",
     "maintainers": [
         {
             "name": "Emmanuel Kimmerlin",
@@ -52,8 +52,8 @@
         "winston": "~3.3.3"
     },
     "devDependencies": {
-        "@electron-common-ipc/eslint-config": "*",
-        "@electron-common-ipc/prettier-config": "*",
+        "@electron-common-ipc-ik/eslint-config": "*",
+        "@electron-common-ipc-ik/prettier-config": "*",
         "@types/fs-extra": "^9.0.13",
         "@types/node": "~14.14.37",
         "@types/semver": "^7.3.9",
@@ -102,5 +102,5 @@
         "deploy": "npm publish ./ --registry https://registry.npmjs.org",
         "lint": "eslint src"
     },
-    "prettier": "@electron-common-ipc/prettier-config"
+    "prettier": "@electron-common-ipc-ik/prettier-config"
 }

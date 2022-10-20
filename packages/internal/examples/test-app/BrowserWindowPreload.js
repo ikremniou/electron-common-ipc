@@ -3,7 +3,7 @@
 
 'use strict';
 
-const electronCommonIpcPreloadModule = require('electron-common-ipc/lib/index-preload');
+const electronCommonIpcPreloadModule = require('electron-common-ipc-ik/lib/index-preload');
 if (electronCommonIpcPreloadModule.PreloadElectronCommonIpc()) {
   // electronCommonIpc.ActivateIpcBusTrace(true);
 }
