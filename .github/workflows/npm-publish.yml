@@ -6,15 +6,16 @@ run-name: Publish
 
 on:
   pull_request:
-    types: [closed]
+    types: [closed, labeled]
     branches:
       - dev
       - master
 
 jobs:
   publish-npm:
-    if: github.event.pull_request.merged == true
-    runs-on: windows-latest
+    if: github.event.pull_request.merged == false &&
+        contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -43,4 +44,5 @@ jobs:
           else
             npx lerna version minor --no-private --yes --force-publish -m "$bump_message"
           fi
+          
           npx lerna publish from-git --yes
