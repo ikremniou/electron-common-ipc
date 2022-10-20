@@ -10,7 +10,8 @@
     "clean:nm": "rimraf ./packages/**/node_modules",
     "clean:pl": "rimraf ./packages/**/package-lock.json",
     "test": "lerna run test",
-    "lint": "lerna run lint"
+    "lint": "lerna run lint",
+    "test2": "test str2"
   },
   "devDependencies": {
     "lerna": "^5.6.2",
