@@ -33,6 +33,7 @@ jobs:
         env:
           GH_TOKEN: ${{secrets.gh_token}}
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+        shell: bash
         run: |
           git config user.name ci.bot"
           git config user.email "ci.bot@users.noreply.github.com"
