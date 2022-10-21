@@ -1,0 +1,70 @@
+name: publish-manual
+run-name: Manual publish. Actor is "${{ github.actor }}". Type is "${{ inputs.bump_type }}". Branch is "${{ github.ref_name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: | 
+          Force Publish:
+          Comma separated list of packages, that must be force published. Or "*" for all packages'
+        required: false
+        type: text  
+      bump_type:
+        description: |
+          Bump type: 
+          Type of the version increment. Default value is "patch"'
+        required: false
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+          - prepatch
+          - preminor
+          - premajor
+      preid:
+        description: |
+          Preid: 
+          Pre prelease package tag. Use "dev" when building from the "dev" branch'
+        required: false
+        type: choice
+        default: 'none'
+        options:
+          - none
+          - dev
+        
+jobs:
+  publish-manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org
+    
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Build Package
+        run: npm run build
+      
+      - name: Publish Package
+        env:
+          GH_TOKEN: ${{secrets.gh_token}}
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+        shell: bash
+        run: |
+          git config user.name "ci.bot"
+          git config user.email "ci.bot@users.noreply.github.com"
+          
+          bump_message="\"chore(release): manual package versions update\""
+          force_publish="" && [[ -n "${{ inputs.force_publish }}" ]] && force_publish="--force-publish=${{ inputs.force_publish }}"
+          bump_type="patch" && [[ -n "${{ inputs.bump_type }}" ]] && bump_type=${{ inputs.bump_type }}
+          preid="" && [[ "${{ inputs.preid }}" != "none" ]] && preid="--preid ${{ inputs.preid }}"
+          
+          npx lerna version $bump_type -m "$bump_message" $preid $force_publish --no-private --yes
+          npx lerna publish from-package --yes
