@@ -1,15 +1,19 @@
 name: publish-manual
-run-name: Publish package manually by ${{ github.actor }}
+run-name: Publish package manually by ${{ github.actor }}. Verison update is "${{ inputs.bump_type }}"
 
 on:
   workflow_dispatch:
     inputs:
       force_publish:
-        description: 'Comma separated list of packages, that must be force published. Or "*" for all packages'
+        description: | 
+          Force Publish:
+          Comma separated list of packages, that must be force published. Or "*" for all packages'
         required: false
         type: text  
       bump_type:
-        description: 'Type of the version increment. Default value is "patch"'
+        description: |
+          Bump type: 
+          Type of the version increment. Default value is "patch"'
         required: false
         default: patch
         type: choice
@@ -22,11 +26,20 @@ on:
           - preminor
           - premajor
       preid:
-        description: 'Pre prelease package tag. Use "dev" when building from the "dev" branch'
+        description: |
+          Preid: 
+          Pre prelease package tag. Use "dev" when building from the "dev" branch'
         required: false
         type: choice
+        default: ''
         options:
+          - ''
           - dev
+      skip_tests:
+        description: 'Skip tests'
+        default: false
+        type: boolean
+        required: false
         
 jobs:
   publish-manual:
@@ -42,9 +55,11 @@ jobs:
         run: npm ci
       
       - name: Build Package
+
         run: npm run build
         
       - name: Run Tests
+        if: ${{ !inputs.skip_tests }}
         run: npm test
       
       - name: Publish Package
