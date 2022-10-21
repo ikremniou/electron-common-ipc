@@ -33,13 +33,7 @@ on:
         type: choice
         default: ''
         options:
-          - ''
           - dev
-      skip_tests:
-        description: 'Skip tests'
-        default: false
-        type: boolean
-        required: false
         
 jobs:
   publish-manual:
@@ -56,10 +50,6 @@ jobs:
       
       - name: Build Package
         run: npm run build
-        
-      - name: Run Tests
-        if: ${{ !inputs.skip_tests }}
-        run: npm test
       
       - name: Publish Package
         env:
@@ -69,6 +59,8 @@ jobs:
         run: |
           git config user.name "ci.bot"
           git config user.email "ci.bot@users.noreply.github.com"
+          
+          echo "Tag is: ${{ inputs.preid }}"
           
           bump_message="\"chore(release): manual package versions update\""
           force_publish="" && [[ -n "${{ inputs.force_publish }}" ]] && force_publish="--force-publish=${{ inputs.force_publish }}"
