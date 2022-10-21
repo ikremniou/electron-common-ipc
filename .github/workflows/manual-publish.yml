@@ -1,5 +1,5 @@
 name: publish-manual
-run-name: Manual publish. Actor - "${{ github.actor }}". Type - "${{ inputs.bump_type }}". Branch - "${{ github.ref_name }}"
+run-name: Manual publish. Actor is "${{ github.actor }}". Type is "${{ inputs.bump_type }}". Branch is "${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
@@ -31,8 +31,9 @@ on:
           Pre prelease package tag. Use "dev" when building from the "dev" branch'
         required: false
         type: choice
-        default: ''
+        default: 'none'
         options:
+          - none
           - dev
         
 jobs:
@@ -60,12 +61,10 @@ jobs:
           git config user.name "ci.bot"
           git config user.email "ci.bot@users.noreply.github.com"
           
-          echo "Tag is: ${{ inputs.preid }}"
-          
           bump_message="\"chore(release): manual package versions update\""
           force_publish="" && [[ -n "${{ inputs.force_publish }}" ]] && force_publish="--force-publish=${{ inputs.force_publish }}"
           bump_type="patch" && [[ -n "${{ inputs.bump_type }}" ]] && bump_type=${{ inputs.bump_type }}
-          preid="" && [[ -n "${{ inputs.preid }}" ]] && preid="--preid ${{ inputs.preid }}"
+          preid="" && [[ "${{ inputs.preid }}" != "none" ]] && preid="--preid ${{ inputs.preid }}"
           
           npx lerna version $bump_type -m "$bump_message" $preid $force_publish --no-private --yes
-          npx lerna publish from-git --yes
+          npx lerna publish from-package --yes
