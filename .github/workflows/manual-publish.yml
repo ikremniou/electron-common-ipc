@@ -1,5 +1,5 @@
 name: publish-manual
-run-name: Publish package manually by ${{ github.actor }}. Verison update is "${{ inputs.bump_type }}"
+run-name: Publish package manually by ${{ github.actor }}. Verison update is "${{ inputs.bump_type }}". Branch is "${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
@@ -55,7 +55,6 @@ jobs:
         run: npm ci
       
       - name: Build Package
-
         run: npm run build
         
       - name: Run Tests
@@ -75,5 +74,6 @@ jobs:
           force_publish="" && [[ -n "${{ inputs.force_publish }}" ]] && force_publish="--force-publish=${{ inputs.force_publish }}"
           bump_type="patch" && [[ -n "${{ inputs.bump_type }}" ]] && bump_type=${{ inputs.bump_type }}
           preid="" && [[ -n "${{ inputs.preid }}" ]] && preid="--preid ${{ inputs.preid }}"
+          
           npx lerna version $bump_type -m $bump_message $preid $force_publish --no-private --yes
           npx lerna publish from-git --yes
