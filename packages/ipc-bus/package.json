@@ -99,8 +99,12 @@
         "test": "electron-mocha --no-timeouts --reporter spec test/*.test.js",
         "_test": "electron-mocha --no-timeouts --reporter spec",
         "test:performance": "electron-mocha --no-timeouts --reporter spec test/performance.test.js",
-        "deploy": "npm publish ./ --registry https://registry.npmjs.org",
+        "deploy": "npm publish ./",
         "lint": "eslint src"
     },
-    "prettier": "@electron-common-ipc/prettier-config"
+    "prettier": "@electron-common-ipc/prettier-config",
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    }
 }

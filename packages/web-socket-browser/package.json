@@ -68,5 +68,9 @@
         "ts-sinon": "^2.0.2",
         "typescript": "^4.8.4"
     },
-    "prettier": "@electron-common-ipc/prettier-config"
+    "prettier": "@electron-common-ipc/prettier-config",
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org"
+    }
 }
