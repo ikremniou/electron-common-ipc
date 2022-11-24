@@ -1,6 +1,6 @@
 {
     "name": "@electron-common-ipc/web-socket-browser",
-    "version": "1.0.1-dev.0",
+    "version": "1.0.1-dev.1",
     "description": "Extension of the @electron-common-ipc with web socket support for browser",
     "repository": {
         "type": "git",
@@ -46,7 +46,7 @@
         "test:mocha": "mocha ./build/config.js ./build/**/*.test.js"
     },
     "dependencies": {
-        "@electron-common-ipc/universal": "^1.0.1-dev.0",
+        "@electron-common-ipc/universal": "^1.0.1-dev.1",
         "json-helpers": "^5.2.0",
         "nanoid": "^3.1.30",
         "socket-serializer": "^11.1.1",
