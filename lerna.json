@@ -11,6 +11,5 @@
     "version": {
       "allowBranch": ["master", "dev"]
     }
-  },
-  "registry": "https://registry.npmjs.org"
+  }
 }
