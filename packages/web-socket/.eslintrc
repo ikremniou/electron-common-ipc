@@ -1,0 +1,8 @@
+{
+    "extends": [
+        "@electron-common-ipc/eslint-config"
+    ],
+    "parserOptions": {
+        "project": [ "./tsconfig-src.json", "./tsconfig-test.json" ]
+    }
+}

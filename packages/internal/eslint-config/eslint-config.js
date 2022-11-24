@@ -16,7 +16,7 @@ module.exports = {
         'plugin:import/typescript'
     ],
     rules: {
-        'quotes': ['error', 'single', { "avoidEscape": true }],
+        'quotes': ['error', 'single', { "avoidEscape": true, "allowTemplateLiterals": true }],
         'eol-last': ['error', 'always'],
         'semi': ['error', 'always'],
         'max-len': ['error', { code: 120 }],
