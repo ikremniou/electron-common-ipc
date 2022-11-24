@@ -1,68 +1,68 @@
 {
-  "name": "@electron-common-ipc/universal",
-  "version": "1.0.0",
-  "description": "Extension of the @electron-common-ipc with web socket support",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/emmkimme/electron-common-ipc.git"
-  },
-  "keywords": [
-    "electron",
-    "ipc",
-    "node",
-    "communication",
-    "rpc",
-    "web-socket",
-    "eventemitter",
-    "bus",
-    "message",
-    "remote-call"
-  ],
-  "main": "./lib/index.js",
-  "author": "Ilya Kremniou",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/emmkimme/electron-common-ipc/issues"
-  },
-  "homepage": "https://github.com/emmkimme/electron-common-ipc#readme",
-  "maintainers": [
-    {
-      "name": "Emmanuel Kimmerlin",
-      "email": "emmanuel.kimmerlin@refinitiv.com"
+    "name": "@electron-common-ipc/universal",
+    "version": "1.0.1-dev.0",
+    "description": "Extension of the @electron-common-ipc with web socket support",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/emmkimme/electron-common-ipc.git"
     },
-    {
-      "name": "Ilya Kremniou",
-      "email": "ilya.kremniou@refinitiv.com"
-    }
-  ],
-  "scripts": {
-    "build": "run-p eslint:src build:src",
-    "build:src": "tsc --project ./tsconfig-src.json",
-    "build:test": "tsc --project ./tsconfig-test.json",
-    "clean": "rimraf ./build ./lib",
-    "eslint:src": "eslint ./src",
-    "test": "run-s build:test test:mocha",
-    "test:mocha": "mocha ./build/config.js ./build/**/*.test.js"
-  },
-  "devDependencies": {
-    "@electron-common-ipc/eslint-config": "*",
-    "@electron-common-ipc/prettier-config": "*",
-    "@types/chai": "^4.3.3",
-    "@types/chai-as-promised": "^7.1.5",
-    "@types/mocha": "^10.0.0",
-    "@types/sinon": "^10.0.13",
-    "chai": "~4.3.4",
-    "chai-as-promised": "^7.1.1",
-    "eslint": "^8.25.0",
-    "mocha": "^9.1.3",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^2.7.1",
-    "rimraf": "^3.0.2",
-    "sinon": "^13.0.1",
-    "socket-serializer": "^11.1.1",
-    "ts-node": "^10.9.1",
-    "ts-sinon": "^2.0.2",
-    "typescript": "^4.8.4"
-  },
-  "prettier": "@electron-common-ipc/prettier-config"
+    "keywords": [
+        "electron",
+        "ipc",
+        "node",
+        "communication",
+        "rpc",
+        "web-socket",
+        "eventemitter",
+        "bus",
+        "message",
+        "remote-call"
+    ],
+    "main": "./lib/index.js",
+    "author": "Ilya Kremniou",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/emmkimme/electron-common-ipc/issues"
+    },
+    "homepage": "https://github.com/emmkimme/electron-common-ipc#readme",
+    "maintainers": [
+        {
+            "name": "Emmanuel Kimmerlin",
+            "email": "emmanuel.kimmerlin@refinitiv.com"
+        },
+        {
+            "name": "Ilya Kremniou",
+            "email": "ilya.kremniou@refinitiv.com"
+        }
+    ],
+    "scripts": {
+        "build": "run-p eslint:src build:src",
+        "build:src": "tsc --project ./tsconfig-src.json",
+        "build:test": "tsc --project ./tsconfig-test.json",
+        "clean": "rimraf ./build ./lib",
+        "eslint:src": "eslint ./src",
+        "test": "run-s build:test test:mocha",
+        "test:mocha": "mocha ./build/config.js ./build/**/*.test.js"
+    },
+    "devDependencies": {
+        "@electron-common-ipc/eslint-config": "*",
+        "@electron-common-ipc/prettier-config": "*",
+        "@types/chai": "^4.3.3",
+        "@types/chai-as-promised": "^7.1.5",
+        "@types/mocha": "^10.0.0",
+        "@types/sinon": "^10.0.13",
+        "chai": "~4.3.4",
+        "chai-as-promised": "^7.1.1",
+        "eslint": "^8.25.0",
+        "mocha": "^9.1.3",
+        "npm-run-all": "^4.1.5",
+        "prettier": "^2.7.1",
+        "rimraf": "^3.0.2",
+        "sinon": "^13.0.1",
+        "socket-serializer": "^11.1.1",
+        "ts-node": "^10.9.1",
+        "ts-sinon": "^2.0.2",
+        "typescript": "^4.8.4"
+    },
+    "prettier": "@electron-common-ipc/prettier-config"
 }
