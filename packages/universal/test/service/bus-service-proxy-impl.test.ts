@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 
-import { IpcBusClientImpl } from '../../lib';
+import { IpcBusClientImpl } from '../../lib/client/bus-client-impl';
 import { IpcBusServiceProxyImpl } from '../../lib/service/bus-service-proxy-impl';
 import { ServiceConstants } from '../../lib/service/constants';
 import { getServiceCallChannel, getServiceEventChannel } from '../../lib/service/utilities';
 
-import type { IpcBusRequestResponse } from '../../lib/client/bus-client';
+import type { IpcBusEvent, IpcBusRequestResponse } from '../../lib/client/bus-client';
 import type { IpcBusServiceProxy } from '../../lib/service/bus-service-proxy';
 
 describe('ipc-bus-service-proxy-impl', () => {
@@ -279,11 +279,29 @@ describe('ipc-bus-service-proxy-impl', () => {
         const emitSpy = sinon.spy(wrapper.emit);
         wrapper.emit = emitSpy;
 
-        ipcBusClientMock.addListener.firstCall.args[1](undefined, {
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
             args: ['my_event', ['arg1', 'arg2']],
         });
         sinon.assert.calledWith(emitSpy, 'my_event', 'arg1', 'arg2');
+    });
+
+    it('should emit unknown even from the service', async () => {
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await ipcBusServiceProxy.connect();
+
+        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
+        ipcBusServiceProxy.emit = emitSpy;
+
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+            eventName: 'my_event',
+            args: ['my_arg'],
+        });
+
+        sinon.assert.calledWith(emitSpy, 'my_event', 'my_arg');
     });
 
     it('should handle start event from service', async () => {
@@ -294,7 +312,7 @@ describe('ipc-bus-service-proxy-impl', () => {
         const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
         ipcBusServiceProxy.emit = emitSpy;
 
-        ipcBusClientMock.addListener.firstCall.args[1](undefined, {
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_START,
             args: [{ started: true, callHandlers: [] }],
         });
@@ -312,11 +330,86 @@ describe('ipc-bus-service-proxy-impl', () => {
         const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
         ipcBusServiceProxy.emit = emitSpy;
 
-        ipcBusClientMock.addListener.firstCall.args[1](undefined, {
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_STOP,
             args: [{ started: true, callHandlers: [] }],
         });
 
         sinon.assert.calledWith(emitSpy, ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
+    });
+
+    it('should not send service stop and start event when emitter is not provided', async () => {
+        const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await proxyWithoutEmitter.connect();
+
+        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
+        ipcBusServiceProxy.emit = emitSpy;
+
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+            eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_STOP,
+            args: [{ started: true, callHandlers: [] }],
+        });
+
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+            eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_START,
+            args: [{ started: true, callHandlers: [] }],
+        });
+
+        sinon.assert.neverCalledWith(emitSpy);
+    });
+
+    it('should should handler service start and stop events without emitter', async () => {
+        const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await proxyWithoutEmitter.connect();
+
+        expect(() => {
+            ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+                eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_START,
+                args: [{ started: true, callHandlers: [] }],
+            });
+
+            ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+                eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_STOP,
+                args: [{ started: true, callHandlers: [] }],
+            });
+        }).to.not.throw();
+    });
+
+    it('should throw error when trying to emit arbitrary event without emitter', async () => {
+        const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await proxyWithoutEmitter.connect();
+        expect(() =>
+            ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+                eventName: 'some_event',
+                args: ['my_arg'],
+            })
+        ).to.throw();
+    });
+
+    it('should throw error when trying to emit service event without emitter', async () => {
+        const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await proxyWithoutEmitter.connect();
+        expect(() =>
+            ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+                eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
+                args: ['event', 'my_arg'],
+            })
+        ).to.throw();
     });
 });

@@ -1,11 +1,11 @@
 import { executeInTimeout } from '@electron-common-ipc/universal';
 
-import { WsClient } from '../client/ws-client';
+import { WsClient } from './ws-client';
 
-import type { BrokerServer, SocketClient , BrokerCloseOptions} from '@electron-common-ipc/universal';
+import type { BrokerServer, SocketClient, BrokerCloseOptions } from '@electron-common-ipc/universal';
 import type { WebSocketServer, WebSocket } from 'ws';
 
-export class WebSocketBrokerServer implements BrokerServer {
+export class WsBrokerServer implements BrokerServer {
     private _onCloseHandler?: () => void;
     private _onErrorHandler?: (error: Error) => void;
     private _onConnectionHandler?: (client: SocketClient) => void;
@@ -53,9 +53,9 @@ export class WebSocketBrokerServer implements BrokerServer {
                 });
             },
             (reject) => {
-                const message = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(
-                    options
-                )}`;
+                const message = `[WsBrokerServer] stop, error = timeout (${
+                    options.timeoutDelay
+                } ms) on ${JSON.stringify(options)}`;
                 reject(new Error(message));
             }
         );

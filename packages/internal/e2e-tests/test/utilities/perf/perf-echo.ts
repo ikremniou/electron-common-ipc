@@ -2,6 +2,7 @@ import { performance as perf, PerformanceObserver } from 'perf_hooks';
 
 import { writeReportTo } from './perf-utilities';
 
+import type { IpcBusBrokerProxy } from '../broker/broker-proxy';
 import type { ClientHost, ProcessMessage } from '../echo-contract';
 import type { PerfContext, PerfResult} from './perf-utilities';
 
@@ -19,9 +20,9 @@ export interface PerfEchoContext extends PerfContext {
  * @param ctx The context of the testing suite
  */
 export function perfEchoSuite(ctx: PerfEchoContext): void {
+    let broker: IpcBusBrokerProxy;
     const busPort = 33333;
-    const broker = ctx.createWebSocketBroker();
-    const brokerClient = ctx.createWebSocketClient();
+    const brokerClient = ctx.createBusClient();
     const perfResult: PerfResult[] = [];
 
     const channel = 'perf_channel';
@@ -29,7 +30,7 @@ export function perfEchoSuite(ctx: PerfEchoContext): void {
     let clientHost: ClientHost;
 
     before(async () => {
-        await broker.connect(busPort);
+        broker = await ctx.createBroker(busPort);
         await brokerClient.connect(busPort);
         clientHost = await ctx.startClientHost(busPort);
 

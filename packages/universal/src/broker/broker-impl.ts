@@ -4,7 +4,6 @@ import { CheckConnectOptions, CheckTimeoutOptions } from '../utils';
 import { ChannelConnectionMap } from '../utils/channel-map';
 import { ConnectionState } from '../utils/connection-state';
 
-import type { SocketClient } from '../client/socket-client';
 import type { IpcBusCommand } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
@@ -18,6 +17,7 @@ import type { Logger } from '../log/logger';
 import type { BrokerCloseOptions, BrokerConnectOptions, IpcBusBroker } from './broker';
 import type { BrokerServer } from './broker-server';
 import type { BrokerServerFactory } from './broker-server-factory';
+import type { SocketClient } from './socket-client';
 import type { IpcPacketBufferList } from 'socket-serializer';
 
 interface IpcBusPeerProcessEndpoint extends IpcBusPeer {
@@ -25,7 +25,7 @@ interface IpcBusPeerProcessEndpoint extends IpcBusPeer {
 }
 
 export class BrokerImpl implements IpcBusBroker {
-    private _socketClients: SocketClient[] = [];
+    private readonly _socketClients: SocketClient[] = [];
     private _server: BrokerServer;
 
     protected _connectCloseState: ConnectionState;
@@ -38,7 +38,7 @@ export class BrokerImpl implements IpcBusBroker {
     ) {
         this._endpoints = new Map();
         this._connectCloseState = new ConnectionState();
-        this._subscriptions = new ChannelConnectionMap('IPCBus:Broker', this._logger);
+        this._subscriptions = new ChannelConnectionMap('BusBroker', this._logger);
 
         this._onServerClose = this._onServerClose.bind(this);
         this._onServerError = this._onServerError.bind(this);
@@ -85,7 +85,12 @@ export class BrokerImpl implements IpcBusBroker {
         });
     }
 
-    // TODO_IK: review reset(server close flag)
+    public addClient(peer: IpcBusPeer, userClient: SocketClient): void {
+        this._logger?.info(`[BusBroker] Adding client from user ${userClient}`);
+        this._onServerConnection(userClient);
+        this._onEndpointHandshake(userClient, peer);
+    }
+
     protected _reset(): void {
         this._socketClients.forEach((socket) => {
             socket.release();
@@ -108,18 +113,18 @@ export class BrokerImpl implements IpcBusBroker {
                 this._subscriptions.remove(key);
             }
         });
-        this._logger?.info(`[IPCBus:Broker] Connection closed !`);
+        this._logger?.info(`[BrokerImpl] Connection closed !`);
     }
 
     protected _onServerClose(): void {
-        const msg = `[IPCBus:Broker] server close`;
+        const msg = `[BrokerImpl] server close`;
         this._logger?.info(msg);
         this._reset();
         this._server = undefined;
     }
 
     protected _onServerError(err: Error) {
-        const msg = `[IPCBus:Broker] server error ${err}`;
+        const msg = `[BrokerImpl] server error ${err}`;
         this._logger?.error(msg);
         this._reset();
     }
@@ -155,7 +160,7 @@ export class BrokerImpl implements IpcBusBroker {
     ): void {
         switch (ipcCommand.kind) {
             case IpcBusCommandKind.Handshake:
-                this._onEndpointHandshake(socket, ipcCommand);
+                this._onEndpointHandshake(socket, ipcCommand.peer);
                 break;
             case IpcBusCommandKind.Shutdown:
                 this._onEndpointShutdown(ipcCommand);
@@ -275,8 +280,8 @@ export class BrokerImpl implements IpcBusBroker {
         }
     }
 
-    private _onEndpointHandshake(socket: SocketClient, ipcCommand: IpcBusCommand) {
-        const endpoint: IpcBusPeerProcessEndpoint = { ...ipcCommand.peer, socket };
+    private _onEndpointHandshake(socket: SocketClient, peer: IpcBusPeer) {
+        const endpoint: IpcBusPeerProcessEndpoint = { ...peer, socket };
         const key = CreateKeyForEndpoint(endpoint);
         this._endpoints.set(key, endpoint);
     }

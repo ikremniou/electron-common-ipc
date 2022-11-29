@@ -153,15 +153,15 @@ describe('ws-connector unit tests', () => {
             it('should handle socket close after handshake correctly', () => {
                 closeHandler('close-event');
                 expect(stubbedWebSocket.off.calledThrice).to.be.true;
-                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw;
-                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw;
+                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw();
+                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw();
             });
 
             it('should handle socket error after handshake correctly', () => {
                 errorHandler('error');
                 expect(stubbedWebSocket.off.calledThrice).to.be.true;
-                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw;
-                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw;
+                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw();
+                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw();
             });
 
             it('should handle socket data event and call onConnectorCommandBase', () => {

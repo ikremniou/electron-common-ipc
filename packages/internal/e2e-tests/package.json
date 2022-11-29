@@ -7,10 +7,10 @@
     "build:test": "tsc --project ./tsconfig.json",
     "clean": "rimraf ./build",
     "test": "run-s test:node test:browser",
-    "test:node": "mocha ./build/config.js ./build/node/**/*.test.js",
-    "test:perf:node": "mocha ./build/config.js ./build/node-perf/**/*.test.js --no-timeout",
-    "test:perf:browser": "electron-mocha ./build/config.js ./build/electron-perf/**/*.test.js --no-timeout",
-    "test:browser": "electron-mocha ./build/config.js ./build/electron/**/*test.js --no-timeout",
+    "test:node": "mocha ./build/config.js ./build/node/**/*.test.js --no-timeout",
+    "test:perf:node": "mocha ./build/config.js ./build/perf/*-node/**/*.test.js --no-timeout",
+    "test:perf:browser": "electron-mocha ./build/config.js ./build/perf/*-browser/**/*.test.js --no-timeout",
+    "test:browser": "electron-mocha ./build/config.js ./build/browser/**/*test.js --no-timeout",
     "pack:bundles": "webpack"
   },
   "devDependencies": {

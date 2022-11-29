@@ -4,25 +4,31 @@ import { WsBrowserConnector } from './ws-browser-connector';
 
 import type {
     BusContainer,
-    EventEmitterLike,
-    IpcBusListener,
     IpcBusTransport,
     UuidProvider,
+    Logger,
+    IpcBusClient,
+    MessageStamp,
+    IpcBusClientEmitter,
 } from '@electron-common-ipc/universal';
 
 export interface ThinContext {
-    container?: BusContainer;
     uuidProvider: UuidProvider;
-    emitter: EventEmitterLike<IpcBusListener>;
+    emitter: IpcBusClientEmitter;
+    logger?: Logger;
+    messageStamp?: MessageStamp;
+    container?: {
+        instance: BusContainer;
+        transportSymbol: string | symbol;
+    };
 }
 
-const BrowserTransportToken = 'WsBrowserTransportToken';
-export function createWebSocketClient(ctx: ThinContext) {
-    let realTransport = ctx.container?.getSingleton<IpcBusTransport>(BrowserTransportToken);
+export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
+    let realTransport = ctx.container?.instance.getSingleton<IpcBusTransport>(ctx.container?.transportSymbol);
     if (!realTransport) {
         const connector = new WsBrowserConnector(ctx.uuidProvider, IpcBusProcessType.Browser);
         realTransport = new IpcBusTransportMulti(connector, ctx.uuidProvider);
-        ctx.container?.registerSingleton(BrowserTransportToken, realTransport);
+        ctx.container?.instance.registerSingleton(ctx.container?.transportSymbol, realTransport);
     }
 
     return new IpcBusClientImpl(ctx.emitter, realTransport);

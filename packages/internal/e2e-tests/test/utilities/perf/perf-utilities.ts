@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import type { BasicContext } from '../smoke';
+import type { BasicContext } from '../smoke-suite';
 
 export interface PerfIteration {
     operation: string;

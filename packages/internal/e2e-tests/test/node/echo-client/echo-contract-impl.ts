@@ -1,7 +1,7 @@
 import { fork } from 'child_process';
 import { join, extname } from 'path';
 
-import type { ClientHost, ProcessMessage } from '../../suites/echo-contract';
+import type { ClientHost, ProcessMessage } from '../../utilities/echo-contract';
 import type { ChildProcess } from 'child_process';
 
 export class NodeClientHost implements ClientHost {

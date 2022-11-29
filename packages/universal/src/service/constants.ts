@@ -10,4 +10,5 @@ export enum ServiceConstants {
     IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop',
 
     IPCBUS_CHANNEL = '/electron-ipc-bus',
+
 }

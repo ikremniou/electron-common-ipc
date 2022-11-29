@@ -1,17 +1,21 @@
+import { createIpcBusServiceProxy, GlobalContainer } from '@electron-common-ipc/universal';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 
-import type { ClientHost, ProcessMessage } from './echo-contract';
-import type { IpcBusBroker, IpcBusClient } from '@electron-common-ipc/universal';
+import type { IpcBusBrokerProxy } from './broker/broker-proxy';
+import type { ClientHost, ProcessMessage, EchoServiceClass } from './echo-contract';
+import type { IpcBusClient, IpcBusServiceProxy } from '@electron-common-ipc/universal';
 
 export interface BasicContext {
     /**
-     * Create a broker that will be hosted locally within current JS context
+     * Create a broker that will be hosted esther locally or remotely
+     * The connection should be established within this function
      */
-    createWebSocketBroker: () => IpcBusBroker;
+    createBroker: (port: number) => Promise<IpcBusBrokerProxy>;
     /**
      * Create a client that will be hosted locally within current JS context
      */
-    createWebSocketClient: () => IpcBusClient;
+    createBusClient: () => IpcBusClient;
     /**
      * Start client host (as node or renderer process for example)
      * @param port The port that client host will connect bus client to
@@ -19,18 +23,25 @@ export interface BasicContext {
     startClientHost(port: number): Promise<ClientHost>;
 }
 
-export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
+export interface BasicSmokeContext extends BasicContext {
+    /**
+     * Create a service proxy to execute service-to-serviceProxy tests
+     */
+    createIpcBusServiceProxy: typeof createIpcBusServiceProxy;
+}
+
+export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext) => {
     const busPort = 47474;
-    let broker: IpcBusBroker;
+    let broker: IpcBusBrokerProxy;
     let brokerClient: IpcBusClient;
 
-    describe(`[${suiteId}] perform server to client communication`, () => {
+    describe(`[${suiteId}] should perform server to client communication`, () => {
         let child: ClientHost;
         before(async () => {
-            broker = ctx.createWebSocketBroker();
-            await broker.connect(busPort);
+            GlobalContainer.reset();
+            broker = await ctx.createBroker(busPort);
 
-            brokerClient = ctx.createWebSocketClient();
+            brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
             child = await ctx.startClientHost(busPort);
         });
@@ -214,7 +225,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
         });
 
         it('should create new client send message, receive echo and close client correctly', async () => {
-            const newClient = ctx.createWebSocketClient();
+            const newClient = ctx.createBusClient();
             await newClient.connect(busPort);
 
             const echoChannel = 'replayChannel_6';
@@ -240,14 +251,13 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
         });
     });
 
-    describe(`[${suiteId}] perform client to client communication`, () => {
+    describe(`[${suiteId}] should perform client to client communication`, () => {
         let childClient1: ClientHost;
         let childClient2: ClientHost;
 
         before(async () => {
-            broker = ctx.createWebSocketBroker();
-            await broker.connect(busPort);
-            brokerClient = ctx.createWebSocketClient();
+            broker = await ctx.createBroker(busPort);
+            brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
             brokerClient.removeAllListeners();
 
@@ -348,7 +358,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
         });
 
         it('should instantly send message to the in proc client', async () => {
-            const inProcClient1 = ctx.createWebSocketClient();
+            const inProcClient1 = ctx.createBusClient();
             await inProcClient1.connect(busPort);
             const testChannel = 'in_proc_channel';
 
@@ -364,13 +374,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
         });
     });
 
-    describe(`[${suiteId}] connect and close for client, broker and host`, () => {
+    describe(`[${suiteId}] should connect and close for client, broker and host`, () => {
         let childProcess: ClientHost;
 
         beforeEach(async () => {
-            broker = ctx.createWebSocketBroker();
-            await broker.connect(busPort);
-            brokerClient = ctx.createWebSocketClient();
+            broker = await ctx.createBroker(busPort);
+            brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
 
             childProcess = await ctx.startClientHost(busPort);
@@ -391,6 +400,69 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicContext) => {
         it('should be able to close connection correctly when child process not terminated', async () => {
             await broker.close();
             await brokerClient.close();
+        });
+    });
+
+    describe(`[${suiteId}] should perform service-to-serviceProxy communication`, () => {
+        let clientHost: ClientHost;
+        let serviceProxy: IpcBusServiceProxy;
+
+        before(async () => {
+            broker = await ctx.createBroker(busPort);
+            brokerClient = ctx.createBusClient();
+            await brokerClient.connect(busPort);
+
+            clientHost = await ctx.startClientHost(busPort);
+        });
+
+        after(async () => {
+            await brokerClient.close();
+            await broker.close();
+            clientHost.close();
+        });
+
+        beforeEach(async () => {
+            clientHost.sendCommand({ type: 'start-echo-service', channel: 'test-service' });
+            await clientHost.waitForMessage('done');
+            serviceProxy = createIpcBusServiceProxy(brokerClient, 'test-service', new EventEmitter());
+            await serviceProxy.connect();
+        });
+
+        afterEach(async () => {
+            clientHost.sendCommand({ type: 'stop-echo-service' });
+            await serviceProxy.close();
+        });
+
+        it('should return same wrapper in connect called multiple times', async () => {
+            const wrapper: EchoServiceClass = await serviceProxy.connect();
+            expect(wrapper).to.exist;
+        });
+
+        it('should receive echo messages from the service', async () => {
+            const wrapper: EchoServiceClass = await serviceProxy.connect();
+            const response = await wrapper.echoMethod(['arg', { prop: 'value' }]);
+            expect(response).to.be.deep.equal(['arg', { prop: 'value' }]);
+        });
+
+        it('should receive event that is emitted from the service', async () => {
+            const wrapper: EchoServiceClass = await serviceProxy.connect();
+
+            const echoEventPromise = new Promise<void>((resolve) => {
+                const eventName = 'echo-event';
+                wrapper.on(eventName, (data) => {
+                    expect(data).to.be.equal('any');
+                    resolve();
+                });
+                clientHost.sendCommand({
+                    type: 'emit-echo-service-event',
+                    channel: eventName,
+                    content: {
+                        data: 'any',
+                    },
+                });
+            });
+
+            await expect(echoEventPromise).to.be.eventually.fulfilled;
         });
     });
 };

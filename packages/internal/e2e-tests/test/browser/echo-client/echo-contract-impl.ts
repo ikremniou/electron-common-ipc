@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
 
-import type { ClientHost, ProcessMessage } from '../../suites/echo-contract';
+import type { ClientHost, ProcessMessage } from '../../utilities/echo-contract';
 
 const isLogEnabled = false;
 export class ElectronClientHost implements ClientHost {

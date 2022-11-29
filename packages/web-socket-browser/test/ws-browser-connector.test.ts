@@ -144,16 +144,16 @@ describe('ws-browser-connector unit tests', () => {
                 stubbedWebSocket.removeEventListener.resetHistory();
                 closeHandler('close-event');
                 expect(stubbedWebSocket.removeEventListener.calledThrice).to.be.true;
-                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw;
-                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw;
+                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw();
+                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw();
             });
 
             it('should handle socket error after handshake correctly', () => {
                 stubbedWebSocket.removeEventListener.resetHistory();
                 errorHandler('error');
                 expect(stubbedWebSocket.removeEventListener.calledThrice).to.be.true;
-                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw;
-                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw;
+                expect(() => connector.postCommand({} as IpcBusCommand)).to.throw();
+                expect(() => connector.postMessage({} as IpcBusMessage)).to.throw();
             });
 
             it('should handle socket data event and call onConnectorCommandBase', () => {

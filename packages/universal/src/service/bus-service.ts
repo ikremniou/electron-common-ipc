@@ -1,3 +1,5 @@
+import type { EventEmitterLike } from '../client/event-emitter-like';
+
 export interface IpcBusServiceCall {
     handlerName: string;
     args: unknown[];
@@ -18,15 +20,12 @@ export interface ServiceStatus {
     supportEventEmitter: boolean;
 }
 
-// interface CreateOptions {
-//    depth?: number;
-// }
-
- //  (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: CreateOptions): IpcBusService | null ;
+export type ServiceEventEmitter = EventEmitterLike<Function>;
 
 export interface IpcBusService {
     start(): void;
     stop(): void;
     registerCallHandler(name: string, handler: Function): void;
+    unregisterCallHandler(name: string): void;
     sendEvent(eventName: string, ...args: any[]): void;
 }

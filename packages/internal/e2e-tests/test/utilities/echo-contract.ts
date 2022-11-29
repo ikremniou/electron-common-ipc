@@ -1,3 +1,5 @@
+import { EventEmitter } from 'events';
+
 import type { IpcBusEvent } from '@electron-common-ipc/universal';
 
 export interface MessageContent {
@@ -12,10 +14,19 @@ export interface ProcessMessage {
         | 'subscribe-echo-request'
         | 'unsubscribe-all'
         | 'request-resolve'
+        | 'start-echo-service'
+        | 'stop-echo-service'
+        | 'emit-echo-service-event'
         | 'send';
     channel?: string;
     echoChannel?: string;
     content?: MessageContent;
+}
+
+export class EchoServiceClass extends EventEmitter {
+    echoMethod(args: unknown[]): Promise<unknown[]> {
+        return Promise.resolve(args);
+    }
 }
 
 export interface ClientHost {
