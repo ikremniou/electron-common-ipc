@@ -27,7 +27,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _postRequestMessage: Function;
 
     constructor(
-        protected readonly _connector: IpcBusConnector,
+        public readonly connector: IpcBusConnector,
         private readonly _uuid: UuidProvider,
         private readonly _stamp?: MessageStamp,
         private readonly _logger?: Logger
@@ -71,7 +71,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
                 const message = this._stamp?.ackResponse(ipcResponse, local, deferredRequest.client.peer);
-                this._connector.postMessage(message);
+                this.connector.postMessage(message);
             }
             // this._logger?.info(`[IPCBusTransport] Emit request response received on channel \
             //    '${ipcCommand.channel}' from peer #${ipcCommand.peer.name} \
@@ -207,15 +207,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     connect(_client: IpcBusTransportClient | null, options: ClientConnectOptions): Promise<IpcBusPeer> {
-        return this._connector
+        return this.connector
             .handshake(this, options)
             .then((handshake) => {
                 this._stamp?.markHandshake(handshake);
                 this._logActivate = handshake.logLevel > 0;
                 // Connect to ... connector
-                this._postCommand = this._connector.postCommand.bind(this._connector);
-                this._postMessage = this._connector.postMessage.bind(this._connector);
-                this._postRequestMessage = this._connector.postMessage.bind(this._connector);
+                this._postCommand = this.connector.postCommand.bind(this.connector);
+                this._postMessage = this.connector.postMessage.bind(this.connector);
+                this._postRequestMessage = this.connector.postMessage.bind(this.connector);
                 return handshake;
             })
             .then((handshake) => {
@@ -224,7 +224,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     close(_client: IpcBusTransportClient | null, options?: ClientConnectOptions): Promise<void> {
-        return this._connector.shutdown(options);
+        return this.connector.shutdown(options);
     }
 
     createDirectChannel(client: IpcBusTransportClient): string {
@@ -232,7 +232,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        return this._connector.isTarget(ipcMessage);
+        return this.connector.isTarget(ipcMessage);
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -251,7 +251,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         //    '${ipcCommand.channel}' from peer #${ipcCommand.peer.name}`);
         if (this._logActivate) {
             const message = this._stamp?.ackMessage(ipcMessage, local, client.peer);
-            this._connector.postMessage(message, args);
+            this.connector.postMessage(message, args);
         }
         let messageHandled = false;
         if (ipcMessage.target && ipcMessage.target.id) {
@@ -346,7 +346,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     private queryConnectorState(ipcCommand: IpcBusCommand): void {
-        const queryState = this._connector.queryState();
+        const queryState = this.connector.queryState();
         this._postCommand({
             kind: IpcBusCommandKind.QueryStateResponse,
             data: {

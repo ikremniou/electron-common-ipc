@@ -27,12 +27,11 @@ export interface QueryStatePeerProcesses {
     [key: string]: QueryStatePeerProcess;
 }
 
-
 export interface QueryStateBase {
     type: 'transport' | 'transport-socket-bridge'
             | 'connector' | 'connector-renderer' | 'connector-socket'
             | 'renderer-bridge' | 'connector-ws' | 'connector-browser-ws'
-            | 'broker-bridge' | 'broker';
+            | 'broker-bridge' | 'broker' | 'connector-ws-local';
 }
 
 export interface QueryStateResponse {
@@ -51,7 +50,7 @@ export interface QueryStateSocketBridge extends QueryStateTransport {
 }
 
 export interface QueryStateConnector extends QueryStateBase {
-    type: 'connector-socket' | 'connector-renderer' | 'connector-ws' | 'connector-browser-ws';
+    type: 'connector-socket' | 'connector-renderer' | 'connector-ws' | 'connector-browser-ws' | 'connector-ws-local';
     peer: IpcBusPeer;
 }
 

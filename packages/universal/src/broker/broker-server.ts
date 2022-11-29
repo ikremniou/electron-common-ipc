@@ -1,5 +1,5 @@
-import type { SocketClient } from '../client/socket-client';
 import type { BrokerCloseOptions } from './broker';
+import type { SocketClient } from './socket-client';
 
 export interface BrokerServer {
     close(options?: BrokerCloseOptions): Promise<void>;

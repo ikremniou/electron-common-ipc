@@ -1,12 +1,20 @@
-import { BrokerImpl, ConsoleLogger } from '@electron-common-ipc/universal';
+import { ConsoleLogger, GlobalContainer } from '@electron-common-ipc/universal';
 
-import { WebSocketBrokerServerFactory } from './ws-broker-server-factory';
+import { BrokerToken, TransportToken } from '../constants';
+import { createWebSocketBroker as createThin } from './broker-factory-thin';
 
 import type { IpcBusBroker } from '@electron-common-ipc/universal';
 
 export function createWebSocketBroker(): IpcBusBroker {
     const logger = new ConsoleLogger();
-    const serverFactory = new WebSocketBrokerServerFactory();
-    const webSocketBroker = new BrokerImpl(serverFactory, logger);
-    return webSocketBroker;
+    const globalContainer = new GlobalContainer();
+
+    return createThin({
+        container: {
+            instance: globalContainer,
+            brokerToken: BrokerToken,
+            transportToken: TransportToken,
+        },
+        logger,
+    });
 }

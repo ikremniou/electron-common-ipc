@@ -2,7 +2,7 @@ import type { IpcBusCommand } from '../contract/ipc-bus-command';
 import type { IpcPacketBufferList } from 'socket-serializer';
 
 /**
- * Abstraction of the socket client. Can be Net.Socket, WebSocket or WebRTC
+ * Abstraction of the socket client for broker. Can be Net.Socket, WebSocket or WebRTC
  */
 export interface SocketClient {
     /**
@@ -32,5 +32,5 @@ export interface SocketClient {
     /**
      * Can be implemented to address correct logging messages
      */
-    [Symbol.toPrimitive]?: string;
+    [Symbol.toPrimitive]?(): string;
 }

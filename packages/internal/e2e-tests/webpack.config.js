@@ -4,7 +4,7 @@ const webpack = require('webpack');
 
 const webConfig = {
     mode: 'development',
-    entry: './test/electron/echo-client/browser-client.ts',
+    entry: './test/browser/echo-client/browser-client.ts',
     devtool: 'inline-source-map',
     target: 'web',
     module: {
@@ -27,7 +27,7 @@ const webConfig = {
     },
     output: {
         filename: 'browser-client.bundle.js',
-        path: path.join(__dirname, 'build', 'electron', 'echo-client'),
+        path: path.join(__dirname, 'build', 'browser', 'echo-client'),
     },
     plugins: [
         new webpack.ProvidePlugin({
@@ -38,7 +38,7 @@ const webConfig = {
         }),
         new CopyPlugin({
             patterns: [{
-                from: './test/electron/echo-client/browser-index.html',
+                from: './test/browser/echo-client/browser-index.html',
             }]
         })
     ],
@@ -46,7 +46,7 @@ const webConfig = {
 
 const preloadConfig = {
     mode: 'development',
-    entry: './test/electron/echo-client/browser-preload.ts',
+    entry: './test/browser/echo-client/browser-preload.ts',
     devtool: 'inline-source-map',
     target: 'electron-renderer',
     module: {
@@ -63,7 +63,7 @@ const preloadConfig = {
     },
     output: {
         filename: 'browser-preload.bundle.js',
-        path: path.join(__dirname, 'build', 'electron', 'echo-client'),
+        path: path.join(__dirname, 'build', 'browser', 'echo-client'),
     },
 };
 

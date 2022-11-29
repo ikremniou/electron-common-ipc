@@ -2,6 +2,7 @@ import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateTransport } from '../contract/query-state';
 import type { ClientCloseOptions, ClientConnectOptions, IpcBusRequestResponse } from './bus-client';
+import type { IpcBusConnector } from './bus-connector';
 import type { BusMessagePort } from './message-ports';
 
 export interface IpcBusTransportClient {
@@ -10,6 +11,8 @@ export interface IpcBusTransportClient {
 }
 
 export interface IpcBusTransport {
+    readonly connector: IpcBusConnector;
+
     connect(client: IpcBusTransportClient, options: ClientConnectOptions): Promise<IpcBusPeer>;
     close(client: IpcBusTransportClient, options?: ClientCloseOptions): Promise<void>;
 

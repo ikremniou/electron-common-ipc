@@ -1,11 +1,11 @@
 import { executeInTimeout } from '@electron-common-ipc/universal';
 import { WebSocketServer } from 'ws';
 
-import { WebSocketBrokerServer } from './ws-broker-server';
+import { WsBrokerServer } from './ws-broker-server';
 
 import type { BrokerConnectOptions, BrokerServer, BrokerServerFactory } from '@electron-common-ipc/universal';
 
-export class WebSocketBrokerServerFactory implements BrokerServerFactory {
+export class WsBrokerServerFactory implements BrokerServerFactory {
     public create(options: BrokerConnectOptions): Promise<BrokerServer> {
         if (options.path) {
             throw new Error(`You cannot specify 'path' parameter for Broker server.`);
@@ -37,7 +37,7 @@ export class WebSocketBrokerServerFactory implements BrokerServerFactory {
 
                 server.on('listening', () => {
                     server.removeAllListeners();
-                    resolve(new WebSocketBrokerServer(server));
+                    resolve(new WsBrokerServer(server));
                 });
             },
             (reject) => {

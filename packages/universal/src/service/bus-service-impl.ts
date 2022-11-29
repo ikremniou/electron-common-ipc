@@ -2,25 +2,26 @@ import { ServiceConstants } from './constants';
 import { getInstanceMethodNames, getServiceCallChannel, getServiceEventChannel } from './utilities';
 
 import type { IpcBusClient, IpcBusEvent } from '../client/bus-client';
-import type { EventEmitterLike } from '../client/event-emitter-like';
 import type { Logger } from '../log/logger';
-import type { IpcBusService, IpcBusServiceCall, IpcBusServiceEvent, ServiceStatus } from './bus-service';
-
-interface Prototype {
-    prototype: unknown;
-}
+import type {
+    IpcBusService,
+    IpcBusServiceCall,
+    IpcBusServiceEvent,
+    ServiceEventEmitter,
+    ServiceStatus,
+} from './bus-service';
 
 // Implementation of IPC service
 export class IpcBusServiceImpl implements IpcBusService {
     private readonly _callHandlers: Map<string, Function>;
     // private _eventHandlers: Map<string, Set<string>>;
-    private _prevImplEmit?: typeof this._emitter['emit'] = undefined;
+    private _prevImplEmit?: typeof this._exposedInstance['emit'] = undefined;
 
     constructor(
         private readonly _ipcBusClient: IpcBusClient,
         private readonly _serviceName: string,
-        private readonly _emitter: EventEmitterLike<Function>,
-        private readonly _exposedInstance: Partial<typeof _emitter>,
+        private readonly _exposedInstance: Partial<ServiceEventEmitter>,
+        private readonly _emitterProto?: ServiceEventEmitter,
         private readonly _logger?: Logger
     ) {
         this._callHandlers = new Map<string, Function>();
@@ -35,8 +36,7 @@ export class IpcBusServiceImpl implements IpcBusService {
         });
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
-            const asPrototype = this._emitter as unknown as Prototype;
-            const methodNames = getInstanceMethodNames(this._exposedInstance as object, asPrototype.prototype);
+            const methodNames = getInstanceMethodNames(this._exposedInstance as object, this._emitterProto);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
             for (const [methodName, methodDesc] of methodNames) {
@@ -45,16 +45,6 @@ export class IpcBusServiceImpl implements IpcBusService {
         } else {
             this._logger?.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);
         }
-    }
-
-    private _getServiceStatus(): ServiceStatus {
-        const callChannel = getServiceCallChannel(this._serviceName);
-        const serviceStatus: ServiceStatus = {
-            started: this._ipcBusClient.listenerCount(callChannel) > 0,
-            callHandlers: this._getCallHandlerNames(),
-            supportEventEmitter: this._prevImplEmit !== undefined,
-        };
-        return serviceStatus;
     }
 
     start(): void {
@@ -117,6 +107,16 @@ export class IpcBusServiceImpl implements IpcBusService {
     sendEvent(name: string, ...args: any[]): void {
         const eventMsg: IpcBusServiceEvent = { eventName: name, args: args };
         this._ipcBusClient.send(getServiceEventChannel(this._serviceName), eventMsg);
+    }
+
+    private _getServiceStatus(): ServiceStatus {
+        const callChannel = getServiceCallChannel(this._serviceName);
+        const serviceStatus: ServiceStatus = {
+            started: this._ipcBusClient.listenerCount(callChannel) > 0,
+            callHandlers: this._getCallHandlerNames(),
+            supportEventEmitter: this._prevImplEmit !== undefined,
+        };
+        return serviceStatus;
     }
 
     private _onCallReceived(event: IpcBusEvent, call: IpcBusServiceCall) {

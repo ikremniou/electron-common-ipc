@@ -70,26 +70,25 @@ function hasMethod(obj: object, name: string): PropertyDescriptor | null {
         return null;
     }
     const desc = Object.getOwnPropertyDescriptor(obj, name);
-    if (Boolean(desc) && (typeof desc.value === 'function')) {
+    if (Boolean(desc) && typeof desc.value === 'function') {
         return desc;
     }
     return null;
 }
 
-export function getInstanceMethodNames<Proto>(obj: object, emitterProto: Proto): Map<string, PropertyDescriptor> {
+export function getInstanceMethodNames<Proto>(obj: object, emitterProto?: Proto): Map<string, PropertyDescriptor> {
     const methodNames = new Map<string, PropertyDescriptor>();
 
-    Object.getOwnPropertyNames(obj)
-        .forEach(name => {
-            const desc = hasMethod(obj, name);
-            if (desc) {
-                methodNames.set(name, desc);
-            }
-        });
+    Object.getOwnPropertyNames(obj).forEach((name) => {
+        const desc = hasMethod(obj, name);
+        if (desc) {
+            methodNames.set(name, desc);
+        }
+    });
 
     let proto = Object.getPrototypeOf(obj);
     while (proto) {
-        if (proto === emitterProto) {
+        if (emitterProto && proto === emitterProto) {
             // Remove EventEmitter overriden methods
             Object.keys(emitterProto).forEach((prop) => {
                 if (prop[0] !== '_') {
@@ -98,19 +97,16 @@ export function getInstanceMethodNames<Proto>(obj: object, emitterProto: Proto):
             });
             methodNames.delete('off');
             break;
-        }
-        else if (proto === Object.prototype) {
+        } else if (proto === Object.prototype) {
             break;
         }
-        Object.getOwnPropertyNames(proto)
-            .forEach(name => {
-                const desc = hasMethod(proto, name);
-                if (desc) {
-                    methodNames.set(name, desc);
-                }
-            });
+        Object.getOwnPropertyNames(proto).forEach((name) => {
+            const desc = hasMethod(proto, name);
+            if (desc && !methodNames.has(name)) {
+                methodNames.set(name, desc);
+            }
+        });
         proto = Object.getPrototypeOf(proto);
     }
     return methodNames;
 }
-

@@ -13,8 +13,7 @@ export class WsClient implements SocketClient {
     private readonly _bufferListReader: BufferListReader;
 
     constructor(private _socket: WebSocket, private readonly _logger?: Logger) {
-        // TODO_IK: review logging
-        this._logger?.info(`[IPCBus:BrokerSocket] Connect: ${this._socket.url}`);
+        this._logger?.info(`[WsBrokerClient] Connect: ${this._socket.url}`);
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
@@ -41,7 +40,7 @@ export class WsClient implements SocketClient {
 
     public release(): void {
         // TODO_IK: review logging
-        this._logger?.info(`[IPCBus:BrokerSocket] Release: ${this._socket.url}`);
+        this._logger?.info(`[WsBrokerClient] Release: ${this._socket.url}`);
         if (this._socket) {
             // TODO_IK: review close
             this._socket.off('message', this._onSocketData);
@@ -62,9 +61,12 @@ export class WsClient implements SocketClient {
         }
     }
 
-    protected _onSocketData(rawData: RawData) {
+    [Symbol.toPrimitive](): string {
+        return `REMOTE: ${JSON.stringify(this._socket)}`;
+    }
+
+    private _onSocketData(rawData: RawData) {
         // TODO_IK: review serialization
-        // console.log(`[onSocketData] isBinary: ${isBinary}`);
         this._bufferListReader.appendBuffer(rawData as Buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {
@@ -76,13 +78,13 @@ export class WsClient implements SocketClient {
         }
     }
 
-    protected _onSocketError(err: Error) {
-        this._logger?.info(`[IPCBus:Broker] Error on connection: ${this._socket.url} - ${err}`);
+    private _onSocketError(err: Error) {
+        this._logger?.info(`[WsBrokerClient] Error on connection: ${this._socket.url} - ${err}`);
         this._onSocketErrorHandler(this, err);
     }
 
-    protected _onSocketClose() {
-        this._logger?.info(`[IPCBus:Broker] Close on connection: ${this._socket.url}`);
+    private _onSocketClose() {
+        this._logger?.info(`[WsBrokerClient] Close on connection: ${this._socket.url}`);
         this._onSocketCloseHandler(this);
         this.release();
     }
