@@ -1,8 +1,8 @@
 name: publish
-run-name: Publish
+run-name: Pull request publish. Actor is "${{ github.actor }}". Target branch is "${{ github.base_ref }}
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     branches:
       - dev
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           registry-url: https://registry.npmjs.org
 
       - name: Install Dependencies

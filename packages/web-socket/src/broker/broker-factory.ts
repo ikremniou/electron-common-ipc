@@ -11,6 +11,6 @@ export function createWebSocketBroker(): IpcBusBroker {
             instance: new GlobalContainer(),
             brokerToken: BrokerToken,
             transportToken: TransportToken,
-        }
+        },
     });
 }

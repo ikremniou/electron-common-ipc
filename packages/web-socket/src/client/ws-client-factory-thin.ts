@@ -28,10 +28,10 @@ export interface ThinContext {
 }
 
 /**
- * This method creates a new client for the IPC. 
+ * This method creates a new client for the IPC.
  * If you pass container in the context then it is possible to create a local client for
  * the IpcBusBroker that will not push message to IPC to reach broker, but call it directly
- * 
+ *
  * If this factory method is using container then the transport object will be reused to
  * manage messaging between local clients, that will improve the performance greatly
  * @param ctx The context of the factory
