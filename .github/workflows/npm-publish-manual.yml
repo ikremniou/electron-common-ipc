@@ -58,8 +58,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
         shell: bash
         run: |
-          git config user.name "ci.bot"
-          git config user.email "ci.bot@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
           bump_message="\"chore(release): manual package versions update\""
           force_publish="" && [[ -n "${{ inputs.force_publish }}" ]] && force_publish="--force-publish=${{ inputs.force_publish }}"
