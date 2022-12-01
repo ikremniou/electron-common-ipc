@@ -3,9 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 const webConfig = {
-    mode: 'development',
     entry: './test/browser/echo-client/browser-client.ts',
-    devtool: 'inline-source-map',
     target: 'web',
     module: {
         rules: [
@@ -17,12 +15,6 @@ const webConfig = {
         ],
     },
     resolve: {
-        fallback: {
-            'buffer': require.resolve('buffer'),
-            'events': require.resolve('events'),
-            'path': false,
-            'fs': false
-        },
         extensions: ['.ts', '.js'],
     },
     output: {
@@ -33,9 +25,6 @@ const webConfig = {
         new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
         }),
-        new webpack.ProvidePlugin({
-            process: 'process/browser',
-        }),
         new CopyPlugin({
             patterns: [{
                 from: './test/browser/echo-client/browser-index.html',
@@ -45,9 +34,7 @@ const webConfig = {
 };
 
 const preloadConfig = {
-    mode: 'development',
     entry: './test/browser/echo-client/browser-preload.ts',
-    devtool: 'inline-source-map',
     target: 'electron-renderer',
     module: {
         rules: [

@@ -1,5 +1,5 @@
 name: publish
-run-name: Pull request publish. Actor is "${{ github.actor }}". Target branch is "${{ github.base_ref }}
+run-name: Pull request publish. Actor is "${{ github.actor }}". Target branch is "${{ github.base_ref }}"
 
 on:
   pull_request_target:
@@ -32,8 +32,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
         shell: bash
         run: |
-          git config user.name "ci.bot"
-          git config user.email "ci.bot@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
           target_branch="${{ github.base_ref }}"
           bump_message="\"chore(release): update package versions\""
