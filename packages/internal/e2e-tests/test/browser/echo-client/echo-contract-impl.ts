@@ -56,7 +56,7 @@ export class ElectronClientHost implements ClientHost {
 
 export async function startClientHost(port: number): Promise<ClientHost> {
     const browserWindow = new BrowserWindow({
-        show: true,
+        show: false,
         webPreferences: {
             contextIsolation: false,
             additionalArguments: [`--port=${port}`, `--log=${isLogEnabled}`],
