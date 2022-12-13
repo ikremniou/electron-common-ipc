@@ -4,6 +4,7 @@ import {
     executeInTimeout,
     IpcBusConnectorImpl,
 } from '@electron-common-ipc/universal';
+import { Buffer } from 'buffer';
 import { JSONParserV1 } from 'json-helpers';
 import { BufferListReader, IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer';
 

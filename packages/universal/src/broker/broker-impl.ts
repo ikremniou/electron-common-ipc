@@ -149,7 +149,7 @@ export class BrokerImpl implements IpcBusBroker {
         if (this._server) {
             socket.release();
             this._socketClients.splice(this._socketClients.indexOf(socket), 1);
-            // this._socketCleanUp(socket);
+            this._socketCleanUp(socket);
         }
     }
 

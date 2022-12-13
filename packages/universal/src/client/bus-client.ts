@@ -53,6 +53,7 @@ export interface IpcBusClient extends IpcBusClientEmitter {
 
     postMessage(channel: string, message: unknown, messagePorts?: BusMessagePort[]): void;
     postMessageTo(target: IpcBusPeer, channel: string, message: unknown, messagePorts?: BusMessagePort[]): void;
+    onClosed(handler: () => void): void;
 }
 
 export type { IpcTimeoutOptions as ClientCloseOptions } from './ipc-connect-options';

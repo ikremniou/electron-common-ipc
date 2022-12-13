@@ -14,8 +14,8 @@ import type {
 // Implementation of IPC service
 export class IpcBusServiceImpl implements IpcBusService {
     private readonly _callHandlers: Map<string, Function>;
-    // private _eventHandlers: Map<string, Set<string>>;
     private _prevImplEmit?: typeof this._exposedInstance['emit'] = undefined;
+    private _isStarted: boolean;
 
     constructor(
         private readonly _ipcBusClient: IpcBusClient,
@@ -48,6 +48,10 @@ export class IpcBusServiceImpl implements IpcBusService {
     }
 
     start(): void {
+        if (this._isStarted) {
+            return;
+        }
+
         if (this._exposedInstance && this._exposedInstance['emit']) {
             // Hook events emitted by implementation to send them via IPC
             this._prevImplEmit = this._exposedInstance['emit'];
@@ -75,6 +79,7 @@ export class IpcBusServiceImpl implements IpcBusService {
         this.sendEvent(ServiceConstants.IPCBUS_SERVICE_EVENT_START, this._getServiceStatus());
 
         this._logger?.info(`[IpcService] Service '${this._serviceName}' is STARTED`);
+        this._isStarted = true;
     }
 
     stop(): void {
@@ -92,6 +97,7 @@ export class IpcBusServiceImpl implements IpcBusService {
         this._ipcBusClient.removeListener(callChannel, this._onCallReceived);
 
         this._logger?.info(`[IpcService] Service '${this._serviceName}' is STOPPED`);
+        this._isStarted = false;
     }
 
     registerCallHandler(name: string, handler: Function): void {

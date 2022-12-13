@@ -1,7 +1,7 @@
 interface CommonEmitter {
     eventNames(): (symbol | string)[];
     listenerCount(eventName: string): number;
-    setMaxListeners(maxListeners: number): void;
+    setMaxListeners?(maxListeners: number): void;
     listeners(eventName: string): Function[]; 
 }
 
@@ -16,9 +16,6 @@ export interface ChannelEmitterLike<Listener> extends CommonEmitter {
     on(channel: string, listener: Listener): ChannelEmitterLike<Listener>;
     once(channel: string, listener: Listener): ChannelEmitterLike<Listener>;
     off(channel: string, listener: Listener): ChannelEmitterLike<Listener>;
-
-    prependListener(channel: string, listener: Listener): ChannelEmitterLike<Listener>;
-    prependOnceListener(channel: string, listener: Listener): ChannelEmitterLike<Listener>;
 }
 
 export interface EventEmitterLike<Listener> extends CommonEmitter {
@@ -31,9 +28,6 @@ export interface EventEmitterLike<Listener> extends CommonEmitter {
     on(event: string, listener: Listener): ChannelEmitterLike<Listener>;
     once(event: string, listener: Listener): ChannelEmitterLike<Listener>;
     off(event: string, listener: Listener): ChannelEmitterLike<Listener>;
-
-    prependListener(event: string, listener: Listener): ChannelEmitterLike<Listener>;
-    prependOnceListener(event: string, listener: Listener): ChannelEmitterLike<Listener>;
 }
 
 
