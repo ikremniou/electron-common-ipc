@@ -13,7 +13,7 @@ const process = window.electronProcess;
 const ipcRenderer = window.ipcRenderer;
 const clientId = String(process.pid);
 const clientPort = Number(process.argv.find((argv: string) => argv.startsWith('--port')).split('=')[1]);
-const shouldLog = Boolean(process.argv.find((argv: string) => argv.startsWith('--log'))?.split('=')[1]);
+const shouldLog = process.argv.find((argv: string) => argv.startsWith('--log'))?.split('=')[1] === 'true';
 const sendBack = (message: unknown) => {
     ipcRenderer.send('ack', message);
 };

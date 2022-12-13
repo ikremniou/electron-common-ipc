@@ -40,4 +40,5 @@ export interface IpcBusTransport {
     ): void;
 
     queryState(): QueryStateTransport;
+    onClosed(handler: () => void): unknown;
 }

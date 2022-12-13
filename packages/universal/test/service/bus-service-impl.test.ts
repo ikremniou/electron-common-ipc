@@ -152,4 +152,10 @@ describe('bus-service-proxy-impl', () => {
         stubbedClient.addListener.lastCall.args[1](event, serviceCall);
         sinon.assert.calledOnceWithMatch(rejectSpy, sinon.match.any);
     });
+
+    it('should not cause the stack overflow if start called multiple times', () => {
+        service.start();
+        service.start();
+        expect(() => stubbedInstance.emit('some-event', 'args')).to.not.throw();
+    });
 });

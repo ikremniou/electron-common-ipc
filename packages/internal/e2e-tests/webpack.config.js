@@ -1,6 +1,5 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
-const webpack = require('webpack');
 
 const webConfig = {
     entry: './test/browser/echo-client/browser-client.ts',
@@ -22,9 +21,6 @@ const webConfig = {
         path: path.join(__dirname, 'build', 'browser', 'echo-client'),
     },
     plugins: [
-        new webpack.ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
-        }),
         new CopyPlugin({
             patterns: [{
                 from: './test/browser/echo-client/browser-index.html',

@@ -401,6 +401,53 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             await broker.close();
             await brokerClient.close();
         });
+
+        it('should send client to client messages correctly if one of the host was terminated', async () => {
+            const clientHost1 = await ctx.startClientHost(busPort);
+            const clientHost2 = await ctx.startClientHost(busPort);
+
+            const subTestChannel1 = 'test_channel_1';
+            const subTestChannel2 = 'test_channel_2';
+            const subTestChannel3 = 'test_channel_2';
+
+            const message: ProcessMessage = { type: 'subscribe-report' };
+            message.channel = subTestChannel1;
+            clientHost1.sendCommand(message);
+            message.channel = subTestChannel2;
+            clientHost2.sendCommand(message);
+            message.channel = subTestChannel3;
+            childProcess.sendCommand(message);
+
+            await Promise.all([
+                clientHost1.waitForMessage('done'),
+                clientHost2.waitForMessage('done'),
+                childProcess.waitForMessage('done'),
+            ]);
+
+            clientHost2.close();
+
+            await new Promise<void>((resolve) => {
+                setTimeout(resolve, 100);
+            });
+
+            // send message from client 1 to client 3
+            message.type = 'send';
+            message.channel = subTestChannel3;
+            message.content = { data: 'any' };
+            clientHost1.sendCommand(message);
+
+            let receivedData: string = '';
+            await childProcess.waitForMessage((message) => {
+                if (message.type === 'subscribe-report') {
+                    receivedData = message.content.data as string;
+                    return true;
+                }
+                return false;
+            });
+
+            clientHost1.close();
+            expect(receivedData).to.be.equal('any');
+        });
     });
 
     describe(`[${suiteId}] should perform service-to-serviceProxy communication`, () => {

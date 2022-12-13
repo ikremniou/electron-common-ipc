@@ -1,11 +1,10 @@
-
 import { CreateMessageTarget, CreateTargetChannel } from '../contract/command-helpers';
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 import { CheckTimeout } from '../utils';
 import { DeferredRequestPromise } from '../utils/deferred-request';
 import { CastToMessagePort } from './message-ports';
 
-import type { IpcBusCommand , IpcBusCommandBase} from '../contract/ipc-bus-command';
+import type { IpcBusCommand, IpcBusCommandBase } from '../contract/ipc-bus-command';
 import type { IpcBusMessage, MessageRequest } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateTransport } from '../contract/query-state';
@@ -25,6 +24,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _postCommand: PostCommandFunction;
     protected _postMessage: PostMessageFunction;
     protected _postRequestMessage: Function;
+    private _closeHandler: () => void;
 
     constructor(
         public readonly connector: IpcBusConnector,
@@ -131,6 +131,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // Cut connection
         this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler;
         // no messages to send, it is too late
+        this._closeHandler?.();
+        this._closeHandler = undefined;
     }
 
     // IpcConnectorClient
@@ -224,6 +226,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     close(_client: IpcBusTransportClient | null, options?: ClientConnectOptions): Promise<void> {
+        this._closeHandler = undefined;
         return this.connector.shutdown(options);
     }
 
@@ -233,6 +236,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
         return this.connector.isTarget(ipcMessage);
+    }
+
+    onClosed(handler: () => void): void {
+        this._closeHandler = handler;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
