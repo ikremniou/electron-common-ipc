@@ -4,12 +4,11 @@ import { ServiceConstants } from './constants';
 import { Deferred, getServiceCallChannel, getServiceEventChannel } from './utilities';
 
 import type { IpcBusClient, IpcBusEvent, IpcBusRequestResponse } from '../client/bus-client';
-import type { EventEmitterLike } from '../client/event-emitter-like';
 import type { Logger } from '../log/logger';
-import type { IpcBusServiceEvent, ServiceEventEmitter, ServiceStatus } from './bus-service';
+import type { IpcBusServiceEvent, ServiceCallback, ServiceEventEmitter, ServiceStatus } from './bus-service';
 import type { IpcBusServiceProxy, ServiceProxyConnectOptions, ServiceProxyCreateOptions } from './bus-service-proxy';
 
-interface CallWrapperEventEmitter extends EventEmitterLike<Function> {
+interface CallWrapperEventEmitter extends ServiceEventEmitter {
     [key: string]: Function;
 }
 
@@ -27,7 +26,7 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
         private readonly _options?: ServiceProxyCreateOptions,
         private readonly _logger?: Logger
     ) {
-        this._emitter?.setMaxListeners(0);
+        this._emitter?.setMaxListeners?.(0);
 
         this._options = CheckTimeoutOptions(this._options);
 
@@ -40,11 +39,11 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
         this._onServiceReceived = this._onServiceReceived.bind(this);
     }
 
-    get emitter(): IpcBusServiceProxy {
+    get emitter(): ServiceEventEmitter {
         if (!this._emitter) {
             throw new Error(`Event Emitter is not available. Please pass 'emitter' to the constructor`);
         }
-        return this;
+        return this._emitter;
     }
 
     get wrapper(): Object {
@@ -108,11 +107,11 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
         return this._emitter.emit(event, ...args);
     }
 
-    addListener(event: string, listener: Function): ServiceEventEmitter {
+    addListener(event: string, listener: ServiceCallback): ServiceEventEmitter {
         return this._emitter.addListener(event, listener);
     }
 
-    removeListener(event: string, listener: Function): ServiceEventEmitter {
+    removeListener(event: string, listener: ServiceCallback): ServiceEventEmitter {
         return this._emitter.removeListener(event, listener);
     }
 
@@ -120,24 +119,16 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
         return this._emitter.removeAllListeners(event);
     }
 
-    on(event: string, listener: Function): ServiceEventEmitter {
+    on(event: string, listener: ServiceCallback): ServiceEventEmitter {
         return this._emitter.on(event, listener);
     }
 
-    once(event: string, listener: Function): ServiceEventEmitter {
+    once(event: string, listener: ServiceCallback): ServiceEventEmitter {
         return this._emitter.once(event, listener);
     }
 
-    off(event: string, listener: Function): ServiceEventEmitter {
+    off(event: string, listener: ServiceCallback): ServiceEventEmitter {
         return this._emitter.off(event, listener);
-    }
-
-    prependListener(event: string, listener: Function): ServiceEventEmitter {
-        return this._emitter.prependListener(event, listener);
-    }
-
-    prependOnceListener(event: string, listener: Function): ServiceEventEmitter {
-        return this._emitter.prependOnceListener(event, listener);
     }
 
     eventNames(): (string | symbol)[] {
@@ -146,10 +137,6 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
 
     listenerCount(eventName: string): number {
         return this._emitter.listenerCount(eventName);
-    }
-
-    setMaxListeners(maxListeners: number): void {
-        this._emitter.setMaxListeners(maxListeners);
     }
 
     listeners(eventName: string): Function[] {
@@ -261,9 +248,7 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
                 this._logger?.info(
                     `[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`
                 );
-                this._wrapper.emit(msg.args[0] as string, ...(msg.args[1] as unknown[]));
-                // why are we throwing event via emit if it is for wrapper?  2 times?
-                this.emit(msg.args[0] as string, ...(msg.args[1] as unknown[]));
+                this.emitter.emit(msg.args[0] as string, ...(msg.args[1] as unknown[]));
                 return;
             }
             this._logger?.info(`[IpcBusServiceProxy] Service '${this._serviceName}' receive event '${msg.eventName}'`);
@@ -290,7 +275,7 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
             this._logger?.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STARTED`);
             this._updateWrapper(serviceStatus);
             if (this._emitter) {
-                this.emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_START, serviceStatus);
+                this._emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_START, serviceStatus);
             }
 
             this._pendingCalls.forEach((deferred) => {
@@ -306,7 +291,7 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
             this._logger?.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
 
             if (this._emitter) {
-                this.emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
+                this._emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
             }
 
             this._pendingCalls.forEach((deferred) => {

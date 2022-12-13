@@ -25,7 +25,7 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
         private readonly _emitter: EventEmitterLike<IpcBusListener>,
         private readonly _transport: IpcBusTransport
     ) {
-        this._emitter.setMaxListeners(0);
+        this._emitter.setMaxListeners?.(0);
         this._connectCloseState = new ConnectionState();
     }
 
@@ -100,30 +100,29 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
         return this._transport.postMessage(this, undefined, channel, [message], messagePorts);
     }
 
-    postMessageTo(
-        target: IpcBusPeer,
-        channel: string,
-        message: unknown,
-        messagePorts?: BusMessagePort[]
-    ): void {
+    postMessageTo(target: IpcBusPeer, channel: string, message: unknown, messagePorts?: BusMessagePort[]): void {
         channel = CheckChannel(channel);
         return this._transport.postMessage(this, target, channel, [message], messagePorts);
     }
-    
+
+    onClosed(handler: () => void): void {
+        this._transport.onClosed(handler);
+    }
+
+    setMaxListeners?(maxListeners: number): void {
+        this._emitter.setMaxListeners?.(maxListeners);
+    }
+
     listeners(eventName: string): Function[] {
         return this._emitter.listeners(eventName);
     }
-    
+
     eventNames(): (symbol | string)[] {
         return this._emitter.eventNames();
     }
 
     listenerCount(eventName: string): number {
         return this._emitter.listenerCount(eventName);
-    }
-
-    setMaxListeners(maxListeners: number): void {
-        this._emitter.setMaxListeners(maxListeners);
     }
 
     emit(event: string, ...args: any[]): boolean {
@@ -164,17 +163,5 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
         }
         this._transport.removeChannel(this, channel, true);
         return this._emitter.removeAllListeners(channel);
-    }
-
-    prependListener(channel: string, listener: IpcBusListener): EventEmitterLike<IpcBusListener> {
-        channel = CheckChannel(channel);
-        this._transport.addChannel(this, channel);
-        return this._emitter.prependListener(channel, listener);
-    }
-
-    prependOnceListener(channel: string, listener: IpcBusListener): EventEmitterLike<IpcBusListener> {
-        channel = CheckChannel(channel);
-        this._transport.addChannel(this, channel);
-        return this._emitter.prependOnceListener(channel, listener);
     }
 }

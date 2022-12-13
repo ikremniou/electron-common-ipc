@@ -44,6 +44,7 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClien
     release(): void {
         this._passDataToBroker = undefined;
         this._passCloseToBroker = undefined;
+        this.onConnectorShutdown();
     }
 
     [Symbol.toPrimitive](): string {
@@ -60,11 +61,17 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClien
         }
 
         this.addClient(client);
+        this.onConnectorHandshake();
         return Promise.resolve({ peer: this.peer });
     }
 
     public shutdown(_options?: ClientCloseOptions): Promise<void> {
-        this._passCloseToBroker?.(this);
+        if (this._passCloseToBroker) {
+            this.onConnectorBeforeShutdown();
+            this._passCloseToBroker(this);
+            return Promise.resolve();
+        }
+        this.onConnectorShutdown();
         return Promise.resolve();
     }
 

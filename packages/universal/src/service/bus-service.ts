@@ -20,12 +20,13 @@ export interface ServiceStatus {
     supportEventEmitter: boolean;
 }
 
-export type ServiceEventEmitter = EventEmitterLike<Function>;
+export type ServiceCallback = (...args: any[]) => void;
+export type ServiceEventEmitter = EventEmitterLike<ServiceCallback>;
 
 export interface IpcBusService {
     start(): void;
     stop(): void;
-    registerCallHandler(name: string, handler: Function): void;
+    registerCallHandler(name: string, handler: ServiceCallback): void;
     unregisterCallHandler(name: string): void;
     sendEvent(eventName: string, ...args: any[]): void;
 }

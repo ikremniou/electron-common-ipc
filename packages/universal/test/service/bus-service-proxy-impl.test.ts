@@ -13,11 +13,13 @@ import type { IpcBusServiceProxy } from '../../lib/service/bus-service-proxy';
 describe('ipc-bus-service-proxy-impl', () => {
     let ipcBusClientMock: sinon.SinonStubbedInstance<IpcBusClientImpl>;
     let ipcBusServiceProxy: IpcBusServiceProxy;
+    let eventEmitter: EventEmitter;
     const commonServiceName = 'service-1';
 
     beforeEach(() => {
         ipcBusClientMock = sinon.createStubInstance(IpcBusClientImpl);
-        ipcBusServiceProxy = new IpcBusServiceProxyImpl(ipcBusClientMock, commonServiceName, new EventEmitter());
+        eventEmitter = new EventEmitter();
+        ipcBusServiceProxy = new IpcBusServiceProxyImpl(ipcBusClientMock, commonServiceName, eventEmitter);
     });
 
     it('should release the subscription if remove service is not started', async () => {
@@ -70,8 +72,8 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should emit start event when services is connected', async () => {
         ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
-        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
-        ipcBusServiceProxy.emit = emitSpy;
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
 
         await ipcBusServiceProxy.connect();
         sinon.assert.calledOnceWithExactly(emitSpy, ServiceConstants.IPCBUS_SERVICE_EVENT_START, sinon.match.any);
@@ -79,8 +81,8 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should emit stop event if stopped explicitly', async () => {
         ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
-        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
-        ipcBusServiceProxy.emit = emitSpy;
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
         await ipcBusServiceProxy.connect();
         await ipcBusServiceProxy.close();
         expect(emitSpy.lastCall.firstArg).to.be.equal(ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
@@ -275,15 +277,18 @@ describe('ipc-bus-service-proxy-impl', () => {
 
         await ipcBusServiceProxy.connect();
 
+        let eventWasCalled = false;
         const wrapper: EventEmitter = ipcBusServiceProxy.getWrapper();
-        const emitSpy = sinon.spy(wrapper.emit);
-        wrapper.emit = emitSpy;
+        wrapper.on('my_event', () => {
+            eventWasCalled = true;
+        });
 
         ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
             args: ['my_event', ['arg1', 'arg2']],
         });
-        sinon.assert.calledWith(emitSpy, 'my_event', 'arg1', 'arg2');
+        
+        expect(eventWasCalled).to.be.equal(true);
     });
 
     it('should emit unknown even from the service', async () => {
@@ -293,8 +298,8 @@ describe('ipc-bus-service-proxy-impl', () => {
 
         await ipcBusServiceProxy.connect();
 
-        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
-        ipcBusServiceProxy.emit = emitSpy;
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
 
         ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: 'my_event',
@@ -309,8 +314,8 @@ describe('ipc-bus-service-proxy-impl', () => {
 
         await expect(ipcBusServiceProxy.connect()).to.be.eventually.rejected;
 
-        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
-        ipcBusServiceProxy.emit = emitSpy;
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
 
         ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_START,
@@ -327,8 +332,8 @@ describe('ipc-bus-service-proxy-impl', () => {
 
         await ipcBusServiceProxy.connect();
 
-        const emitSpy = sinon.spy(ipcBusServiceProxy.emit);
-        ipcBusServiceProxy.emit = emitSpy;
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
 
         ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_STOP,
@@ -411,5 +416,26 @@ describe('ipc-bus-service-proxy-impl', () => {
                 args: ['event', 'my_arg'],
             })
         ).to.throw();
+    });
+    
+    it('should emit service event 2 times on service and on emitter',async () => {
+        const eventEmitter = new EventEmitter();
+        const emitSpy = sinon.spy(eventEmitter.emit);
+        eventEmitter.emit = emitSpy;
+        const proxy = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service', eventEmitter);
+        ipcBusClientMock.request
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await proxy.connect();
+        
+        emitSpy.resetHistory();
+
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+            eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
+            args: ['my_event', ['arg1', 'arg2']],
+        });
+        
+        sinon.assert.calledOnceWithExactly(emitSpy, 'my_event', 'arg1', 'arg2');
     });
 });

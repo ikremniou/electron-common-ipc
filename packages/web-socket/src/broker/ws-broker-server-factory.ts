@@ -7,19 +7,17 @@ import type { BrokerConnectOptions, BrokerServer, BrokerServerFactory } from '@e
 
 export class WsBrokerServerFactory implements BrokerServerFactory {
     public create(options: BrokerConnectOptions): Promise<BrokerServer> {
-        if (options.path) {
-            throw new Error(`You cannot specify 'path' parameter for Broker server.`);
-        }
+        options.host = options.host || '127.0.0.1';
 
         if (!options.port) {
-            throw new Error(`You must specify 'port' parameter to create Broker server.`);
+            throw new Error(`You must specify 'port' parameter to start Broker`);
         }
 
         if (options.timeoutDelay && options.timeoutDelay < 0) {
             throw new Error(`The 'timeoutDelay' parameter must be >= 0.`);
         }
 
-        const server = new WebSocketServer({ host: '127.0.0.1', port: options.port, clientTracking: false });
+        const server = new WebSocketServer({ host: options.host, port: options.port, clientTracking: false });
         return executeInTimeout(
             options.timeoutDelay,
             (resolve, reject) => {

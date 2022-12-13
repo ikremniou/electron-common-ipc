@@ -43,11 +43,11 @@
         "csv-stringify": "^6.0.4",
         "electron-process-type": "~4.2.0",
         "fs-extra": "^10.0.0",
-        "json-helpers": "^5.2.0",
+        "json-helpers": "^5.2.1",
         "nanoid": "^3.1.30",
         "queue-microtask": "^1.2.3",
         "semver": "^7.3.5",
-        "socket-serializer": "^12.0.1",
+        "socket-serializer": "^12.0.2",
         "uuid": "^8.3.2",
         "winston": "~3.3.3"
     },

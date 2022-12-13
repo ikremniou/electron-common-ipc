@@ -1,7 +1,7 @@
 import type { IpcConnectOptions, IpcTimeoutOptions } from '../client/ipc-connect-options';
 
 const enum Constants {
-    IpcBusTimeout = 2000
+    IpcBusTimeout = 2000,
 }
 
 const enum Win32Pipes {
@@ -37,7 +37,7 @@ export function CheckChannel(channel: unknown): string {
 
 export function CheckTimeoutOptions(val?: IpcTimeoutOptions): IpcTimeoutOptions {
     val = val || { timeoutDelay: Constants.IpcBusTimeout };
-    
+
     if (val.timeoutDelay === undefined) {
         val.timeoutDelay = Constants.IpcBusTimeout;
     }
@@ -68,17 +68,24 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(
         options.port = Number(arg1);
         options.host = typeof arg2 === 'string' ? arg2 : undefined;
     }
-    // A 'hostname:port' pattern : 'localhost:8082'
-    // A path : '//local-ipc'
     else if (typeof arg1 === 'string') {
-        const parts = arg1.split(':');
-        if (parts.length === 2 && Number(parts[1]) >= 0) {
-            options.port = Number(parts[1]);
-            options.host = parts[0];
-        } else {
-            options.path = arg1;
+        try {
+            // First check if it is a valid URL
+            const url = new URL(arg1);
+            options.host = url.hostname;
+            options.port = Number(url.port);
+        } catch {
+            // A 'hostname:port' pattern : 'localhost:8082'
+            const parts = arg1.split(':');
+            if (parts.length === 2 && Number(parts[1]) >= 0) {
+                options.port = Number(parts[1]);
+                options.host = parts[0];
+            } else {
+                options.path = arg1;
+            }
         }
     }
+    // A path : '//local-ipc'
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
     if (options.path) {
         options.path = CleanPipeName(options.path);

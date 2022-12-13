@@ -96,8 +96,8 @@ export class WsConnector extends IpcBusConnectorImpl {
             return executeInTimeout(
                 options.timeoutDelay,
                 (resolve, reject) => {
-                    const socketUrl = new URL(options.path || 'ws://127.0.0.1');
-                    socketUrl.port = socketUrl.port || String(options.port);
+                    options.host = options.host || '127.0.0.1';
+                    const socketUrl = new URL(`ws://${options.host}:${options.port}`);
                     this._socket = new WebSocket(socketUrl);
 
                     onSocketError = (error: Error) => {

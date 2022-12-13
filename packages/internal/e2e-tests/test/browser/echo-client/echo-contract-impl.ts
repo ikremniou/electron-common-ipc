@@ -29,7 +29,7 @@ export class ElectronClientHost implements ClientHost {
                         isLogEnabled && console.log(`[MainHost][Wait] Resolved ${message}`);
                         this._delayed.forEach(func => func());
                         this._delayed.length = 0;
-                    });
+                    }, 10);
                 };
                 if (channel === 'ack') {
                     isLogEnabled && console.log(`[MainHost][Wait] Got message ${message}`);
