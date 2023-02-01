@@ -2,9 +2,9 @@ import { performance as perf, PerformanceObserver } from 'perf_hooks';
 
 import { writeReportTo } from './perf-utilities';
 
-import type { IpcBusBrokerProxy } from '../broker/broker-proxy';
-import type { ClientHost, ProcessMessage } from '../echo-contract';
-import type { PerfContext, PerfResult} from './perf-utilities';
+import type { PerfContext, PerfResult } from './perf-utilities';
+import type { IpcBusBrokerProxy } from '../../clients/broker/broker-proxy';
+import type { ClientHost, ToClientProcessMessage } from '../../clients/echo-contract';
 
 export interface PerfRequestContext extends PerfContext {
     numberRequests: number;
@@ -24,12 +24,10 @@ export function perfRequestSuite(ctx: PerfRequestContext): void {
         await brokerClient.connect(busPort);
         clientHost = await ctx.startClientHost(busPort);
 
-        const requestResolve: ProcessMessage = {
+        const requestResolve: ToClientProcessMessage = {
             type: 'request-resolve',
             channel,
-            content: {
-                data: true
-            }
+            data: true,
         };
 
         clientHost.sendCommand(requestResolve);
@@ -52,7 +50,7 @@ export function perfRequestSuite(ctx: PerfRequestContext): void {
         const currPerfResult: PerfResult = {
             iterations: [],
             objectType,
-            name: ctx.name
+            name: ctx.name,
         };
 
         describe(`Perf for object type: ${objectType}`, () => {
@@ -63,7 +61,6 @@ export function perfRequestSuite(ctx: PerfRequestContext): void {
                     for (const item of items.getEntries()) {
                         currPerfResult.iterations.push({ operation: item.name, time: item.duration });
                     }
-
                 });
                 observer.observe({ entryTypes: ['measure'] });
             });

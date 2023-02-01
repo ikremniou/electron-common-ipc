@@ -1,17 +1,17 @@
+import { IpcBusTransportImpl } from './bus-transport-impl';
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 import { ChannelConnectionMap } from '../utils/channel-map';
-import { IpcBusTransportImpl } from './bus-transport-impl';
 
+import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
+import type { IpcBusConnector } from './bus-connector';
+import type { IpcBusTransportClient } from './bus-transport';
+import type { BusMessagePort } from './message-ports';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateChannels, QueryStatePeers, QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
-import type { IpcBusConnector } from './bus-connector';
-import type { IpcBusTransportClient } from './bus-transport';
-import type { BusMessagePort } from './message-ports';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export class IpcBusTransportMulti extends IpcBusTransportImpl {

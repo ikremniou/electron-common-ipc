@@ -1,8 +1,6 @@
 import { ServiceConstants } from './constants';
 import { getInstanceMethodNames, getServiceCallChannel, getServiceEventChannel } from './utilities';
 
-import type { IpcBusClient, IpcBusEvent } from '../client/bus-client';
-import type { Logger } from '../log/logger';
 import type {
     IpcBusService,
     IpcBusServiceCall,
@@ -10,6 +8,8 @@ import type {
     ServiceEventEmitter,
     ServiceStatus,
 } from './bus-service';
+import type { IpcBusClient, IpcBusEvent } from '../client/bus-client';
+import type { Logger } from '../log/logger';
 
 // Implementation of IPC service
 export class IpcBusServiceImpl implements IpcBusService {

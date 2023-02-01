@@ -1,3 +1,4 @@
+import type { SocketClient } from './socket-client';
 import type {
     CloseFunction,
     ConnectFunction,
@@ -5,7 +6,6 @@ import type {
     IpcTimeoutOptions,
 } from '../client/ipc-connect-options';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
-import type { SocketClient } from './socket-client';
 
 export type BrokerConnectOptions = IpcConnectOptions;
 export type BrokerCloseOptions = IpcTimeoutOptions;

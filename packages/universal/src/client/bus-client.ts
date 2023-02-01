@@ -1,7 +1,7 @@
-import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { ChannelEmitterLike } from './event-emitter-like';
 import type { CloseFunction, ConnectFunction, IpcConnectOptions, IpcTimeoutOptions } from './ipc-connect-options';
 import type { BusMessagePort } from './message-ports';
+import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 
 export interface IpcBusRequest {
     resolve(payload: unknown): void;

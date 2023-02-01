@@ -162,7 +162,7 @@ export function RegisterSingleton<T>(symbolName: string, singleton: T) {
 
 /** @internal */
 export class Logger {
-    static enable: boolean = true;
+    static enable: boolean = false;
     static service: boolean = false;
     // static logFile: string;
 

@@ -2,8 +2,13 @@ import { createIpcBusServiceProxy, GlobalContainer } from '@electron-common-ipc/
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 
-import type { IpcBusBrokerProxy } from './broker/broker-proxy';
-import type { ClientHost, ProcessMessage, EchoServiceClass } from './echo-contract';
+import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
+import type {
+    ClientHost,
+    ToClientProcessMessage,
+    EchoServiceClass,
+    ToHostProcessMessage,
+} from '../clients/echo-contract';
 import type { IpcBusClient, IpcBusServiceProxy } from '@electron-common-ipc/universal';
 
 export interface BasicContext {
@@ -59,7 +64,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         it('should subscribe to the channel and echo string back', async () => {
             const echoChannel = 'replayChannel_0';
             const channel = 'testChannel_0';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo',
                 channel,
                 echoChannel,
@@ -80,7 +85,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         it('should unsubscribe from the replay channel', async () => {
             const echoChannel = 'replayChannel_1';
             const channel = 'testChannel_1';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo',
                 channel,
                 echoChannel,
@@ -89,7 +94,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             child.sendCommand(processMessage);
             await child.waitForMessage('done');
 
-            const unsubscribeMes: ProcessMessage = {
+            const unsubscribeMes: ToClientProcessMessage = {
                 type: 'unsubscribe-all',
                 channel,
             };
@@ -117,7 +122,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             const numberOfSubs = 2;
             const echoChannel = 'replayChannel_2';
             const channel = 'testChannel_2';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo',
                 channel,
                 echoChannel,
@@ -143,7 +148,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         it('should sendTo the peer that echoed the message', async () => {
             const echoChannel = 'replayChannel_3';
             const channel = 'testChannel_3';
-            const subMessage: ProcessMessage = {
+            const subMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo',
                 channel,
                 echoChannel,
@@ -171,7 +176,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             const timeout = 2000;
             const echoChannel = 'replayChannel_4';
             const channel = 'testChannel_4';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo-request',
                 channel,
                 echoChannel,
@@ -200,7 +205,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         it('should postMessage and postMessageTo and echo same message back', async () => {
             const echoChannel = 'replayChannel_5';
             const channel = 'testChannel_5';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo',
                 channel,
                 echoChannel,
@@ -230,7 +235,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
             const echoChannel = 'replayChannel_6';
             const channel = 'testChannel_6';
-            const processMessage: ProcessMessage = {
+            const processMessage: ToClientProcessMessage = {
                 type: 'subscribe-echo-request',
                 channel,
                 echoChannel,
@@ -278,11 +283,11 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             const child1SubChannel = 'channel-1';
             const child2SubChannel = 'channel-2';
 
-            let child1Mes: ProcessMessage = {
+            let child1Mes: ToClientProcessMessage = {
                 type: 'subscribe-report',
                 channel: child1SubChannel,
             };
-            let child2Mes: ProcessMessage = { ...child1Mes, channel: child2SubChannel };
+            let child2Mes: ToClientProcessMessage = { ...child1Mes, channel: child2SubChannel };
 
             childClient1.sendCommand(child1Mes);
             childClient2.sendCommand(child2Mes);
@@ -292,14 +297,14 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             child1Mes = {
                 type: 'send',
                 channel: child2SubChannel,
-                content: { data: 'message_1' },
+                data: 'message_1',
             };
 
             childClient1.sendCommand(child1Mes);
-            await childClient2.waitForMessage((message: ProcessMessage) => {
-                if (message.type === 'subscribe-report') {
-                    expect(message.content.data).to.be.eq('message_1');
-                    expect(message.content.event.channel).to.be.eq(child2SubChannel);
+            await childClient2.waitForMessage((message: ToHostProcessMessage) => {
+                if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
+                    expect(message.data).to.be.eq('message_1');
+                    expect(message.event.channel).to.be.eq(child2SubChannel);
                     return true;
                 }
                 return false;
@@ -309,14 +314,14 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             child2Mes = {
                 type: 'send',
                 channel: child1SubChannel,
-                content: { data: 'message_2' },
+                data: 'message_2',
             };
 
             childClient2.sendCommand(child2Mes);
-            await childClient1.waitForMessage((message: ProcessMessage) => {
-                if (message.type === 'subscribe-report') {
-                    expect(message.content.data).to.be.eq('message_2');
-                    expect(message.content.event.channel).to.be.eq(child1SubChannel);
+            await childClient1.waitForMessage((message: ToHostProcessMessage) => {
+                if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
+                    expect(message.data).to.be.eq('message_2');
+                    expect(message.event.channel).to.be.eq(child1SubChannel);
                     return true;
                 }
                 return false;
@@ -325,7 +330,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
         it('should receive two callbacks when client number 2 subscribes two times to same channel', async () => {
             const child1SubChannel = 'channel-3';
-            const child1Mes: ProcessMessage = {
+            const child1Mes: ToClientProcessMessage = {
                 type: 'subscribe-report',
                 channel: child1SubChannel,
             };
@@ -335,18 +340,16 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             childClient1.sendCommand(child1Mes);
             await childClient1.waitForMessage('done');
 
-            const child2Mes: ProcessMessage = {
+            const child2Mes: ToClientProcessMessage = {
                 type: 'send',
                 channel: child1SubChannel,
-                content: {
-                    data: 'any',
-                },
+                data: 'any',
             };
 
             let isCalledFirstTime = false;
             childClient2.sendCommand(child2Mes);
-            await childClient1.waitForMessage((message: ProcessMessage) => {
-                if (message.type === 'subscribe-report') {
+            await childClient1.waitForMessage((message: ToHostProcessMessage) => {
+                if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
                     if (!isCalledFirstTime) {
                         isCalledFirstTime = true;
                         return false;
@@ -410,8 +413,10 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             const subTestChannel2 = 'test_channel_2';
             const subTestChannel3 = 'test_channel_2';
 
-            const message: ProcessMessage = { type: 'subscribe-report' };
-            message.channel = subTestChannel1;
+            const message: ToClientProcessMessage = {
+                type: 'subscribe-report',
+                channel: subTestChannel1,
+            };
             clientHost1.sendCommand(message);
             message.channel = subTestChannel2;
             clientHost2.sendCommand(message);
@@ -431,15 +436,13 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             });
 
             // send message from client 1 to client 3
-            message.type = 'send';
-            message.channel = subTestChannel3;
-            message.content = { data: 'any' };
-            clientHost1.sendCommand(message);
+            const sendMessage: ToClientProcessMessage = { type: 'send', channel: subTestChannel3, data: 'any' };
+            clientHost1.sendCommand(sendMessage);
 
             let receivedData: string = '';
             await childProcess.waitForMessage((message) => {
-                if (message.type === 'subscribe-report') {
-                    receivedData = message.content.data as string;
+                if (typeof message != 'string' && message.type === 'client-subscribe-report') {
+                    receivedData = message.data as string;
                     return true;
                 }
                 return false;
@@ -476,7 +479,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         });
 
         afterEach(async () => {
-            clientHost.sendCommand({ type: 'stop-echo-service' });
+            clientHost.sendCommand({ type: 'stop-echo-service', channel: 'test-service' });
             await serviceProxy.close();
         });
 
@@ -503,9 +506,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
                 clientHost.sendCommand({
                     type: 'emit-echo-service-event',
                     channel: eventName,
-                    content: {
-                        data: 'any',
-                    },
+                    data: 'any',
                 });
             });
 

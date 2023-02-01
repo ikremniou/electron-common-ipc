@@ -1,9 +1,9 @@
 import { GlobalContainer } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
 
+import { createWebSocketClient as createThin } from './ws-client-factory-thin';
 import { BrokerToken, TransportToken } from '../constants';
 import { uuidProvider } from '../uuid';
-import { createWebSocketClient as createThin } from './ws-client-factory-thin';
 
 import type { IpcBusClient } from '@electron-common-ipc/universal';
 

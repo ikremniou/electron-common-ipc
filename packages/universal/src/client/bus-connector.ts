@@ -1,10 +1,10 @@
+import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
+import type { BusMessagePort } from './message-ports';
 import type { IpcBusCommand, IpcBusCommandBase } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
 import type { ContractLogLevel } from '../log/ipc-bus-log-config';
-import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
-import type { BusMessagePort } from './message-ports';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export interface ConnectorHandshake {
