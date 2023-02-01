@@ -1,9 +1,12 @@
 import { createWebSocketBroker } from '@electron-common-ipc/web-socket';
 import { fork } from 'child_process';
+import { ActivateIpcBusTrace, CreateIpcBusBroker } from 'electron-common-ipc';
 import { extname } from 'path';
 
 import type { IpcBusBrokerProxy } from './broker-proxy';
+import type { IpcType } from '../../compare/ipc-type';
 import type { ChildProcess } from 'child_process';
+import type { IpcBusBroker } from 'electron-common-ipc';
 
 class BrokerProxy {
     private isClosed = false;
@@ -16,8 +19,8 @@ class BrokerProxy {
         }
 
         return new Promise<void>((resolve) => {
+            this.isClosed = true;
             this._childProcess.once('close', () => {
-                this.isClosed = true;
                 resolve();
             });
             this._childProcess.send('close-broker');
@@ -25,7 +28,7 @@ class BrokerProxy {
     }
 }
 
-export async function wsNodeBrokerFactory(port: number): Promise<IpcBusBrokerProxy> {
+export async function remoteNodeBrokerFactory(ipcType: IpcType, port: number): Promise<IpcBusBrokerProxy> {
     let execArgv = undefined;
     const extension = extname(__filename);
     if (extension === '.ts') {
@@ -34,7 +37,9 @@ export async function wsNodeBrokerFactory(port: number): Promise<IpcBusBrokerPro
     const newEnv = Object.assign({}, process.env);
     newEnv.PORT = String(port);
     newEnv.IS_FORK = String(true);
+    newEnv.IPC_TYPE = ipcType;
     newEnv.ELECTRON_RUN_AS_NODE = String(true);
+    newEnv.LOG = process.env.LOG;
     const childProcess = fork(__filename, {
         execArgv,
         env: newEnv,
@@ -52,9 +57,15 @@ export async function wsNodeBrokerFactory(port: number): Promise<IpcBusBrokerPro
 }
 
 // fork code
-async function bootstrapBroker() {
+async function bootstrapBroker(ipcType: IpcType): Promise<void> {
     const connectPort = Number(process.env.PORT);
-    const broker = createWebSocketBroker();
+    let broker: IpcBusBroker;
+    if (ipcType === 'eipc') {
+        ActivateIpcBusTrace(Boolean(process.env.LOG));
+        broker = CreateIpcBusBroker();
+    } else {
+        broker = createWebSocketBroker();
+    }
     await broker.connect(connectPort);
     process.send('started');
     process.once('message', async (message: string) => {
@@ -65,5 +76,5 @@ async function bootstrapBroker() {
 }
 
 if (process.env.IS_FORK) {
-    bootstrapBroker();
+    bootstrapBroker(process.env.IPC_TYPE as IpcType);
 }

@@ -1,23 +1,24 @@
-import { EventEmitter } from 'events';
+import { EchoServiceClass } from './echo-contract';
 
-import { EchoServiceClass } from '../echo-contract';
-
-import type { ProcessMessage } from '../echo-contract';
-import type { createIpcBusService, IpcBusClient, IpcBusEvent, IpcBusService } from '@electron-common-ipc/universal';
+import type { ToClientProcessMessage, ClientSubscribeReport, ToHostProcessMessage } from './echo-contract';
+import type { IpcBusClient, IpcBusEvent, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/universal';
 
 export interface BootstrapContext {
     clientId: string;
     shouldLog: boolean;
     clientPort: number;
-    sendBack: (mes: ProcessMessage | string) => void;
-    onMessage: (handler: (mes: ProcessMessage) => void) => void;
+    sendBack: (mes: ToHostProcessMessage) => void;
+    onMessage: (handler: (mes: ToClientProcessMessage) => void) => void;
     createBusClient(): IpcBusClient;
-    createIpcBusService: typeof createIpcBusService;
+    createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService;
+    createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy;
 }
 
 export async function bootstrapEchoClient(ctx: BootstrapContext) {
     let echoService: IpcBusService;
     let echoServiceInstance: EchoServiceClass;
+    let echoServiceProxy: IpcBusServiceProxy;
+
     const webSocketClient = ctx.createBusClient();
     ctx.shouldLog &&
         console.log(`[Client:${ctx.clientId}] Client is created. Port ${ctx.clientPort}. Log: ${ctx.shouldLog}`);
@@ -35,12 +36,10 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
 
     function hostReportCallback(event: IpcBusEvent, data: unknown): void {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Report callback for "${event.channel}"`);
-        const message: ProcessMessage = {
-            type: 'subscribe-report',
-            content: {
-                event,
-                data,
-            },
+        const message: ClientSubscribeReport = {
+            type: 'client-subscribe-report',
+            event,
+            data,
         };
 
         ctx.sendBack(message);
@@ -52,7 +51,14 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
         event.request.resolve(resolveData);
     }
 
-    ctx.onMessage((message: ProcessMessage) => {
+    function eventCounter(counterObject: { count: number; required: number }): void {
+        counterObject.count++;
+        if (counterObject.count === counterObject.required) {
+            ctx.sendBack('counter-confirm');
+        }
+    }
+
+    ctx.onMessage(async (message: ToClientProcessMessage) => {
         if (!message.type) {
             return;
         }
@@ -75,28 +81,47 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
                 webSocketClient.removeAllListeners(message.channel);
                 break;
             case 'send':
-                webSocketClient.send(message.channel, message.content.data);
+                webSocketClient.send(message.channel, message.data);
                 break;
             case 'request-resolve':
-                webSocketClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.content.data));
+                webSocketClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
                 break;
             case 'start-echo-service': {
                 echoServiceInstance = new EchoServiceClass();
-                echoService = ctx.createIpcBusService(
-                    webSocketClient,
-                    message.channel,
-                    echoServiceInstance,
-                    EventEmitter.prototype
-                );
+                echoService = ctx.createIpcBusService(webSocketClient, message.channel, echoServiceInstance);
                 echoService.start();
                 break;
             }
             case 'stop-echo-service':
                 echoService.stop();
                 break;
-            case 'emit-echo-service-event':
-                echoServiceInstance.emit(message.channel, message.content.data);
+            case 'emit-echo-service-event': {
+                if (!message.times) {
+                    message.times = 1;
+                }
+                while (message.times--) {
+                    echoServiceInstance.emit(message.channel, message.data);
+                }
                 break;
+            }
+            case 'start-echo-service-proxy': {
+                if (echoServiceProxy) {
+                    echoServiceProxy.close();
+                }
+                echoServiceProxy = ctx.createIpcBusServiceProxy(webSocketClient, message.channel);
+                await echoServiceProxy.connect();
+                if (message.counterEvents) {
+                    message.counterEvents.forEach((counterEvent) => {
+                        const counterObject = { count: 0, required: counterEvent[0] };
+                        echoServiceProxy.on(counterEvent[1], eventCounter.bind(globalThis, counterObject));
+                    });
+                }
+                break;
+            }
+            case 'stop-echo-service-proxy': {
+                echoServiceProxy.close();
+                break;
+            }
         }
 
         ctx.sendBack('done');

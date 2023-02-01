@@ -2,7 +2,10 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 const webConfig = {
-    entry: './test/browser/echo-client/browser-client.ts',
+    entry: {
+        ws: './test/clients/browser/ws-browser-client.ts',
+        eipc: './test/clients/browser/eipc-browser-client.ts',
+    },
     target: 'web',
     module: {
         rules: [
@@ -17,20 +20,24 @@ const webConfig = {
         extensions: ['.ts', '.js'],
     },
     output: {
-        filename: 'browser-client.bundle.js',
-        path: path.join(__dirname, 'build', 'browser', 'echo-client'),
+        filename: '[name]-browser-client.bundle.js',
+        path: path.join(__dirname, 'build', 'clients', 'browser'),
     },
     plugins: [
         new CopyPlugin({
-            patterns: [{
-                from: './test/browser/echo-client/browser-index.html',
-            }]
+            patterns: [
+                { from: './test/clients/browser/eipc-browser-index.html' },
+                { from: './test/clients/browser/ws-browser-index.html' }
+        ]
         })
     ],
 };
 
 const preloadConfig = {
-    entry: './test/browser/echo-client/browser-preload.ts',
+    entry: {
+        ws: './test/clients/browser/ws-browser-preload.ts',
+        eipc: './test/clients/browser/eipc-browser-preload.ts',
+    },
     target: 'electron-renderer',
     module: {
         rules: [
@@ -45,8 +52,8 @@ const preloadConfig = {
         extensions: ['.ts', '.js'],
     },
     output: {
-        filename: 'browser-preload.bundle.js',
-        path: path.join(__dirname, 'build', 'browser', 'echo-client'),
+        filename: '[name]-browser-preload.bundle.js',
+        path: path.join(__dirname, 'build', 'clients', 'browser'),
     },
 };
 

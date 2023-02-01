@@ -2,8 +2,8 @@ import { performance as perf, PerformanceObserver } from 'perf_hooks';
 
 import { writeReportTo } from './perf-utilities';
 
-import type { IpcBusBrokerProxy } from '../broker/broker-proxy';
-import type { ClientHost, ProcessMessage } from '../echo-contract';
+import type { IpcBusBrokerProxy } from '../../clients/broker/broker-proxy';
+import type { ClientHost, ToClientProcessMessage } from '../../clients/echo-contract';
 import type { PerfContext, PerfResult} from './perf-utilities';
 
 export interface PerfEchoContext extends PerfContext {
@@ -13,7 +13,7 @@ export interface PerfEchoContext extends PerfContext {
 /**
  * This performance test is based on the echo messages:
  * First we subscribe to the primary channel on the remote host(process)
- *  then we subscribe to the echo channel on the current host and wait for the messages
+ * then we subscribe to the echo channel on the current host and wait for the messages
  * There are 2 actions "echo_wait" and "to_dispatch":
  * "to_dispatch" indicates the time taken to dispatch messages
  * "echo_wait" indicates how much time after the dispatch of all messages we waited for replies
@@ -34,7 +34,7 @@ export function perfEchoSuite(ctx: PerfEchoContext): void {
         await brokerClient.connect(busPort);
         clientHost = await ctx.startClientHost(busPort);
 
-        const subEcho: ProcessMessage = {
+        const subEcho: ToClientProcessMessage = {
             type: 'subscribe-echo',
             channel,
             echoChannel,

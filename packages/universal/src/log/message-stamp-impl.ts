@@ -1,11 +1,11 @@
-import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 import { MessageLogKind } from './message-stamp';
+import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 
+import type { IpcBusLogConfig } from './ipc-bus-log-config';
+import type { IpcBusStampedMessage } from './message-stamp';
 import type { ConnectorHandshake } from '../client/bus-connector';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
-import type { IpcBusLogConfig } from './ipc-bus-log-config';
-import type { IpcBusStampedMessage } from './message-stamp';
 
 export class MessageStampImpl {
     constructor(private readonly _log: IpcBusLogConfig, private _messageCount: number = 0) {}

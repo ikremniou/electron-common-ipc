@@ -1,5 +1,5 @@
-import type { IpcTimeoutOptions } from '../client/ipc-connect-options';
 import type { ServiceEventEmitter, ServiceStatus } from './bus-service';
+import type { IpcTimeoutOptions } from '../client/ipc-connect-options';
 
 export interface ServiceProxyConnectOptions extends IpcTimeoutOptions {}
 export interface ServiceProxyCreateOptions extends IpcTimeoutOptions {}

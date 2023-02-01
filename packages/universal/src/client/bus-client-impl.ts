@@ -1,7 +1,6 @@
 import { CheckChannel, CheckConnectOptions } from '../utils';
 import { ConnectionState } from '../utils/connection-state';
 
-import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type {
     ClientCloseOptions,
     ClientConnectOptions,
@@ -12,6 +11,7 @@ import type {
 import type { IpcBusTransport, IpcBusTransportClient } from './bus-transport';
 import type { EventEmitterLike } from './event-emitter-like';
 import type { BusMessagePort } from './message-ports';
+import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 
 export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     private _peer: IpcBusPeer | undefined;

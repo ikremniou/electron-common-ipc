@@ -1,12 +1,12 @@
-import { CheckTimeoutOptions } from '../utils';
-import { ConnectionState } from '../utils/connection-state';
 import { ServiceConstants } from './constants';
 import { Deferred, getServiceCallChannel, getServiceEventChannel } from './utilities';
+import { CheckTimeoutOptions } from '../utils';
+import { ConnectionState } from '../utils/connection-state';
 
-import type { IpcBusClient, IpcBusEvent, IpcBusRequestResponse } from '../client/bus-client';
-import type { Logger } from '../log/logger';
 import type { IpcBusServiceEvent, ServiceCallback, ServiceEventEmitter, ServiceStatus } from './bus-service';
 import type { IpcBusServiceProxy, ServiceProxyConnectOptions, ServiceProxyCreateOptions } from './bus-service-proxy';
+import type { IpcBusClient, IpcBusEvent, IpcBusRequestResponse } from '../client/bus-client';
+import type { Logger } from '../log/logger';
 
 interface CallWrapperEventEmitter extends ServiceEventEmitter {
     [key: string]: Function;

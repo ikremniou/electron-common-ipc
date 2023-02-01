@@ -1,7 +1,7 @@
 import { GlobalContainer } from '@electron-common-ipc/universal';
 
-import { BrokerToken, TransportToken } from '../constants';
 import { createWebSocketBroker as createThin } from './broker-factory-thin';
+import { BrokerToken, TransportToken } from '../constants';
 
 import type { IpcBusBroker } from '@electron-common-ipc/universal';
 

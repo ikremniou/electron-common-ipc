@@ -4,6 +4,10 @@ import { CheckConnectOptions, CheckTimeoutOptions } from '../utils';
 import { ChannelConnectionMap } from '../utils/channel-map';
 import { ConnectionState } from '../utils/connection-state';
 
+import type { BrokerCloseOptions, BrokerConnectOptions, IpcBusBroker } from './broker';
+import type { BrokerServer } from './broker-server';
+import type { BrokerServerFactory } from './broker-server-factory';
+import type { SocketClient } from './socket-client';
 import type { IpcBusCommand } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
@@ -14,10 +18,6 @@ import type {
     QueryStatePeerProcesses,
 } from '../contract/query-state';
 import type { Logger } from '../log/logger';
-import type { BrokerCloseOptions, BrokerConnectOptions, IpcBusBroker } from './broker';
-import type { BrokerServer } from './broker-server';
-import type { BrokerServerFactory } from './broker-server-factory';
-import type { SocketClient } from './socket-client';
 import type { IpcPacketBufferList } from 'socket-serializer';
 
 interface IpcBusPeerProcessEndpoint extends IpcBusPeer {

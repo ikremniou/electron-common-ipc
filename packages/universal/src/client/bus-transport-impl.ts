@@ -1,9 +1,13 @@
+import { CastToMessagePort } from './message-ports';
 import { CreateMessageTarget, CreateTargetChannel } from '../contract/command-helpers';
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 import { CheckTimeout } from '../utils';
 import { DeferredRequestPromise } from '../utils/deferred-request';
-import { CastToMessagePort } from './message-ports';
 
+import type { ClientConnectOptions, IpcBusEvent, IpcBusRequestResponse } from './bus-client';
+import type { IpcBusConnector, IpcBusConnectorClient, PostCommandFunction, PostMessageFunction } from './bus-connector';
+import type { IpcBusTransport, IpcBusTransportClient } from './bus-transport';
+import type { BusMessagePort } from './message-ports';
 import type { IpcBusCommand, IpcBusCommandBase } from '../contract/ipc-bus-command';
 import type { IpcBusMessage, MessageRequest } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
@@ -11,10 +15,6 @@ import type { QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { ClientConnectOptions, IpcBusEvent, IpcBusRequestResponse } from './bus-client';
-import type { IpcBusConnector, IpcBusConnectorClient, PostCommandFunction, PostMessageFunction } from './bus-connector';
-import type { IpcBusTransport, IpcBusTransportClient } from './bus-transport';
-import type { BusMessagePort } from './message-ports';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnectorClient {

@@ -1,14 +1,14 @@
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
 import { ConnectionState } from '../utils/connection-state';
 
+import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
+import type { ConnectorHandshake, IpcBusConnector, IpcBusConnectorClient } from './bus-connector';
+import type { BusMessagePort } from './message-ports';
 import type { IpcBusCommand } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer, IpcBusProcessType } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
 import type { UuidProvider } from '../utils/uuid';
-import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
-import type { ConnectorHandshake, IpcBusConnector, IpcBusConnectorClient } from './bus-connector';
-import type { BusMessagePort } from './message-ports';
 
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client?: IpcBusConnectorClient;

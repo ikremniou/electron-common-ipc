@@ -1,9 +1,9 @@
-import type { IpcBusMessage } from '../contract/ipc-bus-message';
-import type { IpcBusPeer } from '../contract/ipc-bus-peer';
-import type { QueryStateTransport } from '../contract/query-state';
 import type { ClientCloseOptions, ClientConnectOptions, IpcBusRequestResponse } from './bus-client';
 import type { IpcBusConnector } from './bus-connector';
 import type { BusMessagePort } from './message-ports';
+import type { IpcBusMessage } from '../contract/ipc-bus-message';
+import type { IpcBusPeer } from '../contract/ipc-bus-peer';
+import type { QueryStateTransport } from '../contract/query-state';
 
 export interface IpcBusTransportClient {
     peer: IpcBusPeer | null;
