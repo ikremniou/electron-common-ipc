@@ -2,7 +2,7 @@ import { IpcBusCommandKind, IpcBusProcessType } from '@electron-common-ipc/unive
 import { expect } from 'chai';
 import { JSONParserV1 } from 'json-helpers';
 import * as sinon from 'sinon';
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer } from 'socket-serializer-ik';
 import * as tsSinon from 'ts-sinon';
 
 import { WsBrowserConnector } from '../lib/ws-browser-connector';

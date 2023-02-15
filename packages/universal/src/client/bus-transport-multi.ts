@@ -12,7 +12,7 @@ import type { QueryStateChannels, QueryStatePeers, QueryStateTransport } from '.
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { IpcPacketBufferCore } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer-ik';
 
 export class IpcBusTransportMulti extends IpcBusTransportImpl {
     protected _subscriptions: ChannelConnectionMap<IpcBusTransportClient, string>;

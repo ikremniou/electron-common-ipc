@@ -1,5 +1,5 @@
 import type { IpcBusCommand } from '../contract/ipc-bus-command';
-import type { IpcPacketBufferList } from 'socket-serializer';
+import type { IpcPacketBufferList } from 'socket-serializer-ik';
 
 /**
  * Abstraction of the socket client for broker. Can be Net.Socket, WebSocket or WebRTC

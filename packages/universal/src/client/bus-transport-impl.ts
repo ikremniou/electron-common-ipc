@@ -15,7 +15,7 @@ import type { QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { IpcPacketBufferCore } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer-ik';
 
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnectorClient {
     protected _logActivate: boolean;

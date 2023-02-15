@@ -17,6 +17,7 @@
         "forceConsistentCasingInFileNames": true,
         "noImplicitAny": true,
         "importsNotUsedAsValues": "error",
+        "resolveJsonModule": true,
 
         "experimentalDecorators": true,
         "preserveSymlinks": true,

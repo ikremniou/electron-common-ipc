@@ -18,7 +18,7 @@ import type {
     QueryStatePeerProcesses,
 } from '../contract/query-state';
 import type { Logger } from '../log/logger';
-import type { IpcPacketBufferList } from 'socket-serializer';
+import type { IpcPacketBufferList } from 'socket-serializer-ik';
 
 interface IpcBusPeerProcessEndpoint extends IpcBusPeer {
     socket?: SocketClient;
