@@ -5,8 +5,8 @@ import {
     CheckTimeoutOptions,
 } from '@electron-common-ipc/universal';
 import { JSONParserV1 } from 'json-helpers';
-import { IpcPacketBufferList, BufferListReader, IpcPacketBuffer } from 'socket-serializer';
-import { BufferListWriterBase } from 'socket-serializer/lib/buffer/bufferListWriter';
+import { IpcPacketBufferList, BufferListReader, IpcPacketBuffer } from 'socket-serializer-ik';
+import { BufferListWriterBase } from 'socket-serializer-ik/lib/buffer/bufferListWriter';
 import { WebSocket } from 'ws';
 
 import type {

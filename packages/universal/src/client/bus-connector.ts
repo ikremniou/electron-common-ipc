@@ -5,7 +5,7 @@ import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
 import type { ContractLogLevel } from '../log/ipc-bus-log-config';
-import type { IpcPacketBufferCore } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer-ik';
 
 export interface ConnectorHandshake {
     peer: IpcBusPeer;

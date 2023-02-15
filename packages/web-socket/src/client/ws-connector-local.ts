@@ -1,6 +1,6 @@
 import { IpcBusConnectorImpl } from '@electron-common-ipc/universal';
 import { JSONParserV1 } from 'json-helpers';
-import { IpcPacketBufferList } from 'socket-serializer';
+import { IpcPacketBufferList } from 'socket-serializer-ik';
 
 import type {
     ClientCloseOptions,

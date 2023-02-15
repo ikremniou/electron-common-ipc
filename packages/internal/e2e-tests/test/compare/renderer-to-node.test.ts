@@ -1,49 +1,56 @@
 import { CreateIpcBusBridge, CreateIpcBusClient } from 'electron-common-ipc';
 
+import * as bigData from './big-data.json';
 import { remoteNodeBrokerFactory } from '../clients/broker/node-broker-factory';
 import { wsLocalBrokerFactory } from '../clients/broker/ws-local-broker-factory';
 import { startClientHost as startRendererClient } from '../clients/browser/echo-contract-browser';
 import { startClientHost as startNodeClient } from '../clients/node/echo-contract-node';
+import { Benchmark } from '../perf/utilities/benchmark';
 
 import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
 import type { ClientHost } from '../clients/echo-contract';
 import type { IpcBusBridge } from 'electron-common-ipc';
 
-const numberOfEvents = process.env.NUMBER_OF_EVENTS ? parseInt(process.env.NUMBER_OF_EVENTS) : 100000;
+const numberOfEvents = process.env.NUMBER_OF_EVENTS ? parseInt(process.env.NUMBER_OF_EVENTS) : 100;
 const testObject = process.env.TEST_OBJECT
-    ? JSON.parse(process.env.TEST)
-    : [1, 3, 2, { formula: 'RDP.Data', args: [1, 2, 3, 4, 5, 6] }];
+    ? JSON.parse(process.env.TEST_OBJECT)
+    // : [1, 3, 2, { formula: 'RDP.Data', args: [1, 2, 3, 4, 5, 6] }];
+    : bigData;
 
-describe('Comparison of the performance when communicating between renderer and node process', () => {
-    async function emitEventsFromServiceProxyTest(broker: IpcBusBrokerProxy, renderer: ClientHost, node: ClientHost) {
-        renderer.sendCommand({
-            type: 'start-echo-service',
-            channel: 'test-service',
-        });
-        await renderer.waitForMessage('done');
+describe('Renderer to Node process', () => {
+    async function emitEventsFromServiceProxyTest(renderer: ClientHost, node: ClientHost, name: string) {
+        const benchmark = new Benchmark();
+        await benchmark.recordAsync(name, async () => {
+            renderer.sendCommand({
+                type: 'start-echo-service',
+                channel: 'test-service',
+            });
+            await renderer.waitForMessage('done');
 
-        node.sendCommand({
-            type: 'start-echo-service-proxy',
-            channel: 'test-service',
-            counterEvents: [[numberOfEvents, 'data-event']],
-        });
-        await node.waitForMessage('done');
+            node.sendCommand({
+                type: 'start-echo-service-proxy',
+                channel: 'test-service',
+                counterEvents: [[numberOfEvents, 'data-event']],
+            });
+            await node.waitForMessage('done');
 
-        // const t1 = performance.now();
-        renderer.sendCommand({
-            type: 'emit-echo-service-event',
-            channel: 'data-event',
-            data: testObject,
-            times: numberOfEvents,
-        });
-        await node.waitForMessage('counter-confirm');
-        // const t2 = performance.now();
+            renderer.sendCommand({
+                type: 'emit-echo-service-event',
+                channel: 'data-event',
+                data: testObject,
+                times: numberOfEvents,
+            });
+            await node.waitForMessage('counter-confirm');
 
-        // console.log(`[Performance] Emitting '${numberOfEvents}' events took ${t2 - t1} ms`);
+            renderer.sendCommand({
+                type: 'stop-echo-service',
+                channel: 'test-service',
+            });
 
-        renderer.sendCommand({
-            type: 'stop-echo-service',
-            channel: 'test-service',
+            renderer.sendCommand({
+                type: 'stop-echo-service-proxy',
+                channel: 'test-service',
+            });
         });
     }
 
@@ -60,15 +67,15 @@ describe('Comparison of the performance when communicating between renderer and 
         });
 
         afterEach(async () => {
-            await Promise.all([
-                broker.close(),
-                rendererProcess.close(),
-                nodeProcess.close(),
-            ]);
+            await Promise.all([broker.close(), rendererProcess.close(), nodeProcess.close()]);
         });
 
         it('should create a service on the renderer process and send data events to node process', async () => {
-            await emitEventsFromServiceProxyTest(broker, rendererProcess, nodeProcess);
+            await emitEventsFromServiceProxyTest(
+                rendererProcess,
+                nodeProcess,
+                '[WS] Proxy events from Node to Renderer'
+            );
         });
     });
 
@@ -95,7 +102,11 @@ describe('Comparison of the performance when communicating between renderer and 
         });
 
         it('should create a service on the renderer process and send data events to node process', async () => {
-            await emitEventsFromServiceProxyTest(broker, rendererProcess, nodeProcess);
+            await emitEventsFromServiceProxyTest(
+                rendererProcess,
+                nodeProcess,
+                '[EIPC] Proxy events from Node to Renderer'
+            );
         });
     });
 });

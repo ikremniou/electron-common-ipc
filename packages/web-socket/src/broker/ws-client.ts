@@ -1,5 +1,5 @@
 import { JSONParserV1 } from 'json-helpers';
-import { BufferListReader, IpcPacketBufferList } from 'socket-serializer';
+import { BufferListReader, IpcPacketBufferList } from 'socket-serializer-ik';
 
 import type { IpcBusCommand, Logger, SocketClient } from '@electron-common-ipc/universal';
 import type { RawData, WebSocket } from 'ws';
