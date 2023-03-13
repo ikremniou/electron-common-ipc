@@ -4,7 +4,6 @@ import {
     IpcBusConnectorImpl,
     CheckTimeoutOptions,
 } from '@electron-common-ipc/universal';
-import { JSONParserV1 } from 'json-helpers';
 import { IpcPacketBufferList, BufferListReader, IpcPacketBuffer } from 'socket-serializer-ik';
 import { BufferListWriterBase } from 'socket-serializer-ik/lib/buffer/bufferListWriter';
 import { WebSocket } from 'ws';
@@ -20,6 +19,7 @@ import type {
     Logger,
     IpcBusCommandBase,
     UuidProvider,
+    JsonLike,
 } from '@electron-common-ipc/universal';
 import type { RawData } from 'ws';
 
@@ -51,12 +51,12 @@ export class WsConnector extends IpcBusConnectorImpl {
     private readonly _packetIn: IpcPacketBufferList;
     private readonly _packetOut: IpcPacketBuffer;
 
-    constructor(uuid: UuidProvider, contextType: IpcBusProcessType, private readonly _logger?: Logger) {
+    constructor(uuid: UuidProvider, json: JsonLike, contextType: IpcBusProcessType, private readonly _logger?: Logger) {
         super(uuid, contextType, 'connector-ws');
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
-        this._packetIn.JSON = JSONParserV1;
+        this._packetIn.JSON = json;
         this._packetOut = new IpcPacketBuffer();
         this._packetOut.JSON = this._packetIn.JSON;
 

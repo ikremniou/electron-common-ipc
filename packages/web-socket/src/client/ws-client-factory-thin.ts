@@ -2,6 +2,7 @@ import { IpcBusTransportMulti, IpcBusClientImpl, IpcBusProcessType } from '@elec
 
 import { WsConnector } from './ws-connector';
 import { WsConnectorLocal } from './ws-connector-local';
+import { BrokerToken, TransportToken } from '../constants';
 
 import type {
     IpcBusClient,
@@ -13,18 +14,16 @@ import type {
     MessageStamp,
     Logger,
     IpcBusClientEmitter,
+    JsonLike,
 } from '@electron-common-ipc/universal';
 
 export interface ThinContext {
     emitter: IpcBusClientEmitter;
     uuidProvider: UuidProvider;
+    json: JsonLike;
     messageStamp?: MessageStamp;
     logger?: Logger;
-    container?: {
-        instance: BusContainer;
-        brokerToken: string | symbol;
-        transportToken: string | symbol;
-    };
+    container?: BusContainer;
 }
 
 /**
@@ -38,21 +37,21 @@ export interface ThinContext {
  * @returns The instance of the IpcBusClient
  */
 export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
-    const maybeBusBroker: IpcBusBroker = ctx.container?.instance.getSingleton(ctx.container?.brokerToken);
-    let realTransport: IpcBusTransport = ctx.container?.instance.getSingleton(ctx.container?.transportToken);
+    const maybeBusBroker: IpcBusBroker = ctx.container?.getSingleton(BrokerToken);
+    let realTransport: IpcBusTransport = ctx.container?.getSingleton(TransportToken);
 
     if (!realTransport) {
         let connector: IpcBusConnector;
         if (maybeBusBroker) {
-            const localConnector = new WsConnectorLocal(ctx.uuidProvider, IpcBusProcessType.Node);
+            const localConnector = new WsConnectorLocal(ctx.uuidProvider, ctx.json, IpcBusProcessType.Node);
             maybeBusBroker.addClient(localConnector.peer, localConnector);
             connector = localConnector;
         } else {
-            connector = new WsConnector(ctx.uuidProvider, IpcBusProcessType.Node);
+            connector = new WsConnector(ctx.uuidProvider, ctx.json, IpcBusProcessType.Node);
         }
 
         realTransport = new IpcBusTransportMulti(connector, ctx.uuidProvider, ctx.messageStamp, ctx.logger);
-        ctx.container?.instance.registerSingleton(ctx.container?.transportToken, realTransport);
+        ctx.container?.registerSingleton(TransportToken, realTransport);
     }
 
     return new IpcBusClientImpl(ctx.emitter, realTransport);

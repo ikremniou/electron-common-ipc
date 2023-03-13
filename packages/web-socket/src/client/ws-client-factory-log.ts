@@ -1,8 +1,8 @@
 import { MessageStampImpl, GlobalContainer, IpcBusLogConfigImpl, ConsoleLogger } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
+import { JSONParserV1 } from 'json-helpers';
 
 import { createWebSocketClient as createThin } from './ws-client-factory-thin';
-import { BrokerToken, TransportToken } from '../constants';
 import { uuidProvider } from '../uuid';
 
 import type { IpcBusClient, Logger } from '@electron-common-ipc/universal';
@@ -18,11 +18,8 @@ export function createWebSocketClient(logger?: Logger): IpcBusClient {
         emitter,
         uuidProvider,
         messageStamp,
+        json: JSONParserV1,
         logger: realLogger,
-        container: {
-            instance: iocContainer,
-            transportToken: TransportToken,
-            brokerToken: BrokerToken,
-        },
+        container: iocContainer,
     });
 }

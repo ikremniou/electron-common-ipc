@@ -3,9 +3,11 @@ import { WebSocketServer } from 'ws';
 
 import { WsBrokerServer } from './ws-broker-server';
 
-import type { BrokerConnectOptions, BrokerServer, BrokerServerFactory } from '@electron-common-ipc/universal';
+import type { BrokerConnectOptions, BrokerServer, BrokerServerFactory, JsonLike } from '@electron-common-ipc/universal';
 
 export class WsBrokerServerFactory implements BrokerServerFactory {
+    constructor(private readonly _json: JsonLike) {}
+
     public create(options: BrokerConnectOptions): Promise<BrokerServer> {
         options.host = options.host || '127.0.0.1';
 
@@ -35,7 +37,7 @@ export class WsBrokerServerFactory implements BrokerServerFactory {
 
                 server.on('listening', () => {
                     server.removeAllListeners();
-                    resolve(new WsBrokerServer(server));
+                    resolve(new WsBrokerServer(server, this._json));
                 });
             },
             (reject) => {

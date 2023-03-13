@@ -1,1 +1,1 @@
-export type IpcType = 'ws' | 'eipc';
+export type IpcType = 'ws' | 'eipc' | 'wsi';

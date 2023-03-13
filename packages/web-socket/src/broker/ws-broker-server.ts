@@ -2,7 +2,7 @@ import { executeInTimeout } from '@electron-common-ipc/universal';
 
 import { WsClient } from './ws-client';
 
-import type { BrokerServer, SocketClient, BrokerCloseOptions } from '@electron-common-ipc/universal';
+import type { BrokerServer, SocketClient, BrokerCloseOptions, JsonLike } from '@electron-common-ipc/universal';
 import type { WebSocketServer, WebSocket } from 'ws';
 
 export class WsBrokerServer implements BrokerServer {
@@ -10,7 +10,7 @@ export class WsBrokerServer implements BrokerServer {
     private _onErrorHandler?: (error: Error) => void;
     private _onConnectionHandler?: (client: SocketClient) => void;
 
-    constructor(private readonly _server: WebSocketServer) {
+    constructor(private readonly _server: WebSocketServer, private readonly _json: JsonLike) {
         this._onClose = this._onClose.bind(this);
         this._onError = this._onError.bind(this);
         this._onConnection = this._onConnection.bind(this);
@@ -62,7 +62,7 @@ export class WsBrokerServer implements BrokerServer {
     }
 
     private _onConnection(socket: WebSocket): void {
-        const socketWrapper = new WsClient(socket);
+        const socketWrapper = new WsClient(socket, this._json);
         this._onConnectionHandler(socketWrapper);
     }
 
