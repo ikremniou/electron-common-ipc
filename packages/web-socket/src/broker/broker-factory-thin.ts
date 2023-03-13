@@ -1,16 +1,14 @@
 import { BrokerImpl } from '@electron-common-ipc/universal';
 
 import { WsBrokerServerFactory } from './ws-broker-server-factory';
+import { BrokerToken, TransportToken } from '../constants';
 
 import type { WsConnectorLocal } from '../client/ws-connector-local';
-import type { BusContainer, IpcBusBroker, Logger, IpcBusTransport } from '@electron-common-ipc/universal';
+import type { BusContainer, IpcBusBroker, Logger, IpcBusTransport, JsonLike } from '@electron-common-ipc/universal';
 
 export interface ThinContext {
-    container?: {
-        instance: BusContainer;
-        brokerToken: string | symbol;
-        transportToken?: string | symbol;
-    };
+    json: JsonLike;
+    container?: BusContainer;
     logger?: Logger;
 }
 
@@ -26,18 +24,15 @@ export interface ThinContext {
  * @returns The IpcBusBroker instance
  */
 export function createWebSocketBroker(ctx: ThinContext): IpcBusBroker {
-    const serverFactory = new WsBrokerServerFactory();
+    const serverFactory = new WsBrokerServerFactory(ctx.json);
     const broker = new BrokerImpl(serverFactory, ctx.logger);
-    ctx.container?.instance.registerSingleton(ctx.container?.brokerToken, broker);
+    ctx.container?.registerSingleton(BrokerToken, broker);
 
-    if (ctx.container?.transportToken) {
-        const maybeTransport = ctx.container.instance.getSingleton<IpcBusTransport>(ctx.container.transportToken);
-
-        if (maybeTransport) {
-            const maybeLocal = maybeTransport.connector as WsConnectorLocal;
-            if (maybeLocal.subscribe && maybeLocal.release && maybeLocal.send) {
-                broker.addClient(maybeLocal.peer, maybeLocal);
-            }
+    const maybeTransport = ctx.container?.getSingleton<IpcBusTransport>(TransportToken);
+    if (maybeTransport) {
+        const maybeLocal = maybeTransport.connector as WsConnectorLocal;
+        if (maybeLocal.subscribe && maybeLocal.release && maybeLocal.send) {
+            broker.addClient(maybeLocal.peer, maybeLocal);
         }
     }
 

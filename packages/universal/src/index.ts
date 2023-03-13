@@ -21,6 +21,7 @@ export type { MessageStamp } from './log/message-stamp';
 export type { EventEmitterLike } from './client/event-emitter-like';
 export type { IpcBusTransport } from './client/bus-transport';
 export type { BusContainer } from './utils/ioc';
+export type { JsonLike } from './utils/json-like';
 export type { UuidProvider } from './utils/uuid';
 export type { IpcBusPeer } from './contract/ipc-bus-peer';
 export type { BusMessagePort } from './client/message-ports';

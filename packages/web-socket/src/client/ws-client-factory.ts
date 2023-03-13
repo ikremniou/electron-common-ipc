@@ -1,8 +1,8 @@
 import { GlobalContainer } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
+import { JSONParserV1 } from 'json-helpers';
 
 import { createWebSocketClient as createThin } from './ws-client-factory-thin';
-import { BrokerToken, TransportToken } from '../constants';
 import { uuidProvider } from '../uuid';
 
 import type { IpcBusClient } from '@electron-common-ipc/universal';
@@ -14,10 +14,7 @@ export function createWebSocketClient(): IpcBusClient {
     return createThin({
         emitter,
         uuidProvider,
-        container: {
-            instance: container,
-            transportToken: TransportToken,
-            brokerToken: BrokerToken,
-        },
+        json: JSONParserV1,
+        container,
     });
 }

@@ -5,7 +5,6 @@ import {
     IpcBusConnectorImpl,
 } from '@electron-common-ipc/universal';
 import { Buffer } from 'buffer';
-import { JSONParserV1 } from 'json-helpers';
 import { BufferListReader, IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer-ik';
 
 import type {
@@ -19,21 +18,22 @@ import type {
     Logger,
     IpcBusCommandBase,
     UuidProvider,
+    JsonLike,
 } from '@electron-common-ipc/universal';
 
 class WsBrowserWriter {
     private readonly _packetOut: IpcPacketBuffer;
 
-    constructor(private readonly _socket: WebSocket) {
+    constructor(private readonly _socket: WebSocket, private readonly _json: JsonLike) {
         this._packetOut = new IpcPacketBuffer();
-        this._packetOut.JSON = JSONParserV1;
+        this._packetOut.JSON = this._json;
     }
 
     public writeMessage(message: IpcBusMessage, args: unknown[]): void {
         message.isRawData = true;
-        JSONParserV1.install();
+        this._json.install?.();
         this._packetOut.serialize([message, args]);
-        JSONParserV1.uninstall();
+        this._json.uninstall?.();
         this.write(this._packetOut.buffers);
     }
 
@@ -56,12 +56,17 @@ export class WsBrowserConnector extends IpcBusConnectorImpl {
     private readonly _bufferListReader: BufferListReader;
     private readonly _packetIn: IpcPacketBufferList;
 
-    constructor(uuid: UuidProvider, contextType: IpcBusProcessType, private readonly _logger?: Logger) {
+    constructor(
+        uuid: UuidProvider,
+        private readonly _json: JsonLike,
+        contextType: IpcBusProcessType,
+        private readonly _logger?: Logger
+    ) {
         super(uuid, contextType, 'connector-browser-ws');
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
-        this._packetIn.JSON = JSONParserV1;
+        this._packetIn.JSON = JSON;
 
         this.onSocketError = this.onSocketError.bind(this);
         this.onSocketClose = this.onSocketClose.bind(this);
@@ -112,7 +117,7 @@ export class WsBrowserConnector extends IpcBusConnectorImpl {
 
                     onSocketOpen = (_event: Event) => {
                         this.addClient(client);
-                        this._writer = new WsBrowserWriter(this._socket);
+                        this._writer = new WsBrowserWriter(this._socket, this._json);
                         removeTempListeners();
 
                         this._socket.addEventListener('error', this.onSocketError);

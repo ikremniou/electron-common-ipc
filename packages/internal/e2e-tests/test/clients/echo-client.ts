@@ -14,23 +14,23 @@ export interface BootstrapContext {
     createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy;
 }
 
-export async function bootstrapEchoClient(ctx: BootstrapContext) {
+export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBusClient> {
     let echoService: IpcBusService;
     let echoServiceInstance: EchoServiceClass;
     let echoServiceProxy: IpcBusServiceProxy;
 
-    const webSocketClient = ctx.createBusClient();
+    const ipcClient = ctx.createBusClient();
     ctx.shouldLog &&
         console.log(`[Client:${ctx.clientId}] Client is created. Port ${ctx.clientPort}. Log: ${ctx.shouldLog}`);
 
     function busEchoCallback(channel: string, _event: unknown, data: unknown): void {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Echo callback for "${channel}"`);
-        webSocketClient.send(channel, data);
+        ipcClient.send(channel, data);
     }
 
     async function busEchoRequestCallback(channel: string, event: IpcBusEvent, data: unknown) {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Echo request callback for "${event.channel}"`);
-        const response = await webSocketClient.request(channel, 2000, data);
+        const response = await ipcClient.request(channel, 2000, data);
         event.request.resolve(response.payload);
     }
 
@@ -66,29 +66,29 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Executing "${message.type}" to "${message.channel}"`);
         switch (message.type) {
             case 'subscribe-echo':
-                webSocketClient.addListener(message.channel, busEchoCallback.bind(globalThis, message.echoChannel));
+                ipcClient.addListener(message.channel, busEchoCallback.bind(globalThis, message.echoChannel));
                 break;
             case 'subscribe-report':
-                webSocketClient.addListener(message.channel, hostReportCallback);
+                ipcClient.addListener(message.channel, hostReportCallback);
                 break;
             case 'subscribe-echo-request':
-                webSocketClient.addListener(
+                ipcClient.addListener(
                     message.channel,
                     busEchoRequestCallback.bind(globalThis, message.echoChannel)
                 );
                 break;
             case 'unsubscribe-all':
-                webSocketClient.removeAllListeners(message.channel);
+                ipcClient.removeAllListeners(message.channel);
                 break;
             case 'send':
-                webSocketClient.send(message.channel, message.data);
+                ipcClient.send(message.channel, message.data);
                 break;
             case 'request-resolve':
-                webSocketClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
+                ipcClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
                 break;
             case 'start-echo-service': {
                 echoServiceInstance = new EchoServiceClass();
-                echoService = ctx.createIpcBusService(webSocketClient, message.channel, echoServiceInstance);
+                echoService = ctx.createIpcBusService(ipcClient, message.channel, echoServiceInstance);
                 echoService.start();
                 break;
             }
@@ -108,7 +108,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
                 if (echoServiceProxy) {
                     echoServiceProxy.close();
                 }
-                echoServiceProxy = ctx.createIpcBusServiceProxy(webSocketClient, message.channel);
+                echoServiceProxy = ctx.createIpcBusServiceProxy(ipcClient, message.channel);
                 await echoServiceProxy.connect();
                 if (message.counterEvents) {
                     message.counterEvents.forEach((counterEvent) => {
@@ -127,6 +127,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext) {
         ctx.sendBack('done');
     });
 
-    await webSocketClient.connect(ctx.clientPort, { timeoutDelay: -1 });
+    await ipcClient.connect(ctx.clientPort, { timeoutDelay: -1 });
     ctx.sendBack('ready');
+    return ipcClient;
 }

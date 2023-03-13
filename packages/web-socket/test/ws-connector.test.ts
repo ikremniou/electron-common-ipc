@@ -20,7 +20,7 @@ describe('ws-connector unit tests', () => {
 
     beforeEach(() => {
         const uuidProvider = () => 'uuid';
-        connector = new WsConnector(uuidProvider, IpcBusProcessType.Node);
+        connector = new WsConnector(uuidProvider, JSONParserV1, IpcBusProcessType.Node);
     });
 
     it('should be created and create peer based on the uuid generator', () => {

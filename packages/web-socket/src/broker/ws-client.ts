@@ -1,7 +1,6 @@
-import { JSONParserV1 } from 'json-helpers';
 import { BufferListReader, IpcPacketBufferList } from 'socket-serializer-ik';
 
-import type { IpcBusCommand, Logger, SocketClient } from '@electron-common-ipc/universal';
+import type { IpcBusCommand, Logger, SocketClient, JsonLike } from '@electron-common-ipc/universal';
 import type { RawData, WebSocket } from 'ws';
 
 export class WsClient implements SocketClient {
@@ -12,12 +11,12 @@ export class WsClient implements SocketClient {
     private readonly _packetIn: IpcPacketBufferList;
     private readonly _bufferListReader: BufferListReader;
 
-    constructor(private _socket: WebSocket, private readonly _logger?: Logger) {
+    constructor(private _socket: WebSocket, json: JsonLike, private readonly _logger?: Logger) {
         this._logger?.info(`[WsBrokerClient] Connect: ${this._socket.url}`);
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
-        this._packetIn.JSON = JSONParserV1;
+        this._packetIn.JSON = json;
 
         this._onSocketData = this._onSocketData.bind(this);
         this._onSocketError = this._onSocketError.bind(this);
@@ -39,10 +38,8 @@ export class WsClient implements SocketClient {
     }
 
     public release(): void {
-        // TODO_IK: review logging
         this._logger?.info(`[WsBrokerClient] Release: ${this._socket.url}`);
         if (this._socket) {
-            // TODO_IK: review close
             this._socket.off('message', this._onSocketData);
             this._socket.off('close', this._onSocketClose);
             this._socket.off('error', this._onSocketError);
@@ -66,7 +63,6 @@ export class WsClient implements SocketClient {
     }
 
     private _onSocketData(rawData: RawData) {
-        // TODO_IK: review serialization
         this._bufferListReader.appendBuffer(rawData as Buffer);
         if (this._packetIn.decodeFromReader(this._bufferListReader)) {
             do {

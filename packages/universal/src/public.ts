@@ -24,6 +24,7 @@ export type { BusMessagePort } from './index';
 export type { IpcBusPeer } from './index';
 export type { Logger, MessageStamp } from './index';
 export type { BusContainer } from './index';
+export type { JsonLike } from './index';
 
 export { GlobalContainer as DefaultContainer } from './index';
 export { ConsoleLogger as DefaultLogger } from './index';

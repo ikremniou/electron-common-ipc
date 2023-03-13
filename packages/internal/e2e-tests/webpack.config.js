@@ -4,6 +4,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const webConfig = {
     entry: {
         ws: './test/clients/browser/ws-browser-client.ts',
+        wsi: './test/clients/browser/wsi-browser-client.ts',
         eipc: './test/clients/browser/eipc-browser-client.ts',
     },
     target: 'web',
@@ -27,6 +28,7 @@ const webConfig = {
         new CopyPlugin({
             patterns: [
                 { from: './test/clients/browser/eipc-browser-index.html' },
+                { from: './test/clients/browser/wsi-browser-index.html' },
                 { from: './test/clients/browser/ws-browser-index.html' }
         ]
         })
@@ -36,6 +38,7 @@ const webConfig = {
 const preloadConfig = {
     entry: {
         ws: './test/clients/browser/ws-browser-preload.ts',
+        wsi: './test/clients/browser/wsi-browser-preload.ts',
         eipc: './test/clients/browser/eipc-browser-preload.ts',
     },
     target: 'electron-renderer',

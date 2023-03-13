@@ -1,2 +1,2 @@
-export const BrokerToken = 'WsBroker';
-export const TransportToken = 'WsNodeTransport';
+export const BrokerToken = Symbol('WsBroker');
+export const TransportToken = Symbol('WsNodeTransport');

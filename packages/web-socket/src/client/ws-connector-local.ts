@@ -1,5 +1,4 @@
 import { IpcBusConnectorImpl } from '@electron-common-ipc/universal';
-import { JSONParserV1 } from 'json-helpers';
 import { IpcPacketBufferList } from 'socket-serializer-ik';
 
 import type {
@@ -12,6 +11,7 @@ import type {
     IpcBusProcessType,
     SocketClient,
     UuidProvider,
+    JsonLike,
 } from '@electron-common-ipc/universal';
 
 export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClient {
@@ -20,11 +20,11 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClien
 
     private readonly _packetPass: IpcPacketBufferList;
 
-    constructor(uuidProvider: UuidProvider, contextType: IpcBusProcessType) {
+    constructor(uuidProvider: UuidProvider, private readonly _json: JsonLike, contextType: IpcBusProcessType) {
         super(uuidProvider, contextType, 'connector-ws-local');
 
         this._packetPass = new IpcPacketBufferList();
-        this._packetPass.JSON = JSONParserV1;
+        this._packetPass.JSON = this._json;
     }
 
     send(bufferList: IpcPacketBufferList): void {
@@ -77,9 +77,9 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClien
 
     public postMessage(ipcMessage: IpcBusMessage, args?: unknown[]): void {
         ipcMessage.isRawData = true;
-        JSONParserV1.install();
+        this._json.install?.();
         this._packetPass.serialize([ipcMessage, args]);
-        JSONParserV1.uninstall();
+        this._json.uninstall?.();
         this._passDataToBroker(this, ipcMessage, this._packetPass);
     }
 

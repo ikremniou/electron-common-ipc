@@ -23,7 +23,7 @@ describe('ws-browser-connector unit tests', () => {
     beforeEach(() => {
         const loggerStub = tsSinon.stubInterface<Logger>();
         uuidProviderStub = sinon.spy(() => 'uuid');
-        connector = new WsBrowserConnector(uuidProviderStub, IpcBusProcessType.Browser, loggerStub);
+        connector = new WsBrowserConnector(uuidProviderStub, JSONParserV1, IpcBusProcessType.Browser, loggerStub);
     });
 
     it('should call uuid provider to generate peer id', () => {
