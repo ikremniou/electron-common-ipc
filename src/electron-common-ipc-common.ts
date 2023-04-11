@@ -8,7 +8,7 @@ export * from './IpcBus/service/IpcBusService-factory';
 
 export * from './IpcBus/log/IpcBusLog';
 
-export { ActivateIpcBusTrace, ActivateServiceTrace, ConnectCloseState, ParseConnectOptions as CheckConnectOptions } from './IpcBus/IpcBusUtils';
+export { ActivateIpcBusTrace, ActivateServiceTrace, ConnectCloseState, ParseConnectOptions as CheckConnectOptions, ParseConnectOptions } from './IpcBus/IpcBusUtils';
 
 // Force to execute code
 /** @internal */
