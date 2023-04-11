@@ -71,7 +71,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     // IpcBusBroker API
     connect(arg1: Broker.IpcBusBroker.ConnectOptions | string | number, arg2?: Broker.IpcBusBroker.ConnectOptions | string, arg3?: Broker.IpcBusBroker.ConnectOptions): Promise<void> {
         return this._connectCloseState.connect(() => {
-            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            const options = IpcBusUtils.ParseConnectOptions(arg1, arg2, arg3);
             if ((options.port == null) && (options.path == null)) {
                 return Promise.reject('Connection options not provided');
             }

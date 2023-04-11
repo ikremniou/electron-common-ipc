@@ -92,7 +92,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge, IpcBusBridgeDispat
     // IpcBusBridge API
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         // To manage re-entrance
-        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        const options = IpcBusUtils.ParseConnectOptions(arg1, arg2, arg3);
         return this._rendererConnector.broadcastConnect(options)
         .then(() => {
             if (this._socketTransport == null) {

@@ -78,7 +78,7 @@ export function CheckTimeout(val: any): number {
     }
 }
 
-export function CheckConnectOptions<T extends IpcConnectOptions>(arg1?: T | string | number, arg2?: T | string, arg3?: T): T {
+export function ParseConnectOptions<T extends IpcConnectOptions>(arg1?: T | string | number, arg2?: T | string, arg3?: T): T {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
     const options: T = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {}) as T;

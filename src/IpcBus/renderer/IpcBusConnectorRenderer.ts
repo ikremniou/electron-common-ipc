@@ -152,7 +152,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             };
 
             // Below zero = infinite
-            options = IpcBusUtils.CheckConnectOptions(options);
+            options = IpcBusUtils.ParseConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
@@ -194,7 +194,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             };
 
             // Below zero = infinite
-            options = IpcBusUtils.CheckConnectOptions(options);
+            options = IpcBusUtils.ParseConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;

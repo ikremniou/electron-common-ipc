@@ -143,7 +143,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return this._connectCloseState.connect(() => {
             return new Promise((resolve, reject) => {
-                options = IpcBusUtils.CheckConnectOptions(options);
+                options = IpcBusUtils.ParseConnectOptions(options);
                 if ((options.port == null) && (options.path == null)) {
                     return reject('Connection options not provided');
                 }
