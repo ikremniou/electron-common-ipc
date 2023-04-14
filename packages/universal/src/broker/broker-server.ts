@@ -1,5 +1,5 @@
 import type { BrokerCloseOptions } from './broker';
-import type { SocketClient } from './socket-client';
+import type { BrokerClient } from './broker-client';
 
 export interface BrokerServer {
     close(options?: BrokerCloseOptions): Promise<void>;
@@ -7,6 +7,6 @@ export interface BrokerServer {
     subscribe(
         onClose: () => void,
         onError: (error: Error) => void,
-        onConnection: (client: SocketClient) => void): void;
+        onConnection: (client: BrokerClient) => void): void;
     unsubscribe(): void;
 }

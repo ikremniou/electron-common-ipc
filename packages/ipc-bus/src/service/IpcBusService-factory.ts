@@ -1,17 +1,24 @@
-import type { IpcBusClient } from '../client/IpcBusClient';
+import {
+    createIpcBusService as createServiceUniversal,
+    createIpcBusServiceProxy as createServiceProxyUniversal,
+} from '@electron-common-ipc/universal';
+import { EventEmitter } from 'events';
 
-import { IpcBusService, IpcBusServiceProxy } from './IpcBusService';
-import { IpcBusServiceImpl } from './IpcBusServiceImpl';
-import { IpcBusServiceProxyImpl } from './IpcBusServiceProxyImpl';
+import type {
+    IpcBusClient,
+    IpcBusService,
+    IpcBusServiceProxy,
+    ServiceProxyConnectOptions,
+} from '@electron-common-ipc/universal';
 
-export const CreateIpcBusService: IpcBusService.CreateFunction = (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusService.CreateOptions): IpcBusService => {
-    return new IpcBusServiceImpl(client, serviceName, serviceImpl);
-};
+export function createIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
+    return createServiceUniversal(client, serviceName, serviceImpl, EventEmitter.prototype);
+}
 
-IpcBusService.Create = CreateIpcBusService;
-
-export const CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = (client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy => {
-    return new IpcBusServiceProxyImpl(client, serviceName, options);
-};
-
-IpcBusServiceProxy.Create = CreateIpcBusServiceProxy;
+export function createIpcBusServiceProxy(
+    client: IpcBusClient,
+    serviceName: string,
+    options?: ServiceProxyConnectOptions
+): IpcBusServiceProxy {
+    return createServiceProxyUniversal(client, serviceName, new EventEmitter(), options);
+}

@@ -1,10 +1,10 @@
 import type { IpcBusCommand } from '../contract/ipc-bus-command';
-import type { IpcPacketBufferList } from 'socket-serializer-ik';
+import type { IpcPacketBufferList } from 'socket-serializer';
 
 /**
  * Abstraction of the socket client for broker. Can be Net.Socket, WebSocket or WebRTC
  */
-export interface SocketClient {
+export interface BrokerClient {
     /**
      * Send buffer list of the socket connection
      * @param bufferList The buffer list to send to the socket
@@ -18,12 +18,12 @@ export interface SocketClient {
      */
     subscribe(
         onSocketData: (
-            socket: SocketClient,
+            socket: BrokerClient,
             ipcCommand: IpcBusCommand,
             ipcBusBufferList: IpcPacketBufferList
         ) => void,
-        onSocketError: (socket: SocketClient, error: Error) => void,
-        onSocketClose: (socket: SocketClient) => void
+        onSocketError: (socket: BrokerClient, error: Error) => void,
+        onSocketClose: (socket: BrokerClient) => void
     ): void;
     /**
      * Releases the connection

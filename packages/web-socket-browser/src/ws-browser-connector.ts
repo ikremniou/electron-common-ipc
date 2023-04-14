@@ -5,7 +5,7 @@ import {
     IpcBusConnectorImpl,
 } from '@electron-common-ipc/universal';
 import { Buffer } from 'buffer';
-import { BufferListReader, IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer-ik';
+import { BufferListReader, IpcPacketBuffer, IpcPacketBufferList } from 'socket-serializer';
 
 import type {
     ClientCloseOptions,

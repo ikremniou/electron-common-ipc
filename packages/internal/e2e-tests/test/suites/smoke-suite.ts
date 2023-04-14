@@ -1,6 +1,6 @@
-import { createIpcBusServiceProxy, GlobalContainer } from '@electron-common-ipc/universal';
+import { GlobalContainer } from '@electron-common-ipc/universal';
 import { expect } from 'chai';
-import { EventEmitter } from 'events';
+import { findFirstFreePort } from 'socket-port-helpers';
 
 import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
 import type {
@@ -32,11 +32,11 @@ export interface BasicSmokeContext extends BasicContext {
     /**
      * Create a service proxy to execute service-to-serviceProxy tests
      */
-    createIpcBusServiceProxy: typeof createIpcBusServiceProxy;
+    createIpcBusServiceProxy: (client: IpcBusClient, serviceName: string) => IpcBusServiceProxy;
 }
 
 export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext) => {
-    const busPort = 47474;
+    let busPort: number;
     let broker: IpcBusBrokerProxy;
     let brokerClient: IpcBusClient;
 
@@ -44,6 +44,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let child: ClientHost;
         before(async () => {
             GlobalContainer.reset();
+            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
             broker = await ctx.createBroker(busPort);
 
             brokerClient = ctx.createBusClient();
@@ -261,6 +262,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let childClient2: ClientHost;
 
         before(async () => {
+            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
@@ -381,6 +383,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let childProcess: ClientHost;
 
         beforeEach(async () => {
+            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
@@ -441,7 +444,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
             let receivedData: string = '';
             await childProcess.waitForMessage((message) => {
-                if (typeof message != 'string' && message.type === 'client-subscribe-report') {
+                if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
                     receivedData = message.data as string;
                     return true;
                 }
@@ -474,7 +477,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         beforeEach(async () => {
             clientHost.sendCommand({ type: 'start-echo-service', channel: 'test-service' });
             await clientHost.waitForMessage('done');
-            serviceProxy = createIpcBusServiceProxy(brokerClient, 'test-service', new EventEmitter());
+            serviceProxy = ctx.createIpcBusServiceProxy(brokerClient, 'test-service');
             await serviceProxy.connect();
         });
 

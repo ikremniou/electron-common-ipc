@@ -1,12 +1,12 @@
-import { BufferListReader, IpcPacketBufferList } from 'socket-serializer-ik';
+import { BufferListReader, IpcPacketBufferList } from 'socket-serializer';
 
-import type { IpcBusCommand, Logger, SocketClient, JsonLike } from '@electron-common-ipc/universal';
+import type { IpcBusCommand, Logger, BrokerClient, JsonLike } from '@electron-common-ipc/universal';
 import type { RawData, WebSocket } from 'ws';
 
-export class WsClient implements SocketClient {
-    private _onSocketDataHandler?: (socket: SocketClient, command: IpcBusCommand, buffer: IpcPacketBufferList) => void;
-    private _onSocketErrorHandler?: (socket: SocketClient, error: Error) => void;
-    private _onSocketCloseHandler?: (socket: SocketClient) => void;
+export class WsBrokerClient implements BrokerClient {
+    private _onSocketDataHandler?: (socket: BrokerClient, command: IpcBusCommand, buffer: IpcPacketBufferList) => void;
+    private _onSocketErrorHandler?: (socket: BrokerClient, error: Error) => void;
+    private _onSocketCloseHandler?: (socket: BrokerClient) => void;
 
     private readonly _packetIn: IpcPacketBufferList;
     private readonly _bufferListReader: BufferListReader;
@@ -24,9 +24,9 @@ export class WsClient implements SocketClient {
     }
 
     public subscribe(
-        onSocketData: (socket: SocketClient, ipcCommand: IpcBusCommand, ipcBusBufferList: IpcPacketBufferList) => void,
-        onSocketError: (socket: SocketClient, error: Error) => void,
-        onSocketClose: (socket: SocketClient) => void
+        onSocketData: (socket: BrokerClient, ipcCommand: IpcBusCommand, ipcBusBufferList: IpcPacketBufferList) => void,
+        onSocketError: (socket: BrokerClient, error: Error) => void,
+        onSocketClose: (socket: BrokerClient) => void
     ): void {
         this._onSocketDataHandler = onSocketData;
         this._onSocketErrorHandler = onSocketError;
@@ -59,7 +59,7 @@ export class WsClient implements SocketClient {
     }
 
     [Symbol.toPrimitive](): string {
-        return `REMOTE: ${this._socket.url}`;
+        return `WsClientRemote: ${this._socket.url}`;
     }
 
     private _onSocketData(rawData: RawData) {

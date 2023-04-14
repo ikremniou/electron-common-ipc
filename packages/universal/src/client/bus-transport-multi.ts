@@ -1,5 +1,6 @@
 import { IpcBusTransportImpl } from './bus-transport-impl';
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
+import { createContextId } from '../utils';
 import { ChannelConnectionMap } from '../utils/channel-map';
 
 import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
@@ -12,7 +13,7 @@ import type { QueryStateChannels, QueryStatePeers, QueryStateTransport } from '.
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { IpcPacketBufferCore } from 'socket-serializer-ik';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export class IpcBusTransportMulti extends IpcBusTransportImpl {
     protected _subscriptions: ChannelConnectionMap<IpcBusTransportClient, string>;
@@ -165,6 +166,7 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
 
         const results: QueryStateTransport = {
             type: 'transport',
+            contextId: createContextId(this.connector.peer.type),
             channels: processChannelsJSON,
             peers: peersJSON,
         };

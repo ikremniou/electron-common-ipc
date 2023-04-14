@@ -1,65 +1,51 @@
-import type { IpcBusPeer } from '../client/IpcBusClient';
-import type { IpcBusLogConfig } from './IpcBusLogConfig';
+import { MessageLogKind } from '@electron-common-ipc/universal';
 
-export namespace IpcBusLog {
-    export enum Kind {
-        SEND_MESSAGE,
-        GET_MESSAGE,
-        SEND_REQUEST,
-        GET_REQUEST,
-        SEND_REQUEST_RESPONSE,
-        GET_REQUEST_RESPONSE,
-        SEND_CLOSE_REQUEST,
-        GET_CLOSE_REQUEST,
+import type { IpcBusPeer } from '@electron-common-ipc/universal';
+
+export function LogKindToStr(kind: MessageLogKind): string {
+    switch (kind) {
+        case MessageLogKind.SEND_MESSAGE:
+            return 'SendMessage';
+        case MessageLogKind.GET_MESSAGE:
+            return 'GetMessage';
+        case MessageLogKind.SEND_REQUEST:
+            return 'SendRequest';
+        case MessageLogKind.GET_REQUEST:
+            return 'GetRequest';
+        case MessageLogKind.SEND_REQUEST_RESPONSE:
+            return 'SendRequestResponse';
+        case MessageLogKind.GET_REQUEST_RESPONSE:
+            return 'GetRequestResponse';
+        case MessageLogKind.SEND_CLOSE_REQUEST:
+            return 'SendCloseRequest';
+        case MessageLogKind.GET_CLOSE_REQUEST:
+            return 'GetCloseRequest';
+        default:
+            return 'Unknown';
     }
+}
 
-    export function KindToStr(kind: Kind): string {
-        switch (kind) {
-            case Kind.SEND_MESSAGE:
-                return 'SendMessage';
-            case Kind.GET_MESSAGE:
-                return 'GetMessage';
-            case Kind.SEND_REQUEST:
-                return 'SendRequest';
-            case Kind.GET_REQUEST:
-                return 'GetRequest';
-            case Kind.SEND_REQUEST_RESPONSE:
-                return 'SendRequestResponse';
-            case Kind.GET_REQUEST_RESPONSE:
-                return 'GetRequestResponse';
-            case Kind.SEND_CLOSE_REQUEST:
-                return 'SendCloseRequest';
-            case Kind.GET_CLOSE_REQUEST:
-                return 'GetCloseRequest';
-        }
-    }
+export interface IpcBusLogMessage {
+    id: string;
+    order: number;
+    peer: IpcBusPeer;
+    relatedPeer: IpcBusPeer;
+    timestamp: number;
+    delay: number;
+    channel: string;
+    kind: MessageLogKind;
+    kindStr: string;
+    responseChannel?: string;
+    responseStatus?: 'resolved' | 'rejected' | 'cancelled';
+    local?: boolean;
+    payload?: number;
+    args?: unknown[];
+}
 
-    export interface Message {
-        id: string;
-        order: number;
-        peer: IpcBusPeer;
-        related_peer: IpcBusPeer;
-        timestamp: number;
-        delay: number;
-        channel: string;
-        kind: Kind;
-        kindStr: string;
-        responseChannel?: string;
-        responseStatus?: 'resolved' | 'rejected' | 'cancelled';
-        local?: boolean;
-        payload?: number;
-        args?: any[];
-    }
+export interface IpcBusLogCallback {
+    (message: IpcBusLogMessage): void;
+}
 
-    export interface Callback {
-        (message: IpcBusLog.Message): void;
-    }
-
-    export interface Logger {
-        writeLog: Callback;
-    }
-
-    export let SetLogLevel: (level: IpcBusLogConfig.Level, cb: IpcBusLog.Callback, argContentLen?: number) => void;
-    export let SetLogLevelJSON: (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number) => void;
-    export let SetLogLevelCVS: (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number) => void;
+export interface IpcBusLogLogger {
+    writeLog: IpcBusLogCallback;
 }

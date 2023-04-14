@@ -16,7 +16,6 @@
         "noFallthroughCasesInSwitch": true,
         "forceConsistentCasingInFileNames": true,
         "noImplicitAny": true,
-        "importsNotUsedAsValues": "error",
 
         "experimentalDecorators": true,
         "preserveSymlinks": true,

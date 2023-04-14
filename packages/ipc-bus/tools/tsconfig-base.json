@@ -23,6 +23,7 @@
         "forceConsistentCasingInFileNames": true,
         "noImplicitAny": true,
         "importsNotUsedAsValues": "error",
+        "declaration": true,
 
         /* Experimental Options */
         "experimentalDecorators": true,

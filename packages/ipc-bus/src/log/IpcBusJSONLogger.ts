@@ -1,30 +1,33 @@
+import { unlinkSync } from 'fs';
 import * as path from 'path';
-import * as fse from 'fs-extra';
 import * as winston from 'winston';
 
-import type { IpcBusLog } from './IpcBusLog';
+import { ensureDirSync } from './IpcBusLogUtils';
+
+import type { IpcBusLogLogger, IpcBusLogMessage } from './IpcBusLog';
 
 /** @internal */
-export class JSONLogger implements IpcBusLog.Logger {
-    private _winstonLogger: winston.Logger;
+export class JSONLogger implements IpcBusLogLogger {
+    private readonly _winstonLogger: winston.Logger;
 
     constructor(filename: string) {
-        fse.ensureDirSync(path.dirname(filename));
+        ensureDirSync(path.dirname(filename));
         try {
-            fse.unlinkSync(filename);
+            unlinkSync(filename);
+        } catch {
+            /* empty */
         }
-        catch (_) {}
 
         this._winstonLogger = winston.createLogger({
             transports: [
-                new (winston.transports.File)({
-                    filename
-                })
-            ]
+                new winston.transports.File({
+                    filename,
+                }),
+            ],
         });
     }
 
-    writeLog(message: IpcBusLog.Message): void {
+    writeLog(message: IpcBusLogMessage): void {
         this._winstonLogger.info(message.order.toString(), message);
     }
 }

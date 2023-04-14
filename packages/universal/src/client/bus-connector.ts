@@ -5,7 +5,7 @@ import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
 import type { ContractLogLevel } from '../log/ipc-bus-log-config';
-import type { IpcPacketBufferCore } from 'socket-serializer-ik';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export interface ConnectorHandshake {
     peer: IpcBusPeer;
@@ -16,6 +16,11 @@ export interface IpcBusConnectorClient {
     onConnectorArgsReceived(
         ipcMessage: IpcBusMessage,
         args: unknown[],
+        messagePorts?: ReadonlyArray<BusMessagePort>
+    ): boolean;
+    onConnectorPacketReceived(
+        ipcMessage: IpcBusMessage,
+        ipcPacketBufferCore: IpcPacketBufferCore,
         messagePorts?: ReadonlyArray<BusMessagePort>
     ): boolean;
     onConnectorCommandBase(ipcCommandBase: IpcBusCommandBase, ipcPacketBufferCore?: IpcPacketBufferCore): void;

@@ -1,37 +1,24 @@
-import { GetElectronProcessType } from 'electron-process-type/lib/v2';
+import { ConsoleLogger, GlobalContainer } from '@electron-common-ipc/universal';
 
-import * as IpcBusUtils from '../utils';
+import { IpcBusBrokerNode } from './IpcBusBrokerNode';
+import { NetBrokerServerFactory } from './NetBrokerServerFactory';
+import { Logger } from '../utils';
 
-import { IpcBusBroker } from './IpcBusBroker';
+import type { IpcBusBroker } from '@electron-common-ipc/universal';
 
-const g_broker_symbol_name = 'IpcBusBroker';
-
-export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker | null => {
-    let g_broker = IpcBusUtils.GetSingleton<IpcBusBroker>(g_broker_symbol_name);
-    // Beware, we test 'undefined' here
-    if (g_broker === undefined) {
-        const electronProcessType = GetElectronProcessType();
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType}`);
-        switch (electronProcessType) {
-            case 'main': {
-                const newModule = require('./IpcBusBroker-factory-main');
-                g_broker = newModule.NewIpcBusBroker(electronProcessType);
-                break;
-            }
-            case 'node': {
-                const newModule = require('./IpcBusBroker-factory-node');
-                g_broker = newModule.NewIpcBusBroker(electronProcessType);
-                break;
-            }
-            // not supported process
-            case 'renderer':
-            default:
-                g_broker = null;
-                break;
-        }
-        IpcBusUtils.RegisterSingleton(g_broker_symbol_name, g_broker);
+const gBrokerSymbolName = 'IpcBusBroker';
+function createIpcBusBrokerSingleton(factory: () => IpcBusBroker): IpcBusBroker {
+    const container = new GlobalContainer();
+    let broker = container.getSingleton<IpcBusBroker>(gBrokerSymbolName);
+    if (broker === undefined) {
+        broker = factory();
+        container.registerSingleton(gBrokerSymbolName, broker);
     }
-    return g_broker;
-};
 
-IpcBusBroker.Create = CreateIpcBusBroker;
+    return broker;
+}
+
+export function newIpcBusBroker(): IpcBusBroker {
+    const logger = Logger.enable ? new ConsoleLogger() : undefined;
+    return createIpcBusBrokerSingleton(() => new IpcBusBrokerNode(new NetBrokerServerFactory(logger)));
+}

@@ -1,5 +1,5 @@
 import { IpcBusConnectorImpl } from '@electron-common-ipc/universal';
-import { IpcPacketBufferList } from 'socket-serializer-ik';
+import { IpcPacketBufferList } from 'socket-serializer';
 
 import type {
     ClientCloseOptions,
@@ -9,14 +9,14 @@ import type {
     IpcBusConnectorClient,
     IpcBusMessage,
     IpcBusProcessType,
-    SocketClient,
+    BrokerClient,
     UuidProvider,
     JsonLike,
 } from '@electron-common-ipc/universal';
 
-export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClient {
-    private _passDataToBroker: (socket: SocketClient, command: IpcBusCommand, list: IpcPacketBufferList) => void;
-    private _passCloseToBroker: (socket: SocketClient) => void;
+export class WsConnectorLocal extends IpcBusConnectorImpl implements BrokerClient {
+    private _passDataToBroker: (socket: BrokerClient, command: IpcBusCommand, list: IpcPacketBufferList) => void;
+    private _passCloseToBroker: (socket: BrokerClient) => void;
 
     private readonly _packetPass: IpcPacketBufferList;
 
@@ -33,9 +33,9 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements SocketClien
     }
 
     subscribe(
-        onSocketData: (socket: SocketClient, ipcCommand: IpcBusCommand, ipcBusBufferList: IpcPacketBufferList) => void,
-        _onSocketError: (socket: SocketClient, error: Error) => void,
-        onSocketClose: (socket: SocketClient) => void
+        onSocketData: (socket: BrokerClient, ipcCommand: IpcBusCommand, ipcBusBufferList: IpcPacketBufferList) => void,
+        _onSocketError: (socket: BrokerClient, error: Error) => void,
+        onSocketClose: (socket: BrokerClient) => void
     ): void {
         this._passDataToBroker = onSocketData;
         this._passCloseToBroker = onSocketClose;

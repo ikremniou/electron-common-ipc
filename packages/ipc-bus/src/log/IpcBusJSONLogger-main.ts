@@ -1,18 +1,20 @@
-import { IpcBusLog } from './IpcBusLog';
-import { IpcBusLogConfig } from './IpcBusLogConfig';
+import { ContractLogLevel, GlobalContainer } from '@electron-common-ipc/universal';
 
-import { GetSingleton, RegisterSingleton } from '../utils';
+import { JSONLogger } from './IpcBusJSONLogger';
+import { SetLogLevel } from './IpcBusLogConfig-main';
 
-const g_jsonlogger_symbol_name = 'JSONLogger';
-IpcBusLog.SetLogLevelJSON = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
-    if (level >= IpcBusLogConfig.Level.None) {
-        const jsonloggerMod = require('./IpcBusJSONLogger');
-        let g_jsonLogger = GetSingleton<IpcBusLog.Logger>(g_jsonlogger_symbol_name);
-        if (g_jsonLogger == null) {
-            g_jsonLogger = new jsonloggerMod.JSONLogger(filename);
-            RegisterSingleton(g_jsonlogger_symbol_name, g_jsonLogger);
-            const cb = g_jsonLogger.writeLog.bind(g_jsonLogger);
-            IpcBusLog.SetLogLevel(level, cb, argContentLen);
+import type { IpcBusLogLogger } from './IpcBusLog';
+
+const gJsonLoggerSymbolName = 'JSONLogger';
+export function setLogLevelJSON(level: ContractLogLevel, filename: string, argContentLen?: number): void {
+    if (level >= ContractLogLevel.None) {
+        const globalContainer = new GlobalContainer();
+        let gJsonLogger = globalContainer.getSingleton<IpcBusLogLogger>(gJsonLoggerSymbolName);
+        if (gJsonLogger === undefined) {
+            gJsonLogger = new JSONLogger(filename);
+            globalContainer.registerSingleton(gJsonLoggerSymbolName, gJsonLogger);
+            const cb = gJsonLogger.writeLog.bind(gJsonLogger);
+            SetLogLevel(level, cb, argContentLen);
         }
     }
 }

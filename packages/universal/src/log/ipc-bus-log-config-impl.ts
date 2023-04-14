@@ -9,9 +9,9 @@ const enum Env {
 }
 
 export class IpcBusLogConfigImpl implements IpcBusLogConfig {
-    private _level: ContractLogLevel;
-    private _baseTime: number;
-    private _argMaxContentLen: number;
+    protected _level: ContractLogLevel;
+    protected _baseTime: number;
+    protected _argMaxContentLen: number;
 
     constructor() {
         const levelFromEnv = this.getLevelFromEnv();

@@ -1,4 +1,4 @@
-import { BrokerImpl } from '@electron-common-ipc/universal';
+import { BrokerImpl, IpcBusProcessType } from '@electron-common-ipc/universal';
 
 import { WsBrokerServerFactory } from './ws-broker-server-factory';
 import { BrokerToken, TransportToken } from '../constants';
@@ -25,7 +25,7 @@ export interface ThinContext {
  */
 export function createWebSocketBroker(ctx: ThinContext): IpcBusBroker {
     const serverFactory = new WsBrokerServerFactory(ctx.json);
-    const broker = new BrokerImpl(serverFactory, ctx.logger);
+    const broker = new BrokerImpl(serverFactory, IpcBusProcessType.Node, ctx.logger);
     ctx.container?.registerSingleton(BrokerToken, broker);
 
     const maybeTransport = ctx.container?.getSingleton<IpcBusTransport>(TransportToken);

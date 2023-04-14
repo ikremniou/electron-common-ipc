@@ -1,19 +1,32 @@
 /// <reference types='electron' />
 
-import { IpcPacketBuffer, IpcPacketBufferCore, WriteBuffersToSocket } from 'socket-serializer';
+import {
+    ChannelsRefCount,
+    IpcBusCommandKind,
+    IpcBusTransportImpl,
+    createContextId,
+} from '@electron-common-ipc/universal';
+import { WriteBuffersToSocket } from 'socket-serializer';
 
-import * as IpcBusUtils from '../utils';
-import * as IpcBusCommandHelpers from '../utils/IpcBusCommand-helpers';
-import type * as Client from '../client/IpcBusClient';
-import { IpcBusCommand, IpcBusMessage } from '../utils/IpcBusCommand';
-import { IpcBusTransportImpl } from '../client/IpcBusTransportImpl';
-import type { IpcBusTransport } from '../client/IpcBusTransport';
-import type { IpcBusConnector } from '../client/IpcBusConnector';
-import { ChannelsRefCount } from '../utils/IpcBusChannelMap';
-import type { QueryStateChannels, QueryStatePeers, QueryStateSocketBridge, QueryStateTransport } from '../utils/IpcBusQueryState';
-import type { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
+import { GetTargetProcess } from '../utils/IpcBusCommand-helpers';
 
 import type { IpcBusBridgeClient, IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import type { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
+import type { QueryStateSocketBridge } from '../utils/IpcBusQueryState';
+import type {
+    BusMessagePort,
+    ClientConnectOptions,
+    IpcBusCommand,
+    IpcBusConnector,
+    IpcBusMessage,
+    Logger,
+    MessageStamp,
+    QueryStateChannels,
+    QueryStatePeers,
+    QueryStateTransport,
+    UuidProvider,
+} from '@electron-common-ipc/universal';
+import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 const PeerName = 'IPCBus:NetBridge';
 
@@ -21,30 +34,35 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     protected _bridge: IpcBusBridgeImpl;
     protected _subscribedChannels: ChannelsRefCount;
 
-    constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
-        super(connector);
+    constructor(
+        connector: IpcBusConnector,
+        bridge: IpcBusBridgeImpl,
+        uuid: UuidProvider,
+        stamp?: MessageStamp,
+        logger?: Logger
+    ) {
+        super(connector, uuid, stamp, logger);
         this._bridge = bridge;
 
         this._subscribedChannels = new ChannelsRefCount();
     }
 
-    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return super.connect(null, { ...options, peerName: PeerName })
-        .then((peer) => {
+    broadcastConnect(options: ClientConnectOptions): Promise<void> {
+        return super.connect(null, { ...options, peerName: PeerName }).then(() => {
             const channels = this._bridge.getChannels();
             this._postCommand({
-                kind: IpcBusCommand.Kind.BridgeConnect,
+                kind: IpcBusCommandKind.BridgeConnect,
                 channel: undefined,
-                channels
+                channels,
             });
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`${PeerName} Installed`);
+            this._logger?.info(`${PeerName} Installed`);
         });
     }
 
-    broadcastClose(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    broadcastClose(options?: ClientConnectOptions): Promise<void> {
         this._postCommand({
-            kind: IpcBusCommand.Kind.BridgeClose,
-            channel: ''
+            kind: IpcBusCommandKind.BridgeClose,
+            channel: '',
         });
         return super.close(null, options);
     }
@@ -53,26 +71,28 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         this._postCommand(ipcCommand);
     }
 
-    broadcastData(ipcMessage: IpcBusMessage, data: IpcPacketBuffer.RawData | any[], messagePorts?: Electron.MessagePortMain[]): boolean {
+    broadcastData(
+        ipcMessage: IpcBusMessage,
+        data: IpcPacketBuffer.RawData | unknown[],
+        messagePorts?: Electron.MessagePortMain[]
+    ): boolean {
         if (ipcMessage.isRawData) {
             const rawData = data as IpcPacketBuffer.RawData;
             if (rawData.buffer) {
                 return this._broadcastBuffers(ipcMessage, [rawData.buffer]);
             }
-            else {
-                return this._broadcastBuffers(ipcMessage, rawData.buffers);
-            }
+
+            return this._broadcastBuffers(ipcMessage, rawData.buffers);
         }
-        else {
-            const args = data as any[];
-            this._postMessage(ipcMessage, args, messagePorts);
-            return false;
-        }
+
+        const args = data as unknown[];
+        this._postMessage(ipcMessage, args, messagePorts);
+        return false;
     }
 
     // Come from the main bridge: main or renderer
-    protected _broadcastBuffers(ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
-        const connector = this._connector as IpcBusConnectorSocket;
+    protected _broadcastBuffers(_ipcMessage: IpcBusMessage, buffers: Buffer[]): boolean {
+        const connector = this.connector as IpcBusConnectorSocket;
         if (connector.socket) {
             WriteBuffersToSocket(connector.socket, buffers);
         }
@@ -87,44 +107,55 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         if (this._subscribedChannels.has(ipcMessage.channel)) {
             return true;
         }
-        return IpcBusCommandHelpers.GetTargetProcess(ipcMessage) != null;
+        return GetTargetProcess(ipcMessage) !== undefined;
     }
 
     override getChannels(): string[] {
         return this._subscribedChannels.getChannels();
     }
 
-    override addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
+    override addChannel(): void {
         throw 'not implemented';
     }
 
-    override removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
+    override removeChannel(): void {
         // call when closing the transport
     }
 
-    override onLogReceived(ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): void {
-        this._bridge._onSocketLogReceived(ipcMessage, ipcPacketBufferCore);
+    override onLogReceived(ipcMessage: IpcBusMessage, args: unknown[], buffers?: IpcPacketBufferCore): void {
+        this._bridge._onSocketLogReceived(ipcMessage, buffers);
     }
 
-    override onMessageReceived(local: boolean, ipcMessage: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore, messagePorts?: ReadonlyArray<Client.IpcMessagePortType>): boolean {
+    override onMessageReceived(
+        _local: boolean,
+        ipcMessage: IpcBusMessage,
+        _args: unknown[],
+        ipcPacketBufferCore?: IpcPacketBufferCore,
+        _messagePorts?: ReadonlyArray<BusMessagePort>
+    ): boolean {
         return this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferCore);
     }
 
-    override onRequestResponseReceived(local: boolean, ipcResponse: IpcBusMessage, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
+    override onRequestResponseReceived(
+        _local: boolean,
+        ipcResponse: IpcBusMessage,
+        _args: unknown[],
+        ipcPacketBufferCore?: IpcPacketBufferCore
+    ): boolean {
         return this._bridge._onSocketRequestResponseReceived(ipcResponse, ipcPacketBufferCore);
     }
 
-    override onCommandReceived(ipcCommand: IpcBusCommand): void {
+    override onConnectorCommandBase(ipcCommand: IpcBusCommand): void {
         switch (ipcCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener:
+            case IpcBusCommandKind.AddChannelListener:
                 this._subscribedChannels.addRef(ipcCommand.channel);
                 break;
-            case IpcBusCommand.Kind.RemoveChannelListener:
+            case IpcBusCommandKind.RemoveChannelListener:
                 this._subscribedChannels.release(ipcCommand.channel);
                 break;
 
-            case IpcBusCommand.Kind.QueryState:
-            case IpcBusCommand.Kind.QueryStateResponse:
+            case IpcBusCommandKind.QueryState:
+            case IpcBusCommandKind.QueryStateResponse:
                 this._bridge._onSocketCommandReceived(ipcCommand);
                 break;
         }
@@ -143,21 +174,21 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
         const channels = this._subscribedChannels.getChannels();
         for (let i = 0; i < channels.length; ++i) {
             const channel = channels[i];
-            const processChannelJSON = processChannelsJSON[channel] = {
+            const processChannelJSON = (processChannelsJSON[channel] = {
                 name: channel,
-                refCount: 0
-            }
+                refCount: 0,
+            });
             const refCount = this._subscribedChannels.get(channel);
             processChannelJSON.refCount += refCount;
         }
 
         const results: QueryStateSocketBridge = {
             type: 'transport-socket-bridge',
-            process: this._connector.peer.process,
+            contextId: createContextId(this.connector.peer.type),
+            process: { pid: process.pid },
             channels: processChannelsJSON,
-            peers: peersJSON
+            peers: peersJSON,
         };
         return results;
     }
 }
-

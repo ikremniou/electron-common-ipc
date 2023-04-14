@@ -1,23 +1,25 @@
-import * as path from 'path';
-import * as fse from 'fs-extra';
-
-// import CVS_stringify from 'csv-stringify';
 import { stringify } from 'csv-stringify';
+import { createWriteStream, unlinkSync } from 'fs';
+import * as path from 'path';
 
-import type { IpcBusLog } from './IpcBusLog';
+import { ensureDirSync } from './IpcBusLogUtils';
+
+import type { IpcBusLogLogger, IpcBusLogMessage } from './IpcBusLog';
+import type { Stringifier } from 'csv-stringify';
 
 /** @internal */
-export class CSVLogger implements IpcBusLog.Logger {
-    private _stringifyer: any; // CVS_stringify.Stringifier;
+export class CSVLogger implements IpcBusLogLogger {
+    private readonly _stringify: Stringifier;
 
     constructor(filename: string) {
-        fse.ensureDirSync(path.dirname(filename));
+        ensureDirSync(path.dirname(filename));
         try {
-            fse.unlinkSync(filename);
+            unlinkSync(filename);
+        } catch {
+            /* empty */
         }
-        catch (_) {}
 
-        const options: any = {
+        const options: Record<string, unknown> = {
             header: true,
             quoted: true,
             columns: [
@@ -39,16 +41,16 @@ export class CSVLogger implements IpcBusLog.Logger {
                 { key: 'arg3', header: 'arg3' },
                 { key: 'arg4', header: 'arg4' },
                 { key: 'arg5', header: 'arg5' },
-                { key: 'arg6', header: 'arg6' }
-            ]
+                { key: 'arg6', header: 'arg6' },
+            ],
         };
 
-        this._stringifyer = stringify(options);
-        this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
+        this._stringify = stringify(options);
+        this._stringify.pipe(createWriteStream(filename, { highWaterMark: 1024 }));
     }
 
-    writeLog(message: IpcBusLog.Message): void {
-        const csvJsonLog = message as any;
+    writeLog(message: IpcBusLogMessage): void {
+        const csvJsonLog = message as unknown as Record<string, unknown>;
         csvJsonLog.local = message.local ? 'local' : '';
         const args = message.args;
         if (args) {
@@ -57,7 +59,6 @@ export class CSVLogger implements IpcBusLog.Logger {
             }
         }
         csvJsonLog.request = message.responseChannel ? `${message.responseChannel} => ${message.responseStatus}` : '';
-        this._stringifyer.write(csvJsonLog);
+        this._stringify.write(csvJsonLog);
     }
 }
-

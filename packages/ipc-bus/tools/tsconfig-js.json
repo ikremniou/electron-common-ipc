@@ -1,8 +1,5 @@
 {
     "extends": "./tsconfig-base",
-    "compilerOptions": {
-        "declaration": false
-    },
     "include": [
         "../src/**/*.ts",
     ]

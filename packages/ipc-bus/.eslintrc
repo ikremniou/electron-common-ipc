@@ -3,6 +3,6 @@
         "@electron-common-ipc/eslint-config"
     ],
     "parserOptions": {
-        "project": [ "./tools/tsconfig-js.json" ]
+        "project": [ "./tools/tsconfig-js.json", "./tools/tsconfig-test.json" ]
     }
 }

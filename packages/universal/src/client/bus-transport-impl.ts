@@ -15,7 +15,7 @@ import type { QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { IpcPacketBufferCore } from 'socket-serializer-ik';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnectorClient {
     protected _logActivate: boolean;
@@ -30,7 +30,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         public readonly connector: IpcBusConnector,
         private readonly _uuid: UuidProvider,
         private readonly _stamp?: MessageStamp,
-        private readonly _logger?: Logger
+        protected readonly _logger?: Logger
     ) {
         this._requestFunctions = new Map();
         this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler;
@@ -107,24 +107,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         return false;
     }
-
-    // IpcConnectorClient
-    // onConnectorRawDataReceived(
-    //     ipcMessage: IpcBusMessage,
-    //     rawData: IpcPacketBuffer.RawData,
-    //     messagePorts?: IpcBusMessagePort[]
-    // ): boolean {
-    //     // Prevent to create a huge buffer if not needed, keep working with a set of buffers
-    //     const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
-    //     ipcPacketBufferCore.JSON = JSONParserV1;
-    //     switch (ipcMessage.kind) {
-    //         case IpcBusCommandKind.SendMessage:
-    //             return this.onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
-    //         case IpcBusCommandKind.RequestResponse:
-    //             return this.onRequestResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
-    //     }
-    //     return false;
-    // }
 
     // IpcConnectorClient
     onConnectorShutdown() {

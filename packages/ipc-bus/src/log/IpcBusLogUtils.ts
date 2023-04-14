@@ -1,22 +1,66 @@
+import { mkdirSync, existsSync } from 'fs';
 import * as util from 'util';
 
-const CutMarker = '\'__cut__\'';
+const CutMarker = "'__cut__'";
 
-export function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
+export function ensureDirSync(path: string): void {
+    if (!existsSync(path)) {
+        mkdirSync(path, { recursive: true });
+    }
+}
+
+export function jsonStringify(data: unknown, maxLen: number): string {
+    let output = '';
+    switch (typeof data) {
+        case 'object':
+            if (Buffer.isBuffer(data)) {
+                if (data.length > maxLen * 2) {
+                    output = data.toString('utf8', 0, maxLen) + CutMarker;
+                } else {
+                    output = data.toString('utf8', 0, maxLen);
+                }
+            } else if (Array.isArray(data)) {
+                // eslint-disable-next-line no-use-before-define
+                output = stringifyJsonArray(data, maxLen, output);
+            } else if (util.types.isDate(data)) {
+                output = data.toISOString();
+            } else {
+                // eslint-disable-next-line no-use-before-define
+                output = jsonStringifyObject(data, maxLen, output);
+            }
+            break;
+        case 'string':
+            // eslint-disable-next-line no-use-before-define
+            output = jsonStringifyString(data, maxLen);
+            break;
+        case 'number':
+            output = data.toString();
+            break;
+        case 'boolean':
+            output = data ? 'true' : 'false';
+            break;
+        case 'undefined':
+            output = '__undefined__';
+            break;
+    }
+    return output;
+}
+
+export function stringifyJsonArray(data: unknown[], maxLen: number, output: string): string {
     output += '[';
     for (let i = 0, l = data.length; i < l; ++i) {
         if (output.length >= maxLen) {
             output += CutMarker;
             break;
         }
-        output += JSON_stringify(data[i], maxLen - output.length);
+        output += jsonStringify(data[i], maxLen - output.length);
         output += ',';
     }
     output += ']';
     return output;
 }
 
-export function JSON_stringify_object(data: any, maxLen: number, output: string): string {
+export function jsonStringifyObject(data: unknown, maxLen: number, output: string): string {
     output += '{';
     if (data) {
         const keys = Object.keys(data);
@@ -31,70 +75,29 @@ export function JSON_stringify_object(data: any, maxLen: number, output: string)
                 output += CutMarker;
                 break;
             }
-            output += JSON_stringify(data[key], maxLen - output.length);
+            output += jsonStringify((data as Record<string, unknown>)[key], maxLen - output.length);
             output += ',';
         }
-    }
-    else {
+    } else {
         output += 'null';
     }
     output += '}';
     return output;
 }
 
-export function JSON_stringify_string(data: string, maxLen: number): string {
+export function jsonStringifyString(data: string, maxLen: number): string {
     // output = data.substr(0, maxLen).replace(/(\r\n|\n|\r|\t)/gm, ' ');
     if (data.length > maxLen) {
-        return data.substr(0, maxLen) + CutMarker;
+        return data.substring(0, maxLen) + CutMarker;
     }
-    else {
-        return data;
-    }
+    return data;
 }
 
-export function JSON_stringify(data: any, maxLen: number): string {
-    let output = '';
-    switch (typeof data) {
-        case 'object':
-            if (Buffer.isBuffer(data)) {
-                if (data.length > maxLen * 2) {
-                    output = data.toString('utf8', 0, maxLen) + CutMarker;
-                }
-                else {
-                    output = data.toString('utf8', 0, maxLen);
-                }
-            }
-            else if (Array.isArray(data)) {
-                output = JSON_stringify_array(data, maxLen, output);
-            }
-            else if (util.types.isDate(data)) {
-                output = data.toISOString();
-            }
-            else {
-                output = JSON_stringify_object(data, maxLen, output);
-            }
-            break;
-        case 'string':
-            output = JSON_stringify_string(data, maxLen);
-            break;
-        case 'number':
-            output = data.toString();
-            break;
-        case 'boolean':
-            output = data ? 'true' : 'false';
-            break;
-        case 'undefined':
-            output = '__undefined__'
-            break;
-    }
-    return output;
-}
-
-export function CutData(data: any, maxLen: number): any {
+export function cutData(data: unknown, maxLen: number): unknown {
     switch (typeof data) {
         case 'object':
         case 'string':
-            return JSON_stringify(data, maxLen);
+            return jsonStringify(data, maxLen);
         // case 'number':
         // case 'boolean':
         // case 'undefined':
