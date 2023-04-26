@@ -174,6 +174,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
         this._trackRendererDestruction(webContents);
 
+        const peerCopy = { ...realPeer };
         const endpoint: IpcBusPeerProcessEndpoint = Object.assign(realPeer, { webContents });
         const key = CreateKeyForEndpoint(realPeer);
         this._endpoints.set(key, endpoint);
@@ -196,7 +197,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
 
         const handshake: ConnectorHandshake = {
-            peer: ipcCommand.peer,
+            peer: peerCopy,
             logLevel: logger.level,
         };
         // We get back to the webContents

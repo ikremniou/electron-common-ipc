@@ -94,8 +94,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     // We keep ipcCommand in plain text, once again to have master handling it easily
     postCommand(ipcCommand: IpcBusCommand): void {
-        // TODO_IK_2: Review peerProcess
-        // ipcCommand.peer = ipcCommand.peer || this._peerProcess;
+        ipcCommand.peer = ipcCommand.peer || this._peer;
         this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcCommand);
         // this._commandChannel.port1.postMessage(ipcCommand);
     }
@@ -176,8 +175,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._messageChannel.port1.start();
 
                 // We have to keep the reference untouched as used by client
-                // TODO_IK_2: check peerProcess
-                // this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
+                const peerProcess = this._peer as IpcBusProcessPeer;
+                const handshakeProcess = handshake.peer as IpcBusProcessPeer;
+                peerProcess.process = Object.assign(peerProcess.process, handshakeProcess.process);
                 this.onConnectorHandshake();
                 resolve(handshake);
             };

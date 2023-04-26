@@ -53,23 +53,3 @@ export function createProcessID(peer: IpcBusPeer, ipcProcess: IpcBusProcess) {
     }
     return name;
 }
-
-/** @internal */
-export type Arr = readonly unknown[];
-/** @internal */
-export function partialCall<T extends Arr, U extends Arr, R>(f: (...args: [...T, ...U]) => R, ...headArgs: T) {
-    return (...tailArgs: U) => f(...headArgs, ...tailArgs);
-}
-
-export const Logger = {
-    enable: false,
-    service: false,
-};
-
-export function activateIpcBusTrace(enable: boolean): void {
-    Logger.enable = enable;
-}
-
-export function activateServiceTrace(enable: boolean): void {
-    Logger.service = enable;
-}

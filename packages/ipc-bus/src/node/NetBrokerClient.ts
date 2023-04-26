@@ -60,7 +60,9 @@ export class NetBrokerClient implements BrokerClient {
                 this.socket.removeListener(key, this._socketBinds[key]);
             }
             this.socket.on('error', (err) => {
-                console.log(`!!!!! ${err}`);
+                this.socket.removeAllListeners();
+                this._logger?.warn(`[NetBrokerClient] Released socket error: ${err}`);
+                this.socket.destroy();
             });
             this.socket.end();
             this.socket.unref();

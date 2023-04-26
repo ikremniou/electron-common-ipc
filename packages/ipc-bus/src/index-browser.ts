@@ -1,21 +1,20 @@
 import { newIpcBusClient as CreateIpcBusClient } from './client/IpcBusClient-factory-renderer';
-
-import type {
-    createIpcBusService as CreateIpcBusService,
-    createIpcBusServiceProxy as CreateIpcBusServiceProxy,
+import {
+    newIpcBusService as CreateIpcBusService,
+    newIpcBusServiceProxy as CreateIpcBusServiceProxy,
 } from './service/IpcBusService-factory';
+import { activateIpcBusTrace as ActivateIpcBusTrace } from './utils/log';
+
 import type { IpcBusClient } from '@electron-common-ipc/universal';
 
 declare global {
     interface Window {
         ElectronCommonIpc: {
             CreateIpcBusClient: () => IpcBusClient;
-            CreateIpcBusService: typeof CreateIpcBusService;
-            CreateIpcBusServiceProxy: typeof CreateIpcBusServiceProxy;
         };
     }
 }
 
 export * from '@electron-common-ipc/universal/lib/public';
 
-export { CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy };
+export { ActivateIpcBusTrace, CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy };

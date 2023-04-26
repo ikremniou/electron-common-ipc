@@ -2,7 +2,6 @@ import { GlobalContainer, IpcBusProcessType } from '@electron-common-ipc/univers
 
 import { createIpcBusClient as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 import { ElectronCommonIpcNamespace, isElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
-import { createIpcBusService, createIpcBusServiceProxy } from '../service/IpcBusService-factory';
 import { requireElectron } from '../utils';
 
 import type { IpcWindow } from './IpcBusConnectorRenderer';
@@ -19,8 +18,6 @@ export function createIpcBusClient(window: Window, ipcWindow: IpcWindow): IpcBus
 function createGlobals(windowLocal: Window, ipcWindow: IpcWindow) {
     return {
         CreateIpcBusClient: () => createIpcBusClient(windowLocal, ipcWindow),
-        CreateIpcBusService: createIpcBusService,
-        CreateIpcBusServiceProxy: createIpcBusServiceProxy
     };
 }
 

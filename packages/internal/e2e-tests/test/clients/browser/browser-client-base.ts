@@ -4,8 +4,12 @@ import type { IpcBusClient, IpcBusService, IpcBusServiceProxy } from '@electron-
 
 declare global {
     interface Window {
-        __electronProcess: NodeJS.Process;
-        __ipcRenderer: Electron.IpcRenderer;
+        e2eIpc: {
+            port: number;
+            shouldLog: boolean;
+            electronProcess: NodeJS.Process;
+            ipcRenderer: Electron.IpcRenderer;
+        };
     }
 }
 
@@ -14,11 +18,11 @@ export function bootstrap(
     createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService,
     createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy
 ) {
-    const process = window.__electronProcess;
-    const ipcRenderer = window.__ipcRenderer;
+    const process = window.e2eIpc.electronProcess;
+    const ipcRenderer = window.e2eIpc.ipcRenderer;
     const clientId = String(process.pid);
-    const clientPort = Number(process.argv.find((argv: string) => argv.startsWith('--port')).split('=')[1]);
-    const shouldLog = process.argv.find((argv: string) => argv.startsWith('--log'))?.split('=')[1] === 'true';
+    const shouldLog = window.e2eIpc.shouldLog;
+    const clientPort = window.e2eIpc.port;
     const sendBack = (message: unknown) => {
         ipcRenderer.send('ack', message);
     };

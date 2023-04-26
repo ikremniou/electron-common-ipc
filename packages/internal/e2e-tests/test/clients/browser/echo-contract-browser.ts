@@ -53,12 +53,12 @@ export class ElectronClientHost implements ClientHost {
     }
 }
 
-export async function startClientHost(mode: IpcType, port: number): Promise<ClientHost> {
+export async function startClientHost(mode: IpcType, port: number, contextIsolation: boolean): Promise<ClientHost> {
     const browserWindow = new BrowserWindow({
-        show: false,
+        show: true,
         webPreferences: {
-            contextIsolation: false,
-            additionalArguments: [`--port=${port}`, `--log=${isLogEnabled}`],
+            contextIsolation: contextIsolation,
+            additionalArguments: [`--port=${port}`, `--log=${isLogEnabled}`, `--e2e-isolate=${contextIsolation}`],
             preload: path.join(__dirname, `${mode}-browser-preload.bundle.js`),
         },
     });

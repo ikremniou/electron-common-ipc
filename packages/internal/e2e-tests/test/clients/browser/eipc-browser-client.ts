@@ -7,7 +7,6 @@ import {
 
 import { bootstrap } from './browser-client-base';
 
-const shouldLog =
-    window.__electronProcess.argv.find((argv: string) => argv.startsWith('--log'))?.split('=')[1] === 'true';
-ActivateIpcBusTrace(shouldLog);
+
+ActivateIpcBusTrace(window.e2eIpc.shouldLog);
 bootstrap(CreateIpcBusClient as never, CreateIpcBusService as never, CreateIpcBusServiceProxy as never);

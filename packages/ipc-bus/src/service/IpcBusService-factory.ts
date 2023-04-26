@@ -1,7 +1,4 @@
-import {
-    createIpcBusService as createServiceUniversal,
-    createIpcBusServiceProxy as createServiceProxyUniversal,
-} from '@electron-common-ipc/universal';
+import { createIpcBusService, createIpcBusServiceProxy } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
 
 import type {
@@ -11,14 +8,14 @@ import type {
     ServiceProxyConnectOptions,
 } from '@electron-common-ipc/universal';
 
-export function createIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
-    return createServiceUniversal(client, serviceName, serviceImpl, EventEmitter.prototype);
+export function newIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
+    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype);
 }
 
-export function createIpcBusServiceProxy(
+export function newIpcBusServiceProxy(
     client: IpcBusClient,
     serviceName: string,
     options?: ServiceProxyConnectOptions
 ): IpcBusServiceProxy {
-    return createServiceProxyUniversal(client, serviceName, new EventEmitter(), options);
+    return createIpcBusServiceProxy(client, serviceName, new EventEmitter(), options);
 }

@@ -10,7 +10,7 @@ describe('ws-node local, local node broker, ws-browser on host e2e tests', () =>
     shouldPerformBasicTests('ws-browser', {
         createBroker: wsLocalBrokerFactory,
         createBusClient: createWebSocketClient,
-        startClientHost: (port) => startClientHost('ws', port),
+        startClientHost: (port) => startClientHost('ws', port, false),
         createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter())
     });
 });
@@ -19,7 +19,7 @@ describe('ws-node local, remote node broker, ws-browser on host e2e tests', () =
     shouldPerformBasicTests('ws-browser', {
         createBroker: (port) => remoteNodeBrokerFactory('ws', port),
         createBusClient: createWebSocketClient,
-        startClientHost: (port) => startClientHost('ws', port),
+        startClientHost: (port) => startClientHost('ws', port, false),
         createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter())
     });
 });

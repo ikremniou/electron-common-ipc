@@ -2,7 +2,7 @@ import { ConsoleLogger, GlobalContainer } from '@electron-common-ipc/universal';
 
 import { IpcBusBrokerNode } from './IpcBusBrokerNode';
 import { NetBrokerServerFactory } from './NetBrokerServerFactory';
-import { Logger } from '../utils';
+import { Logger } from '../utils/log';
 
 import type { IpcBusBroker } from '@electron-common-ipc/universal';
 

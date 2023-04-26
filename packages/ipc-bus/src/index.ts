@@ -1,8 +1,8 @@
 import { createIpcBusClient } from './client/IpcBusClient-factory';
 import { newIpcBusBridge } from './main/IpcBusBridge-factory';
 import { newIpcBusBroker } from './node/IpcBusBroker-factory';
-import { createIpcBusService, createIpcBusServiceProxy } from './service/IpcBusService-factory';
-import { activateIpcBusTrace } from './utils';
+import { newIpcBusService, newIpcBusServiceProxy } from './service/IpcBusService-factory';
+import { activateIpcBusTrace } from './utils/log';
 
 export type {
     IpcBusBridge,
@@ -14,8 +14,8 @@ export type {
 
 export * from '@electron-common-ipc/universal/lib/public';
 
-export const CreateIpcBusService = createIpcBusService;
-export const CreateIpcBusServiceProxy = createIpcBusServiceProxy;
+export const CreateIpcBusService = newIpcBusService;
+export const CreateIpcBusServiceProxy = newIpcBusServiceProxy;
 export const ActivateIpcBusTrace = activateIpcBusTrace;
 export const CreateIpcBusClient = createIpcBusClient;
 export const CreateIpcBusBridge = newIpcBusBridge;

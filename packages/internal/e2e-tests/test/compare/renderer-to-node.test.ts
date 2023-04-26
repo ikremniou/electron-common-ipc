@@ -65,7 +65,7 @@ describe('Renderer to Node process', () => {
 
         beforeEach(async () => {
             broker = await wsiLocalBrokerFactory(port);
-            rendererProcess = await startRendererClient('wsi', port);
+            rendererProcess = await startRendererClient('wsi', port, false);
             commonClientHost = await startLocalClient('wsi', port);
         });
 
@@ -87,7 +87,7 @@ describe('Renderer to Node process', () => {
 
         beforeEach(async () => {
             broker = await wsLocalBrokerFactory(port);
-            rendererProcess = await startRendererClient('ws', port);
+            rendererProcess = await startRendererClient('ws', port, false);
             commonClientHost = await startLocalClient('ws', port);
         });
 
@@ -118,7 +118,7 @@ describe('Renderer to Node process', () => {
             const dummyClient = CreateIpcBusClient();
             dummyClient.connect(port);
 
-            rendererProcess = await startRendererClient('eipc', port);
+            rendererProcess = await startRendererClient('eipc', port, false);
             commonClientHost = await startNodeClient('eipc', port, true);
         });
 

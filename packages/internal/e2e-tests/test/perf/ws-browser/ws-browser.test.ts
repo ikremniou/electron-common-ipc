@@ -14,6 +14,6 @@ describe('ws-browser echo performance tests', () => {
         objectTypes: [JSON.stringify([1, 2, 3, 4, 5, 6, '7'])],
         createBroker: wsLocalBrokerFactory,
         createBusClient: createWebSocketClient,
-        startClientHost: startClientHost.bind(undefined, 'ws'),
+        startClientHost: (port) => startClientHost('ws', port, false),
     });
 });

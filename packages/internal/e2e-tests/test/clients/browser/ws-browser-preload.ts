@@ -1,11 +1,11 @@
 import { ipcRenderer } from 'electron';
 
-declare global {
-    interface Window {
-        __electronProcess: NodeJS.Process;
-        __ipcRenderer: Electron.IpcRenderer;
-    }
-}
+const shouldLog = process.argv.find((arg) => arg.startsWith('--log'))?.split('=')[1] === 'true';
+const clientPort = Number(process.argv.find((argv: string) => argv.startsWith('--port')).split('=')[1]);
 
-window.__ipcRenderer = ipcRenderer;
-window.__electronProcess = process;
+window.e2eIpc = {
+    shouldLog,
+    ipcRenderer,
+    port: clientPort,
+    electronProcess: process,
+};
