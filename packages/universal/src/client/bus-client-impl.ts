@@ -37,10 +37,6 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
         return this._transport.createDirectChannel(this);
     }
 
-    connect(options?: ClientConnectOptions): Promise<void>;
-    connect(path?: string, options?: ClientConnectOptions): Promise<void>;
-    connect(port?: number, options?: ClientConnectOptions): Promise<void>;
-    connect(port?: number, hostname?: string, options?: ClientConnectOptions): Promise<void>;
     connect(
         arg1?: ClientConnectOptions | string | number,
         arg2?: ClientConnectOptions | string,

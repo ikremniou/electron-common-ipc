@@ -104,6 +104,7 @@ export class WsBrowserConnector extends IpcBusConnectorImpl {
                 (resolve, reject) => {
                     const socketUrl = new URL(options.path || 'ws://127.0.0.1');
                     socketUrl.port = socketUrl.port || String(options.port);
+                    this._logger?.info(`[WsConnector ${this._peer.id}] Connecting to "${socketUrl.toString()}"...`);
                     this._socket = new WebSocket(socketUrl);
                     this._socket.binaryType = 'arraybuffer';
 
