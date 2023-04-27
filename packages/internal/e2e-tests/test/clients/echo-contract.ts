@@ -120,6 +120,16 @@ export interface StartEchoServiceProxy {
 }
 
 /**
+ * Calls the 'echoMethod' on the service proxy with provided data parameters
+ */
+export interface CallOnEchoServiceProxy {
+    type: 'call-on-echo-service-proxy';
+    /** Used as for the identification and debugging only */
+    channel: string;
+    data: unknown[];
+}
+
+/**
  * Stops service echo proxy started by {@link StartEchoServiceProxy}
  */
 export interface StopEchoServiceProxy {
@@ -138,7 +148,8 @@ export type ToClientProcessMessage =
     | StopEchoService
     | SendMessage
     | StartEchoServiceProxy
-    | StopEchoServiceProxy;
+    | StopEchoServiceProxy
+    | CallOnEchoServiceProxy;
 
 /**
  * The contract to report back messages subscribed via {@link SubscribeReport}

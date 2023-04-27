@@ -2,14 +2,11 @@ import { GlobalContainer } from '@electron-common-ipc/universal';
 import { expect } from 'chai';
 import { findFirstFreePort } from 'socket-port-helpers';
 
+import { EchoServiceClass } from '../clients/echo-contract';
+
 import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
-import type {
-    ClientHost,
-    ToClientProcessMessage,
-    EchoServiceClass,
-    ToHostProcessMessage,
-} from '../clients/echo-contract';
-import type { IpcBusClient, IpcBusServiceProxy } from '@electron-common-ipc/universal';
+import type { ClientHost, ToClientProcessMessage, ToHostProcessMessage } from '../clients/echo-contract';
+import type { IpcBusClient, IpcBusServiceProxy, IpcBusService } from '@electron-common-ipc/universal';
 
 export interface BasicContext {
     /**
@@ -33,6 +30,7 @@ export interface BasicSmokeContext extends BasicContext {
      * Create a service proxy to execute service-to-serviceProxy tests
      */
     createIpcBusServiceProxy: (client: IpcBusClient, serviceName: string) => IpcBusServiceProxy;
+    createIpcBusService: (client: IpcBusClient, serviceName: string, serviceImpl: unknown) => IpcBusService;
 }
 
 export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext) => {
@@ -458,6 +456,54 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
     describe(`[${suiteId}] should perform service-to-serviceProxy communication`, () => {
         let clientHost: ClientHost;
+
+        before(async () => {
+            broker = await ctx.createBroker(busPort);
+            brokerClient = ctx.createBusClient();
+            await brokerClient.connect(busPort);
+
+            clientHost = await ctx.startClientHost(busPort);
+        });
+
+        after(async () => {
+            await brokerClient.close();
+            await broker.close();
+
+            clientHost.close();
+        });
+
+        async function startLocalService(instance: EchoServiceClass): Promise<IpcBusService> {
+            const service = ctx.createIpcBusService(brokerClient, 'local-service', instance);
+            service.start();
+            clientHost.sendCommand({ type: 'start-echo-service-proxy', channel: 'local-service' });
+            await clientHost.waitForMessage('done');
+            return service;
+        }
+
+        async function stopLocalService(service: IpcBusService): Promise<void> {
+            clientHost.sendCommand({ type: 'stop-echo-service-proxy', channel: 'local-service' });
+            await clientHost.waitForMessage('done');
+            service.stop();
+        }
+
+        it('should create service locally and respond to the wrapper calls', async () => {
+            let isCalledFromProxy = false;
+            const serviceInstance = new EchoServiceClass();
+            serviceInstance.echoMethod = (data) => {
+                isCalledFromProxy = true;
+                expect(data[0]).to.be.eq('test');
+                return Promise.resolve(data);
+            };
+            const service = await startLocalService(serviceInstance);
+            clientHost.sendCommand({ type: 'call-on-echo-service-proxy', channel: 'local-service', data: ['test'] });
+            await clientHost.waitForMessage('done');
+            await stopLocalService(service);
+            expect(isCalledFromProxy).to.be.true;
+        });
+    });
+
+    describe(`[${suiteId}] should perform service-to-serviceProxy communication`, () => {
+        let clientHost: ClientHost;
         let serviceProxy: IpcBusServiceProxy;
 
         before(async () => {
@@ -471,6 +517,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         after(async () => {
             await brokerClient.close();
             await broker.close();
+
             clientHost.close();
         });
 
@@ -483,6 +530,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
         afterEach(async () => {
             clientHost.sendCommand({ type: 'stop-echo-service', channel: 'test-service' });
+            await clientHost.waitForMessage('done');
             await serviceProxy.close();
         });
 

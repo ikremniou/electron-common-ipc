@@ -1,6 +1,0 @@
-// The only purpose of this JSON is to help vscode to find project typescript compiler options
-{
-    "references": [
-        { "path": "./tools/tsconfig-js.json" },
-    ]
-}

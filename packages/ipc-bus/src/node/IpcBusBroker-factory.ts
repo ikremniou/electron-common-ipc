@@ -7,18 +7,15 @@ import { Logger } from '../utils/log';
 import type { IpcBusBroker } from '@electron-common-ipc/universal';
 
 const gBrokerSymbolName = 'IpcBusBroker';
-function createIpcBusBrokerSingleton(factory: () => IpcBusBroker): IpcBusBroker {
+export function newIpcBusBroker(): IpcBusBroker {
     const container = new GlobalContainer();
     let broker = container.getSingleton<IpcBusBroker>(gBrokerSymbolName);
     if (broker === undefined) {
-        broker = factory();
+        const logger = Logger.enable ? new ConsoleLogger() : undefined;
+        broker = new IpcBusBrokerNode(new NetBrokerServerFactory(logger), logger);
         container.registerSingleton(gBrokerSymbolName, broker);
     }
 
     return broker;
 }
 
-export function newIpcBusBroker(): IpcBusBroker {
-    const logger = Logger.enable ? new ConsoleLogger() : undefined;
-    return createIpcBusBrokerSingleton(() => new IpcBusBrokerNode(new NetBrokerServerFactory(logger)));
-}

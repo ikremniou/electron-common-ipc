@@ -1,4 +1,10 @@
-import { ContractLogLevel, GlobalContainer, IpcBusProcessType, MessageStampImpl } from '@electron-common-ipc/universal';
+import {
+    ConsoleLogger,
+    ContractLogLevel,
+    GlobalContainer,
+    IpcBusProcessType,
+    MessageStampImpl,
+} from '@electron-common-ipc/universal';
 import * as path from 'path';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
@@ -6,6 +12,7 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 import { setLogLevelCVS } from '../log/IpcBusCSVLogger-main';
 import { setLogLevelJSON } from '../log/IpcBusJSONLogger-main';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory-main';
+import { Logger } from '../utils/log';
 import { uuidProvider } from '../utils/uuid';
 
 import type { IpcBusBridge } from './IpcBusBridge';
@@ -36,15 +43,17 @@ function newIpcBusBridgeInternal(): IpcBusBridge {
         setLogLevelJSON(contractLogger.level, filename, contractLogger.argMaxContentLen);
     }
     let bridge: IpcBusBridge;
+    const logger = Logger.enable ? new ConsoleLogger() : undefined;
     if (contractLogger.level > ContractLogLevel.None) {
         bridge = new IpcBusBridgeLogger(
             IpcBusProcessType.Main,
             contractLogger,
             uuidProvider,
-            new MessageStampImpl(contractLogger)
+            new MessageStampImpl(contractLogger),
+            logger
         );
     } else {
-        bridge = new IpcBusBridgeImpl(IpcBusProcessType.Main, uuidProvider);
+        bridge = new IpcBusBridgeImpl(IpcBusProcessType.Main, uuidProvider, undefined, logger);
     }
     return bridge;
 }

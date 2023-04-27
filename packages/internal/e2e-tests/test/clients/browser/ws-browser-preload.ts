@@ -5,7 +5,8 @@ const clientPort = Number(process.argv.find((argv: string) => argv.startsWith('-
 
 window.e2eIpc = {
     shouldLog,
-    ipcRenderer,
+    rendererOn: (channel, listener) => ipcRenderer.on(channel, listener),
+    rendererSend: (channel, ...args) => ipcRenderer.send(channel, ...args),
     port: clientPort,
     electronProcess: process,
 };

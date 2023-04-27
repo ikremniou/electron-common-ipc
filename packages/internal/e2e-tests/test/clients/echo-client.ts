@@ -118,6 +118,11 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 }
                 break;
             }
+            case 'call-on-echo-service-proxy': {
+                const echoWrapper: EchoServiceClass = echoServiceProxy.getWrapper();
+                await echoWrapper.echoMethod(message.data);
+                break;
+            }
             case 'stop-echo-service-proxy': {
                 echoServiceProxy.close();
                 break;

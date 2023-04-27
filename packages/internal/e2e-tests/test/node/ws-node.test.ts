@@ -1,4 +1,4 @@
-import { createIpcBusServiceProxy, createWebSocketClient } from '@electron-common-ipc/web-socket';
+import { createIpcBusService, createIpcBusServiceProxy, createWebSocketClient } from '@electron-common-ipc/web-socket';
 import { EventEmitter } from 'events';
 
 import { remoteNodeBrokerFactory } from '../clients/broker/node-broker-factory';
@@ -11,7 +11,8 @@ describe('ws-node local, local node broker, ws-node on host e2e tests', () => {
         createBroker: wsLocalBrokerFactory,
         createBusClient: createWebSocketClient,
         startClientHost: (port) => startClientHost('ws', port),
-        createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter())
+        createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter()),
+        createIpcBusService: (client, name, impl) => createIpcBusService(client, name, impl, EventEmitter.prototype)
     });
 });
 
@@ -20,6 +21,7 @@ describe('ws-node local, remote node broker, ws-node on host e2e tests', () => {
         createBroker: (port) => remoteNodeBrokerFactory('ws', port),
         createBusClient: createWebSocketClient,
         startClientHost: (port) => startClientHost('ws', port),
-        createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter())
+        createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter()),
+        createIpcBusService: (client, name, impl) => createIpcBusService(client, name, impl, EventEmitter.prototype)
     });
 });

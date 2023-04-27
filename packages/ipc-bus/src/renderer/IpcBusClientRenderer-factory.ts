@@ -1,7 +1,8 @@
-import { GlobalContainer, IpcBusClientImpl, IpcBusTransportMulti } from '@electron-common-ipc/universal';
+import { ConsoleLogger, GlobalContainer, IpcBusClientImpl, IpcBusTransportMulti } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
 
 import { IpcBusConnectorRenderer } from './IpcBusConnectorRenderer';
+import { Logger } from '../utils/log';
 import { uuidProvider } from '../utils/uuid';
 
 import type { IpcWindow } from './IpcBusConnectorRenderer';
@@ -13,20 +14,29 @@ function createConnector(contextType: IpcBusProcessType, isMainFrame: boolean, i
 }
 
 const gTransportSymbolName = 'IpcBusTransportRenderer';
-function createTransport(contextType: IpcBusProcessType, isMainFrame: boolean, ipcWindow: IpcWindow): IpcBusTransport {
+export function createTransport(
+    contextType: IpcBusProcessType,
+    isMainFrame: boolean,
+    ipcWindow: IpcWindow
+): IpcBusTransport {
     const container = new GlobalContainer();
 
     let gTransport = container.getSingleton<IpcBusTransport>(gTransportSymbolName);
     if (!gTransport) {
         const connector = createConnector(contextType, isMainFrame, ipcWindow);
-        gTransport = new IpcBusTransportMulti(connector, uuidProvider);
+        gTransport = new IpcBusTransportMulti(
+            connector,
+            uuidProvider,
+            undefined,
+            Logger.enable ? new ConsoleLogger() : undefined
+        );
         container.registerSingleton(gTransportSymbolName, gTransport);
     }
     return gTransport;
 }
 
 // Implementation for Renderer process
-export function createIpcBusClient(
+export function newIpcBusClient(
     contextType: IpcBusProcessType,
     isMainFrame: boolean,
     ipcWindow: IpcWindow
