@@ -1,5 +1,7 @@
-import { createIpcBusService, createIpcBusServiceProxy } from '@electron-common-ipc/universal';
+import { ConsoleLogger, createIpcBusService, createIpcBusServiceProxy } from '@electron-common-ipc/universal';
 import { EventEmitter } from 'events';
+
+import { Logger } from '../utils/log';
 
 import type {
     IpcBusClient,
@@ -9,7 +11,8 @@ import type {
 } from '@electron-common-ipc/universal';
 
 export function newIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
-    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype);
+    const logger = Logger.service ? new ConsoleLogger() : undefined;
+    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype, logger);
 }
 
 export function newIpcBusServiceProxy(
@@ -17,5 +20,6 @@ export function newIpcBusServiceProxy(
     serviceName: string,
     options?: ServiceProxyConnectOptions
 ): IpcBusServiceProxy {
-    return createIpcBusServiceProxy(client, serviceName, new EventEmitter(), options);
+    const logger = Logger.service ? new ConsoleLogger() : undefined;
+    return createIpcBusServiceProxy(client, serviceName, new EventEmitter(), options, logger);
 }

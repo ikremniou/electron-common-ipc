@@ -22,12 +22,12 @@ async function createBridgeAsBroker(options?: BridgeConnectOptions): Promise<Ipc
     return {
         close: async () => {
             await bridge.close();
-            await broker.close();
+            await broker?.close();
         },
     };
 }
 
-xdescribe('eipc-main local, bridge as broker, eipc-browser on host e2e tests', () => {
+describe('eipc-main local, bridge as broker, eipc-browser on host e2e tests', () => {
     shouldPerformBasicTests('eipc-electron', {
         createBroker: () => createBridgeAsBroker(undefined),
         createBusClient: CreateIpcBusClient,

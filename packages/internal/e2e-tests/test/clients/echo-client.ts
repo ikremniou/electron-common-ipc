@@ -53,7 +53,9 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
 
     function eventCounter(counterObject: { count: number; required: number }): void {
         counterObject.count++;
-        if (counterObject.count === counterObject.required) {
+        const eventsLeft = counterObject.required - counterObject.count;
+        ctx.shouldLog && console.log(`[Client:${ctx.clientId}][EventCounter] Got event. ${eventsLeft} event left`);
+        if (eventsLeft === 0) {
             ctx.sendBack('counter-confirm');
         }
     }
@@ -72,10 +74,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 ipcClient.addListener(message.channel, hostReportCallback);
                 break;
             case 'subscribe-echo-request':
-                ipcClient.addListener(
-                    message.channel,
-                    busEchoRequestCallback.bind(globalThis, message.echoChannel)
-                );
+                ipcClient.addListener(message.channel, busEchoRequestCallback.bind(globalThis, message.echoChannel));
                 break;
             case 'unsubscribe-all':
                 ipcClient.removeAllListeners(message.channel);
@@ -113,6 +112,11 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 if (message.counterEvents) {
                     message.counterEvents.forEach((counterEvent) => {
                         const counterObject = { count: 0, required: counterEvent[0] };
+                        ctx.shouldLog &&
+                            console.log(
+                                `[Client:${ctx.clientId}] Proxy '${message.channel}' subscribed to ${counterEvent[1]}` +
+                                    ` and will fire 'confirm-counter' after ${counterObject.required} events`
+                            );
                         echoServiceProxy.on(counterEvent[1], eventCounter.bind(globalThis, counterObject));
                     });
                 }

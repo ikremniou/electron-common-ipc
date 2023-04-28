@@ -3,7 +3,7 @@ import {
     newIpcBusService as CreateIpcBusService,
     newIpcBusServiceProxy as CreateIpcBusServiceProxy,
 } from './service/IpcBusService-factory';
-import { activateIpcBusTrace as ActivateIpcBusTrace } from './utils/log';
+import { activateIpcBusTrace as ActivateIpcBusTrace, activateServiceTrace as ActivateServiceTrace } from './utils/log';
 
 import type { IpcBusClient } from '@electron-common-ipc/universal';
 
@@ -17,4 +17,4 @@ declare global {
 
 export * from '@electron-common-ipc/universal/lib/public';
 
-export { ActivateIpcBusTrace, CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy };
+export { ActivateIpcBusTrace, CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy, ActivateServiceTrace };

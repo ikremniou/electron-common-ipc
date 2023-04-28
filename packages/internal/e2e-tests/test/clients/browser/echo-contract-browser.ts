@@ -37,7 +37,7 @@ export class ElectronClientHost implements ClientHost {
                     if (typeof predicate === 'string' && predicate === message) {
                         this._browserWindow?.webContents.off('ipc-message', listener);
                         delayedResolve();
-                    } else if ((predicate as Function)(message)) {
+                    } else if (typeof predicate === 'function' && predicate(message as ToHostProcessMessage)) {
                         this._browserWindow?.webContents.off('ipc-message', listener);
                         delayedResolve();
                     }
