@@ -59,7 +59,7 @@ export class WsClient implements SocketClient {
     }
 
     [Symbol.toPrimitive](): string {
-        return `REMOTE: ${JSON.stringify(this._socket)}`;
+        return `REMOTE: ${this._socket.url}`;
     }
 
     private _onSocketData(rawData: RawData) {
