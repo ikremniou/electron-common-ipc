@@ -66,5 +66,5 @@ jobs:
           bump_type="patch" && [[ -n "${{ inputs.bump_type }}" ]] && bump_type=${{ inputs.bump_type }}
           preid="" && [[ "${{ inputs.preid }}" != "none" ]] && preid="--preid ${{ inputs.preid }}"
           
-          npx lerna version $bump_type -m "$bump_message" $preid $force_publish --no-private --yes
+          npx lerna version $bump_type -m "$bump_message" $preid $force_publish --no-private --yes --exact
           npx lerna publish from-package --yes

@@ -38,9 +38,9 @@ jobs:
           target_branch="${{ github.base_ref }}"
           bump_message="\"chore(release): update package versions\""
           if [ $target_branch == "dev" ]; then
-            npx lerna version prerelease --preid dev --no-private --yes -m "$bump_message"
+            npx lerna version prerelease --exact --preid dev --no-private --yes -m "$bump_message"
           else
-            npx lerna version patch --no-private --yes -m "$bump_message"
+            npx lerna version patch --exact --no-private --yes -m "$bump_message"
           fi
 
           npx lerna publish from-git --yes
