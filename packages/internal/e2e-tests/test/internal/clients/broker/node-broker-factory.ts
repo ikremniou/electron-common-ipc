@@ -4,7 +4,7 @@ import { ActivateIpcBusTrace, CreateIpcBusBroker } from 'electron-common-ipc';
 import { extname } from 'path';
 
 import type { IpcBusBrokerProxy } from './broker-proxy';
-import type { IpcType } from '../../compare/ipc-type';
+import type { IpcType } from '../../ipc-type';
 import type { ChildProcess } from 'child_process';
 import type { IpcBusBroker } from 'electron-common-ipc';
 

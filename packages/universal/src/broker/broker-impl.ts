@@ -280,8 +280,8 @@ export class BrokerImpl implements IpcBusBroker {
                     const endpoint = this._endpoints.get(ipcMessage.target.id);
                     if (endpoint) {
                         endpoint.socket.send(ipcPacketBufferList);
+                        return;
                     }
-                    return;
                 }
                 // Response if not for a socket client, forward to main bridge
                 this.broadcastToBridgeRequestResponse({}, ipcMessage, ipcPacketBufferList);

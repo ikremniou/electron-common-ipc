@@ -100,7 +100,7 @@ export interface SendMessage {
      */
     channel: string;
     /**
-     * Data to transmit
+     * Data to transmit. Can be any object
      */
     data: unknown;
 }
@@ -160,7 +160,22 @@ export interface ClientSubscribeReport {
     data: unknown;
 }
 
-export type ToHostProcessMessage = 'ready' | 'done' | 'counter-confirm' | ClientSubscribeReport;
+/**
+ * Service proxy will count the defined number events and then send confirmation
+ * that all events received with the data of the last event
+ */
+export interface ProxyCounterConfirm {
+    type: 'counter-confirm';
+    lastEventData: unknown;
+}
+
+export type ToMainProcessMessage =
+    | 'ready'
+    | 'done'
+    | ProxyCounterConfirm
+    | ProxyCounterConfirm['type']
+    | ClientSubscribeReport
+    | ClientSubscribeReport['type'];
 
 export class EchoServiceClass extends EventEmitter {
     echoMethod(args: unknown[]): Promise<unknown[]> {
@@ -178,9 +193,11 @@ export interface ClientHost {
     /**
      * Waits for the message to be received by the current host form the client host
      * @param process The client host to send command to
-     * @param predicate Message to wait from client host or predicate function
+     * @param predicate Message to wait from client host or predicate function or message.type
      */
-    waitForMessage(predicate: ToHostProcessMessage | ((mes: ToHostProcessMessage) => boolean)): Promise<void>;
+    waitForMessage(
+        predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
+    ): Promise<ToMainProcessMessage>;
     /**
      * Shuts down client host
      */

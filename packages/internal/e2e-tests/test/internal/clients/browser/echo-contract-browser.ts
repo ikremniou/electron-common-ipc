@@ -1,8 +1,8 @@
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
 
-import type { IpcType } from '../../compare/ipc-type';
-import type { ClientHost, ToClientProcessMessage, ToHostProcessMessage } from '../echo-contract';
+import type { IpcType } from '../../ipc-type';
+import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
 
 const isLogEnabled = Boolean(process.env.LOG);
 export class ElectronClientHost implements ClientHost {
@@ -15,7 +15,9 @@ export class ElectronClientHost implements ClientHost {
         this._browserWindow.webContents.send('message', command);
     }
 
-    waitForMessage(predicate: ToHostProcessMessage | ((mes: ToHostProcessMessage) => boolean)): Promise<void> {
+    waitForMessage(
+        predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
+    ): Promise<ToMainProcessMessage> {
         isLogEnabled && console.log(`[MainHost][Wait] Start for message ${predicate}`);
         return new Promise((resolve) => {
             const listener = (_event: Electron.Event, channel: string, message: unknown) => {
@@ -24,22 +26,24 @@ export class ElectronClientHost implements ClientHost {
                  * message arrive before Broker will have an valid addListener entry, so we delay
                  * the resolve of the ack response to make sure that want happen
                  */
-                const delayedResolve = () => {
+                const delayedResolve = (message: unknown) => {
                     this._delayed.push(resolve);
                     setTimeout(() => {
                         isLogEnabled && console.log(`[MainHost][Wait] Resolved ${message}`);
-                        this._delayed.forEach((func) => func());
+                        this._delayed.forEach((func) => func(message));
                         this._delayed.length = 0;
                     }, 10);
                 };
                 if (channel === 'ack') {
                     isLogEnabled && console.log(`[MainHost][Wait] Got message ${message}`);
-                    if (typeof predicate === 'string' && predicate === message) {
+                    if (typeof predicate === 'string') {
+                        if (predicate === message || (message as { type: string }).type === predicate) {
+                            this._browserWindow?.webContents.off('ipc-message', listener);
+                            delayedResolve(message);
+                        }
+                    } else if (typeof predicate === 'function' && predicate(message as ToMainProcessMessage)) {
                         this._browserWindow?.webContents.off('ipc-message', listener);
-                        delayedResolve();
-                    } else if (typeof predicate === 'function' && predicate(message as ToHostProcessMessage)) {
-                        this._browserWindow?.webContents.off('ipc-message', listener);
-                        delayedResolve();
+                        delayedResolve(message);
                     }
                 }
             };

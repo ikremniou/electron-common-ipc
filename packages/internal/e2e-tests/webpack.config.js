@@ -3,9 +3,9 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 const webConfig = {
     entry: {
-        ws: './test/clients/browser/ws-browser-client.ts',
-        wsi: './test/clients/browser/wsi-browser-client.ts',
-        eipc: './test/clients/browser/eipc-browser-client.ts',
+        ws: './test/internal/clients/browser/ws-browser-client.ts',
+        wsi: './test/internal/clients/browser/wsi-browser-client.ts',
+        eipc: './test/internal/clients/browser/eipc-browser-client.ts',
     },
     target: 'web',
     module: {
@@ -22,14 +22,14 @@ const webConfig = {
     },
     output: {
         filename: '[name]-browser-client.bundle.js',
-        path: path.join(__dirname, 'build', 'clients', 'browser'),
+        path: path.join(__dirname, 'build', 'internal', 'clients', 'browser'),
     },
     plugins: [
         new CopyPlugin({
             patterns: [
-                { from: './test/clients/browser/eipc-browser-index.html' },
-                { from: './test/clients/browser/wsi-browser-index.html' },
-                { from: './test/clients/browser/ws-browser-index.html' }
+                { from: './test/internal/clients/browser/eipc-browser-index.html' },
+                { from: './test/internal/clients/browser/wsi-browser-index.html' },
+                { from: './test/internal/clients/browser/ws-browser-index.html' }
         ]
         })
     ],
@@ -37,9 +37,9 @@ const webConfig = {
 
 const preloadConfig = {
     entry: {
-        ws: './test/clients/browser/ws-browser-preload.ts',
-        wsi: './test/clients/browser/wsi-browser-preload.ts',
-        eipc: './test/clients/browser/eipc-browser-preload.ts',
+        ws: './test/internal/clients/browser/ws-browser-preload.ts',
+        wsi: './test/internal/clients/browser/wsi-browser-preload.ts',
+        eipc: './test/internal/clients/browser/eipc-browser-preload.ts',
     },
     target: 'electron-renderer',
     module: {
@@ -59,7 +59,7 @@ const preloadConfig = {
     },
     output: {
         filename: '[name]-browser-preload.bundle.js',
-        path: path.join(__dirname, 'build', 'clients', 'browser'),
+        path: path.join(__dirname, 'build', 'internal', 'clients', 'browser'),
     },
 };
 

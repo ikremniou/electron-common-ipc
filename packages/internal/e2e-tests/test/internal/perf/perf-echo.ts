@@ -3,20 +3,30 @@ import { performance as perf, PerformanceObserver } from 'perf_hooks';
 import { writeReportTo } from './perf-utilities';
 
 import type { PerfContext, PerfResult } from './perf-utilities';
-import type { IpcBusBrokerProxy } from '../../clients/broker/broker-proxy';
-import type { ClientHost, ToClientProcessMessage } from '../../clients/echo-contract';
+import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
+import type { ClientHost, ToClientProcessMessage } from '../clients/echo-contract';
 
-export interface PerfRequestContext extends PerfContext {
-    numberRequests: number;
+export interface PerfEchoContext extends PerfContext {
+    numberOfEchos: number;
 }
 
-export function perfRequestSuite(ctx: PerfRequestContext): void {
+/**
+ * This performance test is based on the echo messages:
+ * First we subscribe to the primary channel on the remote host(process)
+ * then we subscribe to the echo channel on the current host and wait for the messages
+ * There are 2 actions "echo_wait" and "to_dispatch":
+ * "to_dispatch" indicates the time taken to dispatch messages
+ * "echo_wait" indicates how much time after the dispatch of all messages we waited for replies
+ * @param ctx The context of the testing suite
+ */
+export function perfEchoSuite(ctx: PerfEchoContext): void {
     let broker: IpcBusBrokerProxy;
     const busPort = 33333;
     const brokerClient = ctx.createBusClient();
     const perfResult: PerfResult[] = [];
 
     const channel = 'perf_channel';
+    const echoChannel = 'echo_perf_channel';
     let clientHost: ClientHost;
 
     before(async () => {
@@ -24,13 +34,13 @@ export function perfRequestSuite(ctx: PerfRequestContext): void {
         await brokerClient.connect(busPort);
         clientHost = await ctx.startClientHost(busPort);
 
-        const requestResolve: ToClientProcessMessage = {
-            type: 'request-resolve',
+        const subEcho: ToClientProcessMessage = {
+            type: 'subscribe-echo',
             channel,
-            data: true,
+            echoChannel,
         };
 
-        clientHost.sendCommand(requestResolve);
+        clientHost.sendCommand(subEcho);
         await clientHost.waitForMessage('done');
     });
 
@@ -68,15 +78,24 @@ export function perfRequestSuite(ctx: PerfRequestContext): void {
             let index = 0;
             while (index < ctx.times) {
                 index++;
-                it(`should send request and wait for all responses. ${index}`, async () => {
-                    const promises: Promise<unknown>[] = [];
+                it(`should send simple message in loop and wait for all echoes. ${index}`, async () => {
+                    const performancePromise = new Promise<void>((resolve) => {
+                        let currentEchos = 0;
+                        brokerClient.addListener(echoChannel, (_event, _data) => {
+                            currentEchos++;
+                            if (currentEchos === ctx.numberOfEchos) {
+                                resolve();
+                            }
+                        });
+                    });
+
                     perf.mark(`message_dispatch`);
-                    for (let index = 0; index < ctx.numberRequests; index++) {
-                        promises.push(brokerClient.request(channel, -1, objectToSend));
+                    for (let index = 0; index < ctx.numberOfEchos; index++) {
+                        brokerClient.send(channel, objectToSend);
                     }
 
                     perf.mark(`wait_echo`);
-                    await Promise.all(promises);
+                    await performancePromise;
                     perf.mark(`echo_done`);
 
                     perf.measure('to_dispatch', 'wait_echo', 'echo_done');

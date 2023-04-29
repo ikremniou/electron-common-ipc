@@ -1,13 +1,13 @@
 import { EchoServiceClass } from './echo-contract';
 
-import type { ToClientProcessMessage, ClientSubscribeReport, ToHostProcessMessage } from './echo-contract';
+import type { ToClientProcessMessage, ClientSubscribeReport, ToMainProcessMessage } from './echo-contract';
 import type { IpcBusClient, IpcBusEvent, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/universal';
 
 export interface BootstrapContext {
     clientId: string;
     shouldLog: boolean;
     clientPort: number;
-    sendBack: (mes: ToHostProcessMessage) => void;
+    sendBack: (mes: ToMainProcessMessage) => void;
     onMessage: (handler: (mes: ToClientProcessMessage) => void) => void;
     createBusClient(): IpcBusClient;
     createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService;
@@ -51,12 +51,12 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
         event.request.resolve(resolveData);
     }
 
-    function eventCounter(counterObject: { count: number; required: number }): void {
+    function eventCounter(counterObject: { count: number; required: number }, data: unknown): void {
         counterObject.count++;
         const eventsLeft = counterObject.required - counterObject.count;
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}][EventCounter] Got event. ${eventsLeft} event left`);
         if (eventsLeft === 0) {
-            ctx.sendBack('counter-confirm');
+            ctx.sendBack({ type: 'counter-confirm', lastEventData: data });
         }
     }
 

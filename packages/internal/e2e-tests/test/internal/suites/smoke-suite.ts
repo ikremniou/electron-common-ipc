@@ -5,7 +5,7 @@ import { findFirstFreePort } from 'socket-port-helpers';
 import { EchoServiceClass } from '../clients/echo-contract';
 
 import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
-import type { ClientHost, ToClientProcessMessage, ToHostProcessMessage } from '../clients/echo-contract';
+import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../clients/echo-contract';
 import type { IpcBusClient, IpcBusServiceProxy, IpcBusService } from '@electron-common-ipc/universal';
 
 export interface BasicContext {
@@ -301,7 +301,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             };
 
             childClient1.sendCommand(child1Mes);
-            await childClient2.waitForMessage((message: ToHostProcessMessage) => {
+            await childClient2.waitForMessage((message: ToMainProcessMessage) => {
                 if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
                     expect(message.data).to.be.eq('message_1');
                     expect(message.event.channel).to.be.eq(child2SubChannel);
@@ -318,7 +318,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             };
 
             childClient2.sendCommand(child2Mes);
-            await childClient1.waitForMessage((message: ToHostProcessMessage) => {
+            await childClient1.waitForMessage((message: ToMainProcessMessage) => {
                 if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
                     expect(message.data).to.be.eq('message_2');
                     expect(message.event.channel).to.be.eq(child1SubChannel);
@@ -348,7 +348,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
 
             let isCalledFirstTime = false;
             childClient2.sendCommand(child2Mes);
-            await childClient1.waitForMessage((message: ToHostProcessMessage) => {
+            await childClient1.waitForMessage((message: ToMainProcessMessage) => {
                 if (typeof message !== 'string' && message.type === 'client-subscribe-report') {
                     if (!isCalledFirstTime) {
                         isCalledFirstTime = true;

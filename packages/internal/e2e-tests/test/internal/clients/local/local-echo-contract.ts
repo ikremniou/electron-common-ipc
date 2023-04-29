@@ -10,8 +10,8 @@ import { EventEmitter } from 'events';
 
 import { bootstrapEchoClient } from '../echo-client';
 
-import type { IpcType } from '../../compare/ipc-type';
-import type { ClientHost, ToClientProcessMessage, ToHostProcessMessage } from '../echo-contract';
+import type { IpcType } from '../../ipc-type';
+import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
 import type { IpcBusClient } from '@electron-common-ipc/web-socket';
 import type { ChildProcess } from 'child_process';
 
@@ -28,15 +28,19 @@ export class LocalClientHost extends EventEmitter implements ClientHost {
         });
     }
 
-    waitForMessage(predicate: ToHostProcessMessage | ((mes: ToHostProcessMessage) => boolean)): Promise<void> {
+    waitForMessage(
+        predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
+    ): Promise<ToMainProcessMessage> {
         return new Promise((resolve) => {
-            const messageCallback = (message: ToHostProcessMessage | string) => {
-                if (typeof message === 'string' && predicate === message) {
-                    this.off('from-message', messageCallback);
-                    resolve();
+            const messageCallback = (message: ToMainProcessMessage) => {
+                if (typeof predicate === 'string') {
+                    if (predicate === message || (typeof message === 'object' && message.type === predicate)) {
+                        this.off('from-message', messageCallback);
+                        resolve(message);
+                    }
                 } else if ((predicate as Function)(message)) {
                     this.off('from-message', messageCallback);
-                    resolve();
+                    resolve(message);
                 }
             };
             this.on('from-message', messageCallback);
@@ -58,7 +62,7 @@ export async function startClientHost(mode: IpcType, clientPort: number): Promis
     const clientId = String(process.pid);
     const shouldLog = Boolean(process.env.LOG);
     const clientHost = new LocalClientHost();
-    const sendBack: (mes: ToHostProcessMessage) => void = (mes) => {
+    const sendBack: (mes: ToMainProcessMessage) => void = (mes) => {
         clientHost.emit('from-message', mes);
     };
     const onMessage: (handler: (mes: ToClientProcessMessage) => void) => void = (handler) => {

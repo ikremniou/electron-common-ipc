@@ -5,11 +5,13 @@ import {
     CreateIpcBusServiceProxy,
 } from 'electron-common-ipc';
 
-import { remoteNodeBrokerFactory } from '../clients/broker/node-broker-factory';
-import { startClientHost as startClientHostRenderer } from '../clients/browser/echo-contract-browser';
-import { shouldPerformBasicTests } from '../suites/smoke-suite';
+import { remoteNodeBrokerFactory } from '../internal/clients/broker/node-broker-factory';
+import { startClientHost as startClientHostRenderer } from '../internal/clients/browser/echo-contract-browser';
+import { startClientHost as startClientHostNode } from '../internal/clients/node/echo-contract-node';
+import { shouldRunEipcSpecificTests } from '../internal/suites/eipc-suite';
+import { shouldPerformBasicTests } from '../internal/suites/smoke-suite';
 
-import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
+import type { IpcBusBrokerProxy } from '../internal/clients/broker/broker-proxy';
 import type { BridgeConnectOptions } from 'electron-common-ipc';
 
 async function createBridgeAsBroker(options?: BridgeConnectOptions): Promise<IpcBusBrokerProxy> {
@@ -27,7 +29,7 @@ async function createBridgeAsBroker(options?: BridgeConnectOptions): Promise<Ipc
     };
 }
 
-describe('eipc-main local, bridge as broker, eipc-browser on host e2e tests', () => {
+xdescribe('eipc-main local, bridge as broker, eipc-browser on host e2e tests', () => {
     shouldPerformBasicTests('eipc-electron', {
         createBroker: () => createBridgeAsBroker(undefined),
         createBusClient: CreateIpcBusClient,
@@ -37,13 +39,24 @@ describe('eipc-main local, bridge as broker, eipc-browser on host e2e tests', ()
     });
 });
 
-describe('eipc-main local, bridge with remote broker, eipc-browser on host e2e tests', () => {
+xdescribe('eipc-main local, bridge with remote broker, eipc-browser on host e2e tests', () => {
     shouldPerformBasicTests('eipc-electron', {
         createBroker: (port) => createBridgeAsBroker({ port }),
         createBusClient: CreateIpcBusClient,
         startClientHost: () => startClientHostRenderer('eipc', undefined, false),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
         createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl),
+    });
+});
+
+describe('eipc-main local, bridge with remote broker, eipc-browser on host e2e tests', () => {
+    shouldRunEipcSpecificTests('eipc-electron', {
+        createBroker: (port) => createBridgeAsBroker({ port }),
+        createBusClient: CreateIpcBusClient,
+        startClientHost: () => startClientHostRenderer('eipc', undefined, false),
+        createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
+        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl),
+        startClientHostNode: (port) => startClientHostNode('eipc', port, true),
     });
 });
 

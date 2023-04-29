@@ -1,8 +1,8 @@
 import { fork } from 'child_process';
 import { join, extname } from 'path';
 
-import type { IpcType } from '../../compare/ipc-type';
-import type { ClientHost, ToClientProcessMessage, ToHostProcessMessage } from '../echo-contract';
+import type { IpcType } from '../../ipc-type';
+import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
 import type { ChildProcess } from 'child_process';
 
 export class NodeClientHost implements ClientHost {
@@ -12,15 +12,19 @@ export class NodeClientHost implements ClientHost {
         this.child.send(message);
     }
 
-    waitForMessage(predicate: ToHostProcessMessage | ((mes: ToHostProcessMessage) => boolean)): Promise<void> {
+    waitForMessage(
+        predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
+    ): Promise<ToMainProcessMessage> {
         return new Promise((resolve) => {
-            const messageCallback = (message: ToHostProcessMessage | string) => {
-                if (typeof message === 'string' && predicate === message) {
-                    this.child.off('message', messageCallback);
-                    resolve();
+            const messageCallback = (message: ToMainProcessMessage) => {
+                if (typeof predicate === 'string') {
+                    if (predicate === message || (typeof message === 'object' && message.type === predicate)) {
+                        this.child.off('message', messageCallback);
+                        resolve(message);
+                    }
                 } else if ((predicate as Function)(message)) {
                     this.child.off('message', messageCallback);
-                    resolve();
+                    resolve(message);
                 }
             };
             this.child.on('message', messageCallback);

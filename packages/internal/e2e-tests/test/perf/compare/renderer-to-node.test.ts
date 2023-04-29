@@ -1,16 +1,16 @@
 import { CreateIpcBusBridge, CreateIpcBusClient } from 'electron-common-ipc';
 
 import * as bigData from './big-data.json';
-import { remoteNodeBrokerFactory } from '../clients/broker/node-broker-factory';
-import { wsLocalBrokerFactory } from '../clients/broker/ws-local-broker-factory';
-import { wsiLocalBrokerFactory } from '../clients/broker/wsi-local-broker-factory';
-import { startClientHost as startRendererClient } from '../clients/browser/echo-contract-browser';
-import { startClientHost as startLocalClient } from '../clients/local/local-echo-contract';
-import { startClientHost as startNodeClient } from '../clients/node/echo-contract-node';
-import { Benchmark } from '../perf/utilities/benchmark';
+import { remoteNodeBrokerFactory } from '../../internal/clients/broker/node-broker-factory';
+import { wsLocalBrokerFactory } from '../../internal/clients/broker/ws-local-broker-factory';
+import { wsiLocalBrokerFactory } from '../../internal/clients/broker/wsi-local-broker-factory';
+import { startClientHost as startRendererClient } from '../../internal/clients/browser/echo-contract-browser';
+import { startClientHost as startLocalClient } from '../../internal/clients/local/local-echo-contract';
+import { startClientHost as startNodeClient } from '../../internal/clients/node/echo-contract-node';
+import { Benchmark } from '../../internal/perf/benchmark';
 
-import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
-import type { ClientHost } from '../clients/echo-contract';
+import type { IpcBusBrokerProxy } from '../../internal/clients/broker/broker-proxy';
+import type { ClientHost } from '../../internal/clients/echo-contract';
 import type { IpcBusBridge } from 'electron-common-ipc';
 
 const numberOfEvents = process.env.NUMBER_OF_EVENTS ? parseInt(process.env.NUMBER_OF_EVENTS) : 100;

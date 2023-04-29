@@ -18,7 +18,7 @@ declare global {
 export function bootstrap(
     createBusClient: () => IpcBusClient,
     createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService,
-    createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy
+    createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy,
 ) {
     const process = window.e2eIpc.electronProcess;
     const clientId = String(process.pid);

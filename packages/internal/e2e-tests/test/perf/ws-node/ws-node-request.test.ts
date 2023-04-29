@@ -1,9 +1,9 @@
 import { createWebSocketClient } from '@electron-common-ipc/web-socket';
 import * as path from 'path';
 
-import { wsLocalBrokerFactory } from '../../clients/broker/ws-local-broker-factory';
-import { startClientHost } from '../../clients/node/echo-contract-node';
-import { perfRequestSuite } from '../utilities/perf-request';
+import { wsLocalBrokerFactory } from '../../internal/clients/broker/ws-local-broker-factory';
+import { startClientHost } from '../../internal/clients/node/echo-contract-node';
+import { perfRequestSuite } from '../../internal/perf/perf-request';
 
 describe('ws-node request performance tests', () => {
     perfRequestSuite({

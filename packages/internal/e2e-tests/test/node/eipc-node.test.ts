@@ -1,9 +1,9 @@
 import { CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy } from 'electron-common-ipc';
 
-import { eipcLocalBrokerFactory } from '../clients/broker/eipc-local-broker-factory';
-import { remoteNodeBrokerFactory } from '../clients/broker/node-broker-factory';
-import { startClientHost as startClientHostNode } from '../clients/node/echo-contract-node';
-import { shouldPerformBasicTests } from '../suites/smoke-suite';
+import { eipcLocalBrokerFactory } from '../internal/clients/broker/eipc-local-broker-factory';
+import { remoteNodeBrokerFactory } from '../internal/clients/broker/node-broker-factory';
+import { startClientHost as startClientHostNode } from '../internal/clients/node/echo-contract-node';
+import { shouldPerformBasicTests } from '../internal/suites/smoke-suite';
 
 describe('eipc-node local, local(unaware) node broker, eipc-node on host e2e tests', () => {
     shouldPerformBasicTests('eipc-node', {
