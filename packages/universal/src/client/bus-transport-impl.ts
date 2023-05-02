@@ -314,7 +314,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected cancelRequest(client?: IpcBusTransportClient): void {
-        this._logger?.info(`[BusTransport] Cancel requests for '${client.peer.id}' peer`);
+        this._logger?.info(`[BusTransport] Cancel requests for '${client?.peer.id ?? this.connector.peer.id}' peer`);
         this._requestFunctions.forEach((request, key) => {
             if (client === undefined || client === request.client) {
                 request.timeout();
@@ -354,7 +354,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._logger?.error(`[BusTransport] dead handler not managed ${JSON.stringify(ipcCommand, undefined, 4)}`);
     }
 
-    // TODO_IK: is this can all be isolated behind the generic "subscriptions"?
     abstract getChannels(): string[];
     abstract addChannel(client: IpcBusTransportClient, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransportClient, channel?: string, all?: boolean): void;

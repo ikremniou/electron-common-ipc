@@ -22,6 +22,9 @@ async function createBridgeAsBroker(options?: BridgeConnectOptions): Promise<Ipc
     const bridge = CreateIpcBusBridge();
     await bridge.connect(options);
     return {
+        getInstance<T>(): T {
+            return bridge as T;
+        },
         close: async () => {
             await bridge.close();
             await broker?.close();

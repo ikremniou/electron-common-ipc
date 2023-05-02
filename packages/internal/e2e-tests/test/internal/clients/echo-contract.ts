@@ -77,9 +77,13 @@ export interface StopEchoService {
 export interface EmitEchoServiceEvent {
     type: 'emit-echo-service-event';
     /**
-     * The name of the event to emit
+     * The name of the service. For debug purposes
      */
     channel: string;
+    /**
+     * The name of the event to fire
+     */
+    event: string;
     /**
      * The data to emit
      */

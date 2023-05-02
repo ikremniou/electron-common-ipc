@@ -39,7 +39,8 @@ describe('Renderer to Node process', () => {
 
             renderer.sendCommand({
                 type: 'emit-echo-service-event',
-                channel: 'data-event',
+                channel: 'test-service',
+                event: 'data-event',
                 data: testObject,
                 times: numberOfEvents,
             });
@@ -113,7 +114,7 @@ describe('Renderer to Node process', () => {
             bridge = CreateIpcBusBridge();
             await bridge.connect(port);
 
-            // TODO_IK: we need to create a client in order for transport to be initialized
+            // TODO: we need to create a client in order for transport to be initialized
             // this has to be fixed in electron-common-ipc
             const dummyClient = CreateIpcBusClient();
             dummyClient.connect(port);

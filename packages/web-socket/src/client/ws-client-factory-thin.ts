@@ -10,7 +10,7 @@ import type {
     BusContainer,
     IpcBusTransport,
     IpcBusConnector,
-    IpcBusBroker,
+    IpcBusBrokerPrivate,
     MessageStamp,
     Logger,
     IpcBusClientEmitter,
@@ -37,7 +37,7 @@ export interface ThinContext {
  * @returns The instance of the IpcBusClient
  */
 export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
-    const maybeBusBroker: IpcBusBroker = ctx.container?.getSingleton(BrokerToken);
+    const maybeBusBroker: IpcBusBrokerPrivate = ctx.container?.getSingleton(BrokerToken);
     let realTransport: IpcBusTransport = ctx.container?.getSingleton(TransportToken);
 
     if (!realTransport) {

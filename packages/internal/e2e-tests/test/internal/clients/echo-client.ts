@@ -56,6 +56,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
         const eventsLeft = counterObject.required - counterObject.count;
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}][EventCounter] Got event. ${eventsLeft} event left`);
         if (eventsLeft === 0) {
+            ctx.shouldLog && console.log(`[Client:${ctx.clientId}][EventCounter] Confirm. Data: ${data}`);
             ctx.sendBack({ type: 'counter-confirm', lastEventData: data });
         }
     }
@@ -99,7 +100,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                     message.times = 1;
                 }
                 while (message.times--) {
-                    echoServiceInstance.emit(message.channel, message.data);
+                    echoServiceInstance.emit(message.event, message.data);
                 }
                 break;
             }

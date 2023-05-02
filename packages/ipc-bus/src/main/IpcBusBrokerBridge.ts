@@ -12,8 +12,8 @@ import type {
     IpcBusCommand,
     IpcBusMessage,
     QueryStateBase,
+    BrokerClient,
 } from '@electron-common-ipc/universal';
-import type { Socket } from 'net';
 import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 /** @internal */
@@ -96,19 +96,15 @@ export class IpcBusBrokerBridge extends BrokerImpl implements IpcBusBridgeClient
         this._bridge._onSocketCommandReceived(ipcCommand);
     }
 
-    protected override broadcastToBridgeRequestResponse(
-        _socket: Socket,
+    protected override broadcastToBridge(
+        _client: BrokerClient,
         ipcMessage: IpcBusMessage,
         ipcPacketBufferList: IpcPacketBufferList
     ) {
-        this._bridge._onSocketRequestResponseReceived(ipcMessage, ipcPacketBufferList);
-    }
-
-    protected override broadcastToBridgeMessage(
-        _socket: Socket,
-        ipcMessage: IpcBusMessage,
-        ipcPacketBufferList: IpcPacketBufferList
-    ) {
-        this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
+        if (ipcMessage.kind === IpcBusCommandKind.RequestResponse) {
+            this._bridge._onSocketRequestResponseReceived(ipcMessage, ipcPacketBufferList);
+        } else {
+            this._bridge._onSocketMessageReceived(ipcMessage, ipcPacketBufferList);
+        }
     }
 }

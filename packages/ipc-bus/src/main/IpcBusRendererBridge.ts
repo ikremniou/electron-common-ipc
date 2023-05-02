@@ -37,7 +37,6 @@ interface IpcBusPeerProcessEndpoint extends IpcBusProcessPeer {
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
-/** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private readonly _contextType: IpcBusProcessType;
 

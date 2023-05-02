@@ -71,7 +71,6 @@ export interface IpcBusBridgeDispatcher {
 }
 
 // This class ensures the messagePorts of data between Broker and Renderer/s using ipcMain
-/** @internal */
 export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _socketTransport: IpcBusBridgeClient;
@@ -104,7 +103,7 @@ export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
     }
 
     get socketTransport(): IpcBusBridgeClient {
-        return this._rendererConnector;
+        return this._socketTransport;
     }
 
     getWindowTarget(window: Electron.BrowserWindow, frameId?: number): IpcBusPeer | undefined {
@@ -160,6 +159,10 @@ export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
 
     startQueryState() {
         this._queryStateManager.start();
+    }
+
+    getQueryState() {
+        return this._queryStateManager.processes;
     }
 
     getChannels(): string[] {

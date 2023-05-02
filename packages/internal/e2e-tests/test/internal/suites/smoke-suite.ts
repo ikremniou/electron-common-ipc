@@ -589,7 +589,8 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
                 });
                 clientHost.sendCommand({
                     type: 'emit-echo-service-event',
-                    channel: eventName,
+                    channel: 'test-service',
+                    event: eventName,
                     data: 'any',
                 });
             });

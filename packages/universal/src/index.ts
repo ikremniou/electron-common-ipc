@@ -1,4 +1,4 @@
-export type { IpcBusBroker, BrokerConnectOptions, BrokerCloseOptions } from './broker/broker';
+export type { IpcBusBroker, IpcBusBrokerPrivate, BrokerConnectOptions, BrokerCloseOptions } from './broker/broker';
 export type { IpcBusCommand } from './contract/ipc-bus-command';
 export type { BrokerClient } from './broker/broker-client';
 export type { BrokerServerFactory } from './broker/broker-server-factory';
