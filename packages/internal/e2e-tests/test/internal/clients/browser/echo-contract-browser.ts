@@ -1,24 +1,26 @@
 import { BrowserWindow } from 'electron';
 import * as path from 'path';
 
+import { createLogArgv, isLogEnabled } from '../utils';
+
 import type { IpcType } from '../../ipc-type';
 import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
 
-const isLogEnabled = Boolean(process.env.LOG);
+const shouldLog = isLogEnabled();
 export class ElectronClientHost implements ClientHost {
     private readonly _delayed: Function[] = [];
 
     constructor(private _browserWindow?: BrowserWindow) {}
 
     sendCommand(command: ToClientProcessMessage): void {
-        isLogEnabled && console.log(`[MainHost] Sending command ${command}`);
+        shouldLog && console.log(`[MainHost] Sending command ${command}`);
         this._browserWindow.webContents.send('message', command);
     }
 
     waitForMessage(
         predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
     ): Promise<ToMainProcessMessage> {
-        isLogEnabled && console.log(`[MainHost][Wait] Start for message ${predicate}`);
+        shouldLog && console.log(`[MainHost][Wait] Start for message ${predicate}`);
         return new Promise((resolve) => {
             const listener = (_event: Electron.Event, channel: string, message: unknown) => {
                 /**
@@ -29,13 +31,13 @@ export class ElectronClientHost implements ClientHost {
                 const delayedResolve = (message: unknown) => {
                     this._delayed.push(resolve);
                     setTimeout(() => {
-                        isLogEnabled && console.log(`[MainHost][Wait] Resolved ${message}`);
+                        shouldLog && console.log(`[MainHost][Wait] Resolved ${message}`);
                         this._delayed.forEach((func) => func(message));
                         this._delayed.length = 0;
                     }, 10);
                 };
                 if (channel === 'ack') {
-                    isLogEnabled && console.log(`[MainHost][Wait] Got message ${message}`);
+                    shouldLog && console.log(`[MainHost][Wait] Got message ${message}`);
                     if (typeof predicate === 'string') {
                         if (predicate === message || (message as { type: string }).type === predicate) {
                             this._browserWindow?.webContents.off('ipc-message', listener);
@@ -58,11 +60,13 @@ export class ElectronClientHost implements ClientHost {
 }
 
 export async function startClientHost(mode: IpcType, port: number, contextIsolation: boolean): Promise<ClientHost> {
+    const execArgv = createLogArgv();
+    execArgv.push(`--port=${port}`, `--e2e-isolate=${contextIsolation}`);
     const browserWindow = new BrowserWindow({
-        show: true,
+        show: isLogEnabled(),
         webPreferences: {
             contextIsolation: contextIsolation,
-            additionalArguments: [`--port=${port}`, `--log=${isLogEnabled}`, `--e2e-isolate=${contextIsolation}`],
+            additionalArguments: execArgv,
             preload: path.join(__dirname, `${mode}-browser-preload.bundle.js`),
         },
     });

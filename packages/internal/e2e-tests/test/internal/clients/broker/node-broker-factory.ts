@@ -3,6 +3,8 @@ import { fork } from 'child_process';
 import { ActivateIpcBusTrace, CreateIpcBusBroker } from 'electron-common-ipc';
 import { extname } from 'path';
 
+import { createLogArgv, isLogEnabled } from '../utils';
+
 import type { IpcBusBrokerProxy } from './broker-proxy';
 import type { IpcType } from '../../ipc-type';
 import type { ChildProcess } from 'child_process';
@@ -29,20 +31,20 @@ class BrokerProxy {
 }
 
 export async function remoteNodeBrokerFactory(ipcType: IpcType, port: number): Promise<IpcBusBrokerProxy> {
-    let execArgv = undefined;
+    const processArguments = createLogArgv();
     const extension = extname(__filename);
+    let execArgv = undefined;
     if (extension === '.ts') {
-        execArgv = ['-r', 'ts-node/register'];
+            execArgv = ['-r', 'ts-node/register'];
     }
     const newEnv = Object.assign({}, process.env);
     newEnv.PORT = String(port);
     newEnv.IS_FORK = String(true);
     newEnv.IPC_TYPE = ipcType;
     newEnv.ELECTRON_RUN_AS_NODE = String(true);
-    newEnv.LOG = process.env.LOG;
-    const childProcess = fork(__filename, {
-        execArgv,
+    const childProcess = fork(__filename, processArguments, {
         env: newEnv,
+        execArgv
     });
 
     await new Promise<void>((resolve) => {
@@ -61,7 +63,7 @@ async function bootstrapBroker(ipcType: IpcType): Promise<void> {
     const connectPort = Number(process.env.PORT);
     let broker: IpcBusBroker;
     if (ipcType === 'eipc') {
-        ActivateIpcBusTrace(Boolean(process.env.LOG));
+        ActivateIpcBusTrace(isLogEnabled());
         broker = CreateIpcBusBroker();
     } else {
         broker = createWebSocketBroker();

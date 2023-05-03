@@ -1,6 +1,5 @@
-import { IpcBusProcessType } from '@electron-common-ipc/universal';
+import { GlobalContainer, IpcBusProcessType } from '@electron-common-ipc/universal';
 import { expect } from 'chai';
-import { ActivateIpcBusTrace } from 'electron-common-ipc';
 import { findFirstFreePort } from 'socket-port-helpers';
 
 import type { BasicSmokeContext } from './smoke-suite';
@@ -10,8 +9,6 @@ import type { QueryStateConnector, QueryStateTransport } from '@electron-common-
 import type { IpcBusClient } from 'electron-common-ipc';
 import type { IpcBusBridgeImpl } from 'electron-common-ipc/lib/main/IpcBusBridgeImpl';
 
-ActivateIpcBusTrace(true);
-
 export interface EipcContext extends BasicSmokeContext {
     /**
      * Create Node process instance and activates Ipc client on it.
@@ -20,7 +17,7 @@ export interface EipcContext extends BasicSmokeContext {
     startClientHostNode(port: number): Promise<ClientHost>;
 }
 
-export function shouldRunEipcSpecificTests(suiteId: string, ctx: EipcContext) {
+export function shouldRunEipcRemoteBrokerTests(suiteId: string, ctx: EipcContext) {
     const sampleEipcObject = {
         prop1: '1',
         prop2: 2,
@@ -42,7 +39,13 @@ export function shouldRunEipcSpecificTests(suiteId: string, ctx: EipcContext) {
         let port: number;
 
         before(async () => {
-            port = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
+            GlobalContainer.reset();
+            port = await findFirstFreePort({
+                portRange: '>=49352',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             brokerAndBridge = await ctx.createBroker(port);
             localMainClient = ctx.createBusClient();
             await localMainClient.connect(port);
@@ -258,7 +261,7 @@ export function shouldRunEipcSpecificTests(suiteId: string, ctx: EipcContext) {
 
                 const bridge: IpcBusBridgeImpl = brokerAndBridge.getInstance?.();
                 bridge.startQueryState();
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise((resolve) => setTimeout(resolve, 500));
                 qsResult = bridge.getQueryState();
             });
 
@@ -269,23 +272,23 @@ export function shouldRunEipcSpecificTests(suiteId: string, ctx: EipcContext) {
             });
 
             it('should send query state from the main and receive information about all main components', () => {
-                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find(entry => entry.startsWith('Main')));
-                expect(mainEntry.find(x => x.type === 'renderer-bridge')).to.exist;
-                expect(mainEntry.find(x => x.type === 'connector-main')).to.exist;
-                expect(mainEntry.find(x => x.type === 'transport')).to.exist;
-                expect(mainEntry.find(x => x.type === 'transport-socket-bridge')).to.exist;
+                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find((entry) => entry.startsWith('Main')));
+                expect(mainEntry.find((x) => x.type === 'renderer-bridge')).to.exist;
+                expect(mainEntry.find((x) => x.type === 'connector-main')).to.exist;
+                expect(mainEntry.find((x) => x.type === 'transport')).to.exist;
+                expect(mainEntry.find((x) => x.type === 'transport-socket-bridge')).to.exist;
             });
 
             it('should send query state from the main and get subscribed channel from the renderer bridge', () => {
-                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find(entry => entry.startsWith('Main')));
-                const rendererBridge = mainEntry.find(x => x.type === 'renderer-bridge') as QueryStateTransport;
+                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find((entry) => entry.startsWith('Main')));
+                const rendererBridge = mainEntry.find((x) => x.type === 'renderer-bridge') as QueryStateTransport;
                 expect(rendererBridge.channels['some-test-channel']).to.exist;
                 expect(rendererBridge.channels['some-test-channel'].refCount).to.be.eq(1);
             });
 
             it('should send query state from the main and find the subscribed channel in the node broker', () => {
                 let broker: QueryStateTransport;
-                const nodeHosts = Array.from(qsResult.keys()).filter(entry => entry.startsWith('Node'));
+                const nodeHosts = Array.from(qsResult.keys()).filter((entry) => entry.startsWith('Node'));
                 for (let index = 0; index < nodeHosts.length; index++) {
                     const nodeProcess = qsResult.get(nodeHosts[index]);
                     if (nodeProcess[0].type === 'broker') {
@@ -298,17 +301,21 @@ export function shouldRunEipcSpecificTests(suiteId: string, ctx: EipcContext) {
             });
 
             it('should send query state and get the transport information back', () => {
-                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find(entry => entry.startsWith('Renderer')));
-                const rendererTransport = mainEntry.find(x => x.type === 'transport') as QueryStateTransport;
-                
+                const mainEntry = qsResult.get(
+                    Array.from(qsResult.keys()).find((entry) => entry.startsWith('Renderer'))
+                );
+                const rendererTransport = mainEntry.find((x) => x.type === 'transport') as QueryStateTransport;
+
                 expect(rendererTransport.channels['some-test-channel']).to.exist;
                 expect(rendererTransport.channels['some-test-channel'].refCount).to.be.eq(1);
             });
 
             it('should send query state and get the connector information back', () => {
-                const mainEntry = qsResult.get(Array.from(qsResult.keys()).find(entry => entry.startsWith('Renderer')));
-                const rendererConnector = mainEntry.find(x => x.type === 'connector-renderer') as QueryStateConnector;
-                
+                const mainEntry = qsResult.get(
+                    Array.from(qsResult.keys()).find((entry) => entry.startsWith('Renderer'))
+                );
+                const rendererConnector = mainEntry.find((x) => x.type === 'connector-renderer') as QueryStateConnector;
+
                 expect(rendererConnector.peer).to.exist;
                 expect(rendererConnector.peer.type).to.be.eq(IpcBusProcessType.Renderer);
             });

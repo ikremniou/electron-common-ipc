@@ -42,7 +42,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let child: ClientHost;
         before(async () => {
             GlobalContainer.reset();
-            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
+            busPort = await findFirstFreePort({
+                portRange: '>=49152',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             broker = await ctx.createBroker(busPort);
 
             brokerClient = ctx.createBusClient();
@@ -260,7 +265,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let childClient2: ClientHost;
 
         before(async () => {
-            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
+            busPort = await findFirstFreePort({
+                portRange: '>=49162',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
@@ -381,7 +391,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let childProcess: ClientHost;
 
         beforeEach(async () => {
-            busPort = await findFirstFreePort({ testConnection: true, testDataTransfer: true });
+            busPort = await findFirstFreePort({
+                portRange: '>=49172',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
@@ -458,6 +473,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let clientHost: ClientHost;
 
         before(async () => {
+            busPort = await findFirstFreePort({
+                portRange: '>=49182',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);
@@ -540,6 +561,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let serviceProxy: IpcBusServiceProxy;
 
         before(async () => {
+            busPort = await findFirstFreePort({
+                portRange: '>=49192',
+                testConnection: true,
+                testDataTransfer: true,
+                hostname: '127.0.0.1',
+            });
             broker = await ctx.createBroker(busPort);
             brokerClient = ctx.createBusClient();
             await brokerClient.connect(busPort);

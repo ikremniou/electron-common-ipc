@@ -605,7 +605,7 @@ function startApp() {
 var localIpcBroker = false;
 
 function prepareApp() {
-    ipcBridge = ipcBusModule.IpcBusBridge.Create();
+    ipcBridge = ipcBusModule.CreateIpcBusBridge();
     ipcBridge.connect(busPath, { server: localIpcBroker == null })
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
@@ -620,7 +620,7 @@ electronApp.on('ready', function () {
     console.log('<MAIN> Starting IPC broker ...');
     if (localIpcBroker === true) {
         // Broker in Master process
-        ipcBroker = ipcBusModule.IpcBusBroker.Create();
+        ipcBroker = ipcBusModule.CreateIpcBusClient();
         ipcBroker.connect(busPath)
             .then((msg) => {
                 console.log('<MAIN> IPC broker is ready !');

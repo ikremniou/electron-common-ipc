@@ -1,7 +1,7 @@
 const ipcBusModule = require('electron-common-ipc');
 
 window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
-    const ipcClient = ipcBusModule.IpcBusClient.Create();
+    const ipcClient = ipcBusModule.CreateIpcBusClient();
     return ipcClient.connect(busPath, { peerName: 'Renderer client', timeoutDelay: busTimeout })
     .then(() => {
 

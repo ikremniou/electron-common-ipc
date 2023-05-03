@@ -27,7 +27,7 @@ let nodeCount = GetCmdLineArgValue('nodeCount');
 console.log(nodeCount);
 
 const ipcBusModule = require('electron-common-ipc');
-const ipcBus = ipcBusModule.IpcBusClient.Create();
+const ipcBus = ipcBusModule.CreateIpcBusClient();
 // ipcBusModule.ActivateIpcBusTrace(true);
 
 const PerfTests = require('./PerfTests.js');

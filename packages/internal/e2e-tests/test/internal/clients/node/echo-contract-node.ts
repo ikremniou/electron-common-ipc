@@ -1,6 +1,8 @@
 import { fork } from 'child_process';
 import { join, extname } from 'path';
 
+import { createLogArgv } from '../utils';
+
 import type { IpcType } from '../../ipc-type';
 import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
 import type { ChildProcess } from 'child_process';
@@ -42,8 +44,9 @@ export function sendCommand(message: ToClientProcessMessage, child: ChildProcess
 
 export function startClientHost(mode: IpcType, port: number, runAsNode?: boolean): Promise<ClientHost> {
     return new Promise<ClientHost>((resolve) => {
-        let execArgv = undefined;
+        const processArguments = createLogArgv();
         const extension = extname(__filename);
+        let execArgv = undefined;
         if (extension === '.ts') {
             execArgv = ['-r', 'ts-node/register'];
         }
@@ -52,9 +55,9 @@ export function startClientHost(mode: IpcType, port: number, runAsNode?: boolean
         if (runAsNode) {
             newEnv.ELECTRON_RUN_AS_NODE = '1';
         }
-        const child = fork(join(__dirname, `${mode}-bus-echo-client${extension}`), {
+        const child = fork(join(__dirname, `${mode}-bus-echo-client${extension}`), processArguments, {
             env: newEnv,
-            execArgv,
+            execArgv
         });
 
         const readyCallback = (message: string) => {

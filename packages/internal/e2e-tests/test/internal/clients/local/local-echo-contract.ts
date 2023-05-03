@@ -9,6 +9,7 @@ import {
 import { EventEmitter } from 'events';
 
 import { bootstrapEchoClient } from '../echo-client';
+import { isLogEnabled } from '../utils';
 
 import type { IpcType } from '../../ipc-type';
 import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
@@ -60,7 +61,7 @@ export function sendCommand(message: ToClientProcessMessage, child: ChildProcess
 
 export async function startClientHost(mode: IpcType, clientPort: number): Promise<ClientHost> {
     const clientId = String(process.pid);
-    const shouldLog = Boolean(process.env.LOG);
+    const shouldLog = isLogEnabled();
     const clientHost = new LocalClientHost();
     const sendBack: (mes: ToMainProcessMessage) => void = (mes) => {
         clientHost.emit('from-message', mes);

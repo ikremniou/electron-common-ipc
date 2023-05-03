@@ -9,14 +9,13 @@
     "test": "run-s test:node test:browser",
     "test:node": "mocha ./build/config.js ./build/node/**/*.test.js --timeout 10000",
     "test:browser": "electron-mocha ./build/config.js ./build/browser/**/*.test.js --timeout 10000",
-    "test:electron": "electron-mocha ./build/config.js ./build/browser/eipc-electron.test.js --no-timeout",
-    "test:compare:rn": "electron-mocha ./build/config.js ./build/compare/renderer-to-node.test.js --timeout 1200000",
-    "test:perf:node": "mocha ./build/config.js ./build/perf/*-node/**/*.test.js --no-timeout",
-    "test:perf:browser": "electron-mocha ./build/config.js ./build/perf/*-browser/**/*.test.js --no-timeout",
+    "test:eipc:electron": "electron-mocha ./build/config.js ./build/browser/eipc-electron.test.js --no-timeout",
+    "test:eipc:node": "mocha ./build/config.js ./build/node/eipc-node.test.js --no-timeout",
+    "test:compare:rn": "electron-mocha ./build/config.js ./build/perf/compare/renderer-to-node.test.js --no-timeout",
     "pack:bundles": "webpack --mode development -d inline-source-map",
     "pack:stats": "run-s pack:bundles:profile pack:bundles:analyze",
-    "pack:bundles:profile": "webpack --profile --json --mode production > ./build/stats.json",
-    "pack:bundles:analyze": "webpack-bundle-analyzer ./build/stats.json"
+    "pack:bundles:profile": "webpack --profile --json --mode production > ./build/internal/clients/browser/stats.json",
+    "pack:bundles:analyze": "webpack-bundle-analyzer ./build/internal/clients/browser/stats.json"
   },
   "devDependencies": {
     "@electron-common-ipc/eslint-config": "*",

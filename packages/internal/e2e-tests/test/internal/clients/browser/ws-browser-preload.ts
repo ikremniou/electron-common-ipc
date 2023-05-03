@@ -1,6 +1,8 @@
 import { ipcRenderer } from 'electron';
 
-const shouldLog = process.argv.find((arg) => arg.startsWith('--log'))?.split('=')[1] === 'true';
+import { isLogEnabled } from '../utils';
+
+const shouldLog = isLogEnabled();
 const clientPort = Number(process.argv.find((argv: string) => argv.startsWith('--port')).split('=')[1]);
 
 window.e2eIpc = {

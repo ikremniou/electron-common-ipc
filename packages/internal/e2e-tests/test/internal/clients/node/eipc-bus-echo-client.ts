@@ -6,8 +6,8 @@ import {
 } from 'electron-common-ipc';
 
 import { bootstrap } from './bus-echo-client-base';
+import { isLogEnabled } from '../utils';
 
-const shouldLog = Boolean(process.env['LOG']);
-ActivateIpcBusTrace(shouldLog);
+ActivateIpcBusTrace(isLogEnabled());
 
 bootstrap(CreateIpcBusClient as never, CreateIpcBusService as never, CreateIpcBusServiceProxy as never);

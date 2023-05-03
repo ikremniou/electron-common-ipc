@@ -28,7 +28,7 @@ function testIPC(ipcBus) {
     }, 1);
 }
 
-const ipcClient = ipcBusModule.IpcBusClient.Create();
+const ipcClient = ipcBusModule.CreateIpcBusClient();
 ipcClient.connect(busPath, { peerName: 'Node client', timeoutDelay: busTimeout })
 .then(() => {
 

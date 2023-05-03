@@ -37,7 +37,7 @@ function spawnNodeInstance(scriptPath, busPath, busTimeout, newArgs) {
                     resolve(nodeProcess);
                 }
                 else if (msg.ready.reject) {
-                    reject(message.error);
+                    reject(msg.error);
                 }
             }
             else if (msg.response) {
@@ -86,7 +86,7 @@ function createIPCBusRendererClient(busPath, busTimeout) {
 }
 
 function createIPCBusMainClient(busPath, busTimeout) {
-    const ipcClient = ipcBusModule.IpcBusClient.Create();
+    const ipcClient = ipcBusModule.CreateIpcBusClient();
     return ipcClient.connect(busPath, { peerName: 'Main client', timeoutDelay: busTimeout })
         .then(() => {
             ipcClient.on('Main client ACK', (event) => {
@@ -99,11 +99,11 @@ function createIPCBusMainClient(busPath, busTimeout) {
         });
 }
 
-var localIpcBroker = undefined;
+var localIpcBroker = false;
 
 function prepareApp() {
-    ipcBridge = ipcBusModule.IpcBusBridge.Create();
-    ipcBridge.connect(busPath, { server: localIpcBroker == null })
+    ipcBridge = ipcBusModule.CreateIpcBusBridge();
+    ipcBridge.connect(busPath, { server: localIpcBroker })
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
@@ -134,7 +134,7 @@ function createIPCBusClients() {
     console.log('<MAIN> Starting IPC broker ...');
     if (localIpcBroker === true) {
         // Broker in Master process
-        ipcBroker = ipcBusModule.IpcBusBroker.Create();
+        ipcBroker = ipcBusModule.CreateIpcBusClient();
         ipcBroker.connect(busPath)
             .then((msg) => {
                 console.log('<MAIN> IPC broker is ready !');
