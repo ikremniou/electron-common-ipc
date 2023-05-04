@@ -18,20 +18,21 @@ export interface QueryStatePeers {
     [key: string]: QueryStatePeer;
 }
 
-export interface QueryStatePeerProcess {
-    peer: IpcBusPeer;
-    channels: QueryStateChannels;
-}
-
-export interface QueryStatePeerProcesses {
-    [key: string]: QueryStatePeerProcess;
-}
-
 export interface QueryStateBase {
-    type: 'transport' | 'transport-socket-bridge'
-            | 'connector' | 'connector-renderer' | 'connector-socket'
-            | 'renderer-bridge' | 'connector-ws' | 'connector-browser-ws'
-            | 'broker-bridge' | 'broker' | 'connector-ws-local';
+    type:
+        | 'transport'
+        | 'transport-socket-bridge'
+        | 'connector'
+        | 'connector-renderer'
+        | 'connector-socket'
+        | 'renderer-bridge'
+        | 'connector-ws'
+        | 'connector-browser-ws'
+        | 'broker-bridge'
+        | 'broker'
+        | 'connector-ws-local'
+        | 'connector-main';
+    contextId: string;
 }
 
 export interface QueryStateResponse {
@@ -45,24 +46,19 @@ export interface QueryStateTransport extends QueryStateBase {
     channels: QueryStateChannels;
 }
 
-export interface QueryStateSocketBridge extends QueryStateTransport {
-    type: 'transport-socket-bridge';
-}
-
 export interface QueryStateConnector extends QueryStateBase {
-    type: 'connector-socket' | 'connector-renderer' | 'connector-ws' | 'connector-browser-ws' | 'connector-ws-local';
+    type:
+        | 'connector-socket'
+        | 'connector-renderer'
+        | 'connector-ws'
+        | 'connector-browser-ws'
+        | 'connector-ws-local'
+        | 'connector-main';
     peer: IpcBusPeer;
 }
 
-export interface QueryStateBridge extends QueryStateBase {
-    peers: QueryStatePeerProcesses;
+export interface QueryStateBroker extends Omit<QueryStateBase, 'peer'> {
+    type: 'broker';
+    peers: QueryStatePeers;
     channels: QueryStateChannels;
-}
-
-export interface QueryStateRendererBridge extends QueryStateBridge {
-    type: 'renderer-bridge';
-}
-
-export interface QueryStateBroker extends Omit<QueryStateBridge, 'peer'> {
-    type: 'broker' | 'broker-bridge';
 }

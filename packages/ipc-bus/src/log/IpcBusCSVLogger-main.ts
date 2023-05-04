@@ -1,18 +1,20 @@
-import { IpcBusLog } from './IpcBusLog';
-import { IpcBusLogConfig } from './IpcBusLogConfig';
+import { ContractLogLevel, GlobalContainer } from '@electron-common-ipc/universal';
 
-import { GetSingleton, RegisterSingleton } from '../utils';
+import { CSVLogger } from './IpcBusCSVLogger';
+import { SetLogLevel } from './IpcBusLogConfig-main';
 
-const g_cvslogger_symbol_name = 'CSVLogger';
-IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
-    if (level >= IpcBusLogConfig.Level.None) {
-        const cvsloggerMod = require('./IpcBusCSVLogger');
-        let g_cvsLogger = GetSingleton< IpcBusLog.Logger>(g_cvslogger_symbol_name);
-        if (g_cvsLogger == null) {
-            g_cvsLogger = new cvsloggerMod.CSVLogger(filename);
-            RegisterSingleton(g_cvslogger_symbol_name, g_cvsLogger);
-            const cb = g_cvsLogger.writeLog.bind(g_cvsLogger);
-            IpcBusLog.SetLogLevel(level, cb, argContentLen);
+import type { IpcBusLogLogger } from './IpcBusLog';
+
+const gCsvLoggerSymbolName = 'CSVLogger';
+export const setLogLevelCVS = (level: ContractLogLevel, filename: string, argContentLen?: number): void => {
+    if (level >= ContractLogLevel.None) {
+        const globalContainer = new GlobalContainer();
+        let gCsvLogger = globalContainer.getSingleton<IpcBusLogLogger>(gCsvLoggerSymbolName);
+        if (gCsvLogger === undefined) {
+            gCsvLogger = new CSVLogger(filename);
+            globalContainer.registerSingleton(gCsvLoggerSymbolName, gCsvLogger);
+            const cb = gCsvLogger.writeLog.bind(gCsvLogger);
+            SetLogLevel(level, cb, argContentLen);
         }
     }
-}
+};

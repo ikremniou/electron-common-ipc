@@ -1,13 +1,12 @@
-import type { IpcBusClient } from './IpcBusClient';
-import type { ElectronProcessType } from 'electron-process-type/lib/v2';
 import { ElectronCommonIpcNamespace } from '../renderer/IpcBusWindowNamespace';
 
-const windowLocal = window as any;
+import type { IpcBusClient } from '@electron-common-ipc/universal';
+
 /** @internal */
-export function NewIpcBusClient(electronProcessType: ElectronProcessType): IpcBusClient {
-    const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];
+export function newIpcBusClient(): IpcBusClient {
+    const electronCommonIpcSpace = window[ElectronCommonIpcNamespace];
     if (electronCommonIpcSpace && electronCommonIpcSpace.CreateIpcBusClient) {
         return electronCommonIpcSpace.CreateIpcBusClient();
     }
-    return null;
-};
+    return undefined;
+}

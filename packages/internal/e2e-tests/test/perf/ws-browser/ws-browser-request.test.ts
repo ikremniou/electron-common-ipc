@@ -1,9 +1,9 @@
 import { createWebSocketClient } from '@electron-common-ipc/web-socket';
 import * as path from 'path';
 
-import { wsLocalBrokerFactory } from '../../clients/broker/ws-local-broker-factory';
-import { startClientHost } from '../../clients/browser/echo-contract-browser';
-import { perfRequestSuite } from '../utilities/perf-request';
+import { wsLocalBrokerFactory } from '../../internal/clients/broker/ws-local-broker-factory';
+import { startClientHost } from '../../internal/clients/browser/echo-contract-browser';
+import { perfRequestSuite } from '../../internal/perf/perf-request';
 
 describe('ws-browser request performance tests', () => {
     perfRequestSuite({
@@ -14,6 +14,7 @@ describe('ws-browser request performance tests', () => {
         objectTypes: [JSON.stringify([1, 2, 3, 4, 5, 6, '7'])],
         createBroker: wsLocalBrokerFactory,
         createBusClient: createWebSocketClient,
-        startClientHost: startClientHost.bind(undefined, 'ws'),
+        startClientHost: (port) => startClientHost('ws', port, false),
     });
 });
+

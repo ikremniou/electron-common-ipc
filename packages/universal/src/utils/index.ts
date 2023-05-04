@@ -1,4 +1,14 @@
+import { IpcBusProcessType } from '../contract/ipc-bus-peer';
+
 import type { IpcConnectOptions, IpcTimeoutOptions } from '../client/ipc-connect-options';
+import type { IpcBusPeer } from '../contract/ipc-bus-peer';
+
+/* 
+This number is used to the javascript context.
+We cannot introduce the notion of the process into
+Universal library, so we will use this contextId
+*/
+const executionContextId = String(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
 
 const enum Constants {
     IpcBusTimeout = 2000,
@@ -10,7 +20,7 @@ const enum Win32Pipes {
 }
 
 // https://nodejs.org/api/net.html#net_ipc_support
-function CleanPipeName(str: string) {
+function cleanPipeName(str: string) {
     if (process.platform === 'win32') {
         if (str.lastIndexOf(Win32Pipes.Prefix1, 0) === -1 && str.lastIndexOf(Win32Pipes.Prefix2, 0) === -1) {
             str = str.replace(/^\//, '');
@@ -19,6 +29,38 @@ function CleanPipeName(str: string) {
         }
     }
     return str;
+}
+
+export function isBridgeTarget(target: IpcBusPeer): boolean {
+    if (target.type === IpcBusProcessType.Main || target.type === IpcBusProcessType.Renderer) {
+        return true;
+    }
+    return false;
+}
+
+export function convertProcessTypeToString(type: IpcBusProcessType): string {
+    switch (type) {
+        case IpcBusProcessType.Browser:
+            return 'Browser';
+        case IpcBusProcessType.Main:
+            return 'Main';
+        case IpcBusProcessType.Native:
+            return 'Native';
+        case IpcBusProcessType.Node:
+            return 'Node';
+        case IpcBusProcessType.Renderer:
+            return 'Renderer';
+        case IpcBusProcessType.Undefined:
+            return 'Undefined';
+        case IpcBusProcessType.Worker:
+            return 'Worker';
+        default:
+            return 'Unknown';
+    }
+}
+
+export function createContextId(type: IpcBusProcessType): string {
+    return `${convertProcessTypeToString(type)}-${executionContextId}`;
 }
 
 export function CheckChannel(channel: unknown): string {
@@ -67,8 +109,7 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(
     if (Number(arg1) >= 0) {
         options.port = Number(arg1);
         options.host = typeof arg2 === 'string' ? arg2 : undefined;
-    }
-    else if (typeof arg1 === 'string') {
+    } else if (typeof arg1 === 'string') {
         try {
             // First check if it is a valid URL
             const url = new URL(arg1);
@@ -88,7 +129,7 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(
     // A path : '//local-ipc'
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
     if (options.path) {
-        options.path = CleanPipeName(options.path);
+        options.path = cleanPipeName(options.path);
     }
     if (options.timeoutDelay === undefined) {
         options.timeoutDelay = Constants.IpcBusTimeout;

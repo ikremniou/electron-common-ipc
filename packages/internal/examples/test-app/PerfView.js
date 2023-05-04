@@ -6,7 +6,7 @@ var processToMaster;
 var generateReportTimer;
 var generateReport = false;
 var noUpdate = false;
-var ipcBus = CreateIpcBusClient();
+var ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
 
 function doPerformance(type) {
     var bufferSize = 1024 * 1024;
@@ -103,12 +103,12 @@ function doSave() {
             let cvsRow = [];
             cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`);
             if (result.start.peer.id === result.stop.peer.id) {
-                cvsRow.push(`${result.start.peer.process.type}`);
-                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type}`);
+                cvsRow.push(`${result.start.peer.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.type}`);
             }
             else {
-                cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
-                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
+                cvsRow.push(`${result.start.peer.type} => ${result.stop.peer.type}`);
+                cvsRow.push(`${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize}) ${result.start.peer.type} => ${result.stop.peer.type}`);
             }
             cvsRow.push(result.delay);
             cvsLike.push(cvsRow);
@@ -138,10 +138,10 @@ function onIPCBus_TestPerformanceResult(result) {
         var cell3 = row.insertCell(-1);
         cellType.innerHTML = `${result.testParams.typeCommand} ${result.testParams.typeArgs} (${result.testParams.bufferSize})`;
         if (msgTestStart.peer.id === msgTestStop.peer.id) {
-            cellLink.innerHTML = `${msgTestStart.peer.process.type}`;
+            cellLink.innerHTML = `${msgTestStart.peer.type}`;
         }
         else {
-            cellLink.innerHTML = `${msgTestStart.peer.process.type} => ${msgTestStop.peer.process.type}`;
+            cellLink.innerHTML = `${msgTestStart.peer.type} => ${msgTestStop.peer.type}`;
         }
         cell1.innerHTML = JSON.stringify(msgTestStart.peer);
         cell2.innerHTML = JSON.stringify(msgTestStop.peer);

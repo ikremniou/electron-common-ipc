@@ -1,33 +1,73 @@
-import { GetElectronProcessType } from 'electron-process-type/lib/v2';
+import {
+    ConsoleLogger,
+    ContractLogLevel,
+    GlobalContainer,
+    IpcBusProcessType,
+    MessageStampImpl,
+} from '@electron-common-ipc/universal';
+import * as path from 'path';
 
-import * as IpcBusUtils from '../utils';
+import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
+import { setLogLevelCVS } from '../log/IpcBusCSVLogger-main';
+import { setLogLevelJSON } from '../log/IpcBusJSONLogger-main';
+import { CreateIpcBusLog } from '../log/IpcBusLog-factory-main';
+import { Logger } from '../utils/log';
+import { uuidProvider } from '../utils/uuid';
 
-import { IpcBusBridge } from './IpcBusBridge';
+import type { IpcBusBridge } from './IpcBusBridge';
+import type { IpcBusLogMain } from '../log/IpcBusLogConfig-main';
 
-const g_bridge_symbol_name = 'IpcBusBridge';
-
-export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
-    let g_bridge = IpcBusUtils.GetSingleton<IpcBusBridge>(g_bridge_symbol_name);
-    // Beware, we test 'undefined' here
-    if (g_bridge === undefined) {
-        const electronProcessType = GetElectronProcessType();
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusBridge process type = ${electronProcessType}`);
-        switch (electronProcessType) {
-            case 'main': {
-                const newModule = require('./IpcBusBridge-factory-main');
-                g_bridge = newModule.NewIpcBusBridge(electronProcessType);
-                break;
-            }
-            // not supported process
-            case 'renderer':
-            case 'node':
-            default:
-                g_bridge = null;
-                break;
+function newIpcBusBridgeInternal(): IpcBusBridge {
+    const contractLogger = CreateIpcBusLog() as IpcBusLogMain;
+    // For backward
+    if (process.env['ELECTRON_IPC_LOG_CSV']) {
+        if (contractLogger.level === ContractLogLevel.None) {
+            contractLogger.level = ContractLogLevel.Args;
         }
-        IpcBusUtils.RegisterSingleton(g_bridge_symbol_name, g_bridge);
+        if (contractLogger.argMaxContentLen < 0) {
+            contractLogger.argMaxContentLen = 255;
+        }
+        const filename = path.join(process.env['ELECTRON_IPC_LOG_CSV'], 'electron-common-ipc.csv');
+        setLogLevelCVS(contractLogger.level, filename, contractLogger.argMaxContentLen);
     }
-    return g_bridge;
-};
+    // For backward
+    if (process.env['ELECTRON_IPC_LOG_JSON']) {
+        if (contractLogger.level === ContractLogLevel.None) {
+            contractLogger.level = ContractLogLevel.Args;
+        }
+        if (contractLogger.argMaxContentLen < 0) {
+            contractLogger.argMaxContentLen = 255;
+        }
+        const filename = path.join(process.env['ELECTRON_IPC_LOG_JSON'], 'electron-common-ipc.json');
+        setLogLevelJSON(contractLogger.level, filename, contractLogger.argMaxContentLen);
+    }
+    let bridge: IpcBusBridge;
+    const logger = Logger.enable ? new ConsoleLogger() : undefined;
+    if (contractLogger.level > ContractLogLevel.None) {
+        bridge = new IpcBusBridgeLogger(
+            IpcBusProcessType.Main,
+            contractLogger,
+            uuidProvider,
+            new MessageStampImpl(contractLogger),
+            logger
+        );
+    } else {
+        bridge = new IpcBusBridgeImpl(IpcBusProcessType.Main, uuidProvider, undefined, logger);
+    }
+    return bridge;
+}
 
-IpcBusBridge.Create = CreateIpcBusBridge;
+const gBridgeSymbolName = 'IpcBusBridge';
+export function newIpcBusBridge(): IpcBusBridge {
+    const globalContainer = new GlobalContainer();
+    let gBridge = globalContainer.getSingleton<IpcBusBridge>(gBridgeSymbolName);
+    // Beware, we test 'undefined' here
+    if (gBridge === undefined) {
+        // IpcBusUtils.Logger.enable &&
+        //    IpcBusUtils.Logger.info(`CreateIpcBusBridge process type = ${electronProcessType}`);
+        gBridge = newIpcBusBridgeInternal();
+        globalContainer.registerSingleton(gBridgeSymbolName, gBridge);
+    }
+    return gBridge;
+}

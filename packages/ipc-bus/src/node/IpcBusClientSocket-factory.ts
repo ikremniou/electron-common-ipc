@@ -1,41 +1,40 @@
-import { GetElectronProcessType } from 'electron-process-type/lib/v2';
-
-import type * as Client from '../client/IpcBusClient';
-import { GetSingleton, RegisterSingleton } from '../utils';
+import {
+    GlobalContainer,
+    IpcBusClientImpl,
+    IpcBusTransportMulti,
+    IpcBusProcessType,
+    ConsoleLogger,
+} from '@electron-common-ipc/universal';
+import { EventEmitter } from 'events';
 
 import { IpcBusConnectorSocket } from './IpcBusConnectorSocket';
-import { IpcBusClientImpl}  from '../client/IpcBusClientImpl';
-import type { IpcBusTransport } from '../client/IpcBusTransport';
-import { IpcBusTransportMultiImpl } from '../client/IpcBusTransportMultiImpl';
-import type { IpcBusConnector } from '../client/IpcBusConnector';
-import { IpcBusClientNet, IpcBusClientSocket } from './IpcBusClientSocket';
+import { Logger } from '../utils/log';
+import { uuidProvider } from '../utils/uuid';
 
-const CreateIpcBusNet: Client.IpcBusClient.CreateFunction = (): Client.IpcBusClient => {
-    const electronProcessType = GetElectronProcessType();
-    return Create(electronProcessType);
-}
-IpcBusClientNet.Create = CreateIpcBusNet;
-IpcBusClientSocket.Create = CreateIpcBusNet;
+import type { IpcBusClient, IpcBusConnector, IpcBusTransport, UuidProvider } from '@electron-common-ipc/universal';
 
-function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector {
-    const connector = new IpcBusConnectorSocket(contextType);
+function createConnector(uuid: UuidProvider, contextType: IpcBusProcessType): IpcBusConnector {
+    const connector = new IpcBusConnectorSocket(uuid, contextType);
     return connector;
 }
 
-const g_transport_symbol_name = 'IpcBusTransportSocket';
-function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
-    let g_transport = GetSingleton<IpcBusTransport>(g_transport_symbol_name);
-    if (g_transport == null) {
-        const connector = CreateConnector(contextType);
-        g_transport = new IpcBusTransportMultiImpl(connector);
-        RegisterSingleton(g_transport_symbol_name, g_transport);
+const gTransportSymbolName = 'IpcBusTransportSocket';
+function createTransport(contextType: IpcBusProcessType): IpcBusTransport {
+    const container = new GlobalContainer();
+    let transport = container.getSingleton<IpcBusTransport>(gTransportSymbolName);
+    if (!transport) {
+        const connector = createConnector(uuidProvider, contextType);
+        // TODO_IK_2: add logger and stamps from globals as it was before.
+        const logger = Logger.enable ? new ConsoleLogger() : undefined;
+        transport = new IpcBusTransportMulti(connector, uuidProvider, undefined, logger);
+        container.registerSingleton(gTransportSymbolName, transport);
     }
-    return g_transport;
+    return transport;
 }
 
 // Implementation for Node process
-export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClient {
-    const transport = CreateTransport(contextType);
-    const ipcClient = new IpcBusClientImpl(transport);
+export function createIpcBusClient(): IpcBusClient {
+    const transport = createTransport(IpcBusProcessType.Node);
+    const ipcClient = new IpcBusClientImpl(new EventEmitter(), transport);
     return ipcClient;
 }

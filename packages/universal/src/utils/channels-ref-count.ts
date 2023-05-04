@@ -3,7 +3,6 @@ interface ChannelRefCount {
     refCount: number;
 }
 
-/** @internal */
 export class ChannelsRefCount {
     private readonly _channelsMap: Map<string, ChannelRefCount>;
 

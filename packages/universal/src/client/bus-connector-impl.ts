@@ -1,4 +1,5 @@
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
+import { createContextId } from '../utils';
 import { ConnectionState } from '../utils/connection-state';
 
 import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
@@ -22,7 +23,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         private readonly _connectorType: QueryStateConnector['type']
     ) {
         this._peer = {
-            id: `${uuid()}`,
+            id: uuid(),
             type: processContextType,
         };
 
@@ -37,6 +38,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         const queryState: QueryStateConnector = {
             type: this._connectorType,
             peer: this._peer,
+            contextId: createContextId(this.peer.type),
         };
         return queryState;
     }

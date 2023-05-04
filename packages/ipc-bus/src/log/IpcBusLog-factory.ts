@@ -1,37 +1,15 @@
-import { GetElectronProcessType } from 'electron-process-type/lib/v2';
+import { GlobalContainer } from '@electron-common-ipc/universal';
 
-import * as IpcBusUtils from '../utils';
-
-import type { IpcBusLogConfig } from './IpcBusLogConfig';
-
-const g_log_symbol_name = 'IpcBusLogConfig';
+import type { IpcBusLogConfig } from '@electron-common-ipc/universal';
 
 /** @internal */
-export const CreateIpcBusLog = (): IpcBusLogConfig => {
-    let g_log = IpcBusUtils.GetSingleton<IpcBusLogConfig>(g_log_symbol_name);
-    if (g_log == null) {
-        const electronProcessType = GetElectronProcessType();
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusLog process type = ${electronProcessType}`);
-        switch (electronProcessType) {
-            case 'main': {
-                const newModule = require('./IpcBusLog-new-main');
-                g_log = newModule.NewIpcBusLog();
-                break;
-            }
-            // This case 'renderer' is not reachable as 'factory-browser' is used in a browser (see browserify 'browser' field in package.json)
-            case 'renderer': {
-                const newModule = require('./IpcBusLog-new-renderer');
-                g_log = newModule.NewIpcBusLog();
-                break;
-            }
-            case 'node':
-            default: {
-                const newModule = require('./IpcBusLog-new-node');
-                g_log = newModule.NewIpcBusLog();
-                break;
-            }
-        }
-        IpcBusUtils.RegisterSingleton(g_log_symbol_name, g_log);
+export function CreateIpcBusLogSingleton(logSymbolName: string, factory: () => IpcBusLogConfig): IpcBusLogConfig {
+    const globalContainer = new GlobalContainer();
+    let logInstance = globalContainer.getSingleton<IpcBusLogConfig>(logSymbolName);
+    if (logInstance === undefined) {
+        logInstance = factory();
+        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`Created logger with symbol: ${logSymbolName}`);
+        globalContainer.registerSingleton(logSymbolName, logInstance);
     }
-    return g_log;
-};
+    return logInstance;
+}

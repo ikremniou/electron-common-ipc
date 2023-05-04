@@ -1,8 +1,39 @@
-// The only purpose of this JSON is to help vscode to find project typescript compiler options
 {
-    "files": [],
-    "include": [],
-    "references": [
-        { "path": "./tools/tsconfig-js.json" },
-    ]
+    "compilerOptions": {
+		"module": "commonjs",
+        "target": "es6",
+
+        /* Module Resolution Options */
+        "moduleResolution": "node",
+
+        /* Source Map Options */
+        "sourceMap": true,
+
+        /* Strict Type-Checking Options */
+        /* --strict enables --noImplicitAny, --noImplicitThis, --alwaysStrict, --strictNullChecks, --strictFunctionTypes and --strictPropertyInitialization */
+        "strict": true,
+        "strictNullChecks": false,
+
+        /* Additional Checks */
+        "noUnusedLocals" : true,
+        "noUnusedParameters" : false,
+        "noImplicitReturns": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch" : true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitAny": true,
+        "importsNotUsedAsValues": "error",
+        "declaration": true,
+
+        /* Experimental Options */
+        "experimentalDecorators": true,
+
+        /* Treat a symlinked file like a real one. */
+        "preserveSymlinks": true,
+
+        "stripInternal": true,
+        "removeComments": true,
+
+        "outDir" : "../lib"
+    }
 }

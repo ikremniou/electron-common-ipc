@@ -1,5 +1,15 @@
 const testTimeout = 2000;
 
+const IpcBusProcessType = {
+    Native: 0,
+    Node: 1,
+    Renderer: 2,
+    Worker: 3,
+    Undefined: 4,
+    Browser: 5,
+    Main: 6
+}
+
 function isArrayBuffer(value) {
     return (value instanceof ArrayBuffer || toString.call(value) === '[object ArrayBuffer]');
   }
@@ -64,10 +74,11 @@ var PerfTests = function _PerfTests(type, busPath) {
         _ipcBus.send('test-performance-ping', _transaction);
         setTimeout(() => {
             _ipcBus.removeListener('test-performance-pong', collectTarget);
-            targets = targets.filter(target => ['node', 'renderer', 'main'].includes(target.peer.process.type)).filter(onlyUnique);
+            targets = targets.filter(target => [IpcBusProcessType.Node, IpcBusProcessType.Renderer, IpcBusProcessType.Main]
+                .includes(target.peer.type)).filter(onlyUnique);
             let masterTargets = [];
-            ['node', 'renderer', 'main'].forEach(type => {
-                const index = targets.findIndex((target) => target.peer.process.type === type);
+            [IpcBusProcessType.Node, IpcBusProcessType.Renderer, IpcBusProcessType.Main].forEach(type => {
+                const index = targets.findIndex((target) => target.peer.type === type);
                 if (index >= 0) {
                     masterTargets.push(targets[index]);
                     targets.splice(index, 1);
@@ -79,7 +90,7 @@ var PerfTests = function _PerfTests(type, busPath) {
             combinations.push(...pairwise(masterTargets.reverse()));
             combinations.push(...masterTargets.map(target => [target, target]));
             masterTargets.forEach(target => {
-                const similarTarget = targets.find((curr) => curr.peer.process.type === target.peer.process.type);
+                const similarTarget = targets.find((curr) => curr.peer.type === target.peer.type);
                 if (similarTarget) {
                     combinations.push([target, similarTarget]);
                 }
@@ -124,7 +135,7 @@ var PerfTests = function _PerfTests(type, busPath) {
                     this.onTestFailed(testResult);
                 }
             },
-            testTimeout * 3);
+            testTimeout * 300);
             return true;
         }
         return false;
@@ -291,7 +302,7 @@ var PerfTests = function _PerfTests(type, busPath) {
 
     const _ipcBusModule = require('electron-common-ipc');
     const _uuidFactory = require('nanoid').nanoid;
-    var _ipcBus = _ipcBusModule.IpcBusClient.Create();
+    var _ipcBus = _ipcBusModule.CreateIpcBusClient();
     var _uuid = createUuid();
     var _testProgressCB;
     var _transaction = 0;

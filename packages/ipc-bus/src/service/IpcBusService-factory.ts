@@ -1,17 +1,25 @@
-import type { IpcBusClient } from '../client/IpcBusClient';
+import { ConsoleLogger, createIpcBusService, createIpcBusServiceProxy } from '@electron-common-ipc/universal';
+import { EventEmitter } from 'events';
 
-import { IpcBusService, IpcBusServiceProxy } from './IpcBusService';
-import { IpcBusServiceImpl } from './IpcBusServiceImpl';
-import { IpcBusServiceProxyImpl } from './IpcBusServiceProxyImpl';
+import { Logger } from '../utils/log';
 
-export const CreateIpcBusService: IpcBusService.CreateFunction = (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusService.CreateOptions): IpcBusService => {
-    return new IpcBusServiceImpl(client, serviceName, serviceImpl);
-};
+import type {
+    IpcBusClient,
+    IpcBusService,
+    IpcBusServiceProxy,
+    ServiceProxyConnectOptions,
+} from '@electron-common-ipc/universal';
 
-IpcBusService.Create = CreateIpcBusService;
+export function newIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
+    const logger = Logger.service ? new ConsoleLogger() : undefined;
+    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype, logger);
+}
 
-export const CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = (client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy => {
-    return new IpcBusServiceProxyImpl(client, serviceName, options);
-};
-
-IpcBusServiceProxy.Create = CreateIpcBusServiceProxy;
+export function newIpcBusServiceProxy(
+    client: IpcBusClient,
+    serviceName: string,
+    options?: ServiceProxyConnectOptions
+): IpcBusServiceProxy {
+    const logger = Logger.service ? new ConsoleLogger() : undefined;
+    return createIpcBusServiceProxy(client, serviceName, new EventEmitter(), options, logger);
+}

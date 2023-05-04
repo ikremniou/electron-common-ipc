@@ -148,9 +148,12 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     }
 
     once(channel: string, listener: IpcBusListener): EventEmitterLike<IpcBusListener> {
-        // addListener will be automatically called by NodeJS
-        // removeListener will be automatically called by NodeJS when callback has been triggered
-        return this._emitter.once(channel, listener);
+        channel = CheckChannel(channel);
+        this._transport.addChannel(this, channel);
+        return this._emitter.once(channel, (event, ...args) => {
+            this._transport.removeChannel(this, channel);
+            listener(event, ...args);
+        });
     }
 
     removeAllListeners(channel?: string): EventEmitterLike<IpcBusListener> {

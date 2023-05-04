@@ -35,7 +35,8 @@ export class DeferredRequestPromise {
         if (this._settled === false) {
             const ipcBusEvent: IpcBusEvent = { channel: ipcResponse.request.channel, sender: ipcResponse.peer };
             this._logger?.info(
-                `[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcResponse.request.id}`
+                `[IPCBusTransport] Peer #${ipcBusEvent.sender.name}-${ipcBusEvent.sender.id}` +
+                    ` replied to request on ${ipcResponse.request.id}`
             );
             try {
                 if (ipcResponse.request.resolve === true) {
@@ -44,7 +45,6 @@ export class DeferredRequestPromise {
                     this.resolve(response);
                 } else {
                     this._logger?.info(`[IPCBusTransport] reject: ${args[0]}`);
-                    // TODO_IK:LC
                     const response: IpcBusRequestResponse = { event: ipcBusEvent, err: args[0].toString() };
                     this.reject(response);
                 }

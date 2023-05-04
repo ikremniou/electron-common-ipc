@@ -1,15 +1,20 @@
-export * from './index-common';
+import { newIpcBusClient as CreateIpcBusClient } from './client/IpcBusClient-factory-renderer';
+import {
+    newIpcBusService as CreateIpcBusService,
+    newIpcBusServiceProxy as CreateIpcBusServiceProxy,
+} from './service/IpcBusService-factory';
+import { activateIpcBusTrace as ActivateIpcBusTrace, activateServiceTrace as ActivateServiceTrace } from './utils/log';
 
-export * from './client/IpcBusClient-factory-browser';
+import type { IpcBusClient } from '@electron-common-ipc/universal';
 
-export * from './log/IpcBusLog-factory-browser';
+declare global {
+    interface Window {
+        ElectronCommonIpc: {
+            CreateIpcBusClient: () => IpcBusClient;
+        };
+    }
+}
 
-export * from './service/IpcBusService-factory-browser';
+export * from '@electron-common-ipc/universal/lib/public';
 
-// Force to execute code
-/** @internal */
-import './client/IpcBusClient-factory-browser';
-/** @internal */
-import './log/IpcBusLog-factory-browser';
-/** @internal */
-import './service/IpcBusService-factory-browser';
+export { ActivateIpcBusTrace, CreateIpcBusClient, CreateIpcBusService, CreateIpcBusServiceProxy, ActivateServiceTrace };

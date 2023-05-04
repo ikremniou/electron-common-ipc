@@ -15,7 +15,7 @@ import type { QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
 import type { UuidProvider } from '../utils/uuid';
-import type { IpcPacketBufferCore } from 'socket-serializer-ik';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnectorClient {
     protected _logActivate: boolean;
@@ -30,7 +30,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         public readonly connector: IpcBusConnector,
         private readonly _uuid: UuidProvider,
         private readonly _stamp?: MessageStamp,
-        private readonly _logger?: Logger
+        protected readonly _logger?: Logger
     ) {
         this._requestFunctions = new Map();
         this._postMessage = this._postCommand = this._postRequestMessage = this._deadMessageHandler;
@@ -73,9 +73,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 const message = this._stamp?.ackResponse(ipcResponse, local, deferredRequest.client.peer);
                 this.connector.postMessage(message);
             }
-            // this._logger?.info(`[IPCBusTransport] Emit request response received on channel \
-            //    '${ipcCommand.channel}' from peer #${ipcCommand.peer.name} \
-            //    (replyChannel '${ipcCommand.request.replyChannel}')`);
+            this._logger?.info(
+                `[IPCBusTransport] Emit request response received on channel` +
+                    ` '${ipcResponse.channel}' from peer #${ipcResponse.peer.name}-${ipcResponse.peer.id}` +
+                    ` (replyChannel '${ipcResponse.request.channel}')`
+            );
             deferredRequest.settled(ipcResponse, args);
             return true;
         }
@@ -107,24 +109,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         return false;
     }
-
-    // IpcConnectorClient
-    // onConnectorRawDataReceived(
-    //     ipcMessage: IpcBusMessage,
-    //     rawData: IpcPacketBuffer.RawData,
-    //     messagePorts?: IpcBusMessagePort[]
-    // ): boolean {
-    //     // Prevent to create a huge buffer if not needed, keep working with a set of buffers
-    //     const ipcPacketBufferCore = rawData.buffer ? new IpcPacketBuffer(rawData) : new IpcPacketBufferList(rawData);
-    //     ipcPacketBufferCore.JSON = JSONParserV1;
-    //     switch (ipcMessage.kind) {
-    //         case IpcBusCommandKind.SendMessage:
-    //             return this.onMessageReceived(false, ipcMessage, undefined, ipcPacketBufferCore, messagePorts);
-    //         case IpcBusCommandKind.RequestResponse:
-    //             return this.onRequestResponseReceived(false, ipcMessage, undefined, ipcPacketBufferCore);
-    //     }
-    //     return false;
-    // }
 
     // IpcConnectorClient
     onConnectorShutdown() {
@@ -294,8 +278,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             ipcBusEvent.request = {
                 resolve: (payload: Object | string) => {
                     this._logger?.info(
-                        `[IPCBusTransport] Resolve request received on channel '${ipcMessage.channel}' \
-                        from peer #${ipcMessage.peer.name} - payload: ${JSON.stringify(payload)}`
+                        `[IPCBusTransport] Resolve request received on channel '${ipcMessage.channel}' from` +
+                            ` peer #${ipcMessage.peer.name}-${ipcMessage.peer.id} - payload: ${JSON.stringify(payload)}`
                     );
                     settled(true, [payload]);
                 },
@@ -307,8 +291,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         errResponse = JSON.stringify(err);
                     }
                     this._logger?.info(
-                        `[IPCBusTransport] Reject request. Channel \
-                        '${ipcMessage.channel}' from peer #${ipcMessage.peer.name} - err: ${errResponse}`
+                        `[IPCBusTransport] Reject request. Channel ${ipcMessage.channel}' from` +
+                            ` peer #${ipcMessage.peer.name}-${ipcMessage.peer.id} - err: ${errResponse}`
                     );
                     settled(false, [err]);
                 },
@@ -330,6 +314,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected cancelRequest(client?: IpcBusTransportClient): void {
+        this._logger?.info(`[BusTransport] Cancel requests for '${client?.peer.id ?? this.connector.peer.id}' peer`);
         this._requestFunctions.forEach((request, key) => {
             if (client === undefined || client === request.client) {
                 request.timeout();
@@ -343,6 +328,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     private queryTransportState(ipcCommand: IpcBusCommand) {
         const queryState = this.queryState();
+        this._logger?.info(`[BusTransport] query state transport: ${JSON.stringify(queryState, undefined, 4)}`);
         this._postCommand({
             kind: IpcBusCommandKind.QueryStateResponse,
             data: {
@@ -354,6 +340,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     private queryConnectorState(ipcCommand: IpcBusCommand): void {
         const queryState = this.connector.queryState();
+        this._logger?.info(`[BusTransport] query state connector: ${JSON.stringify(queryState, undefined, 4)}`);
         this._postCommand({
             kind: IpcBusCommandKind.QueryStateResponse,
             data: {
@@ -364,10 +351,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     private _deadMessageHandler(ipcCommand: IpcBusCommand): void {
-        this._logger?.error(`IPCBUS: not managed ${JSON.stringify(ipcCommand, null, 4)}`);
+        this._logger?.error(`[BusTransport] dead handler not managed ${JSON.stringify(ipcCommand, undefined, 4)}`);
     }
 
-    // TODO_IK: is this can all be isolated behind the generic "subscriptions"?
     abstract getChannels(): string[];
     abstract addChannel(client: IpcBusTransportClient, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransportClient, channel?: string, all?: boolean): void;

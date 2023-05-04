@@ -1,30 +1,22 @@
-import type { IpcTimeoutOptions, IpcConnectOptions } from '../client/IpcBusClient';
+import type { IpcConnectOptions, IpcTimeoutOptions } from '@electron-common-ipc/universal';
 
-export namespace IpcBusBridge {
-    export interface ConnectOptions extends IpcConnectOptions {
-        // 'false' by default
-        server?: boolean;
-    }
-    export interface ConnectFunction {
-        (options: ConnectOptions): Promise<void>;
-        (path: string, options?: ConnectOptions): Promise<void>;
-        (port: number, options?: ConnectOptions): Promise<void>;
-        (port: number, hostname?: string, options?: ConnectOptions): Promise<void>;
-    }
+export interface BridgeConnectOptions extends IpcConnectOptions {
+    // 'false' by default
+    server?: boolean;
+}
 
-    export interface CloseOptions extends IpcTimeoutOptions {
-    }
-    export interface CloseFunction {
-        (options?: IpcBusBridge.CloseOptions): Promise<void>;
-    }
-
-    export interface CreateFunction {
-        (): IpcBusBridge | null ;
-    }
-    export let Create: CreateFunction;
+export interface BridgeCloseOptions extends IpcTimeoutOptions {}
+export interface BridgeConnectFunction {
+    (options: BridgeConnectOptions): Promise<void>;
+    (path: string, options?: BridgeConnectOptions): Promise<void>;
+    (port: number, options?: BridgeConnectOptions): Promise<void>;
+    (port: number, hostname?: string, options?: BridgeConnectOptions): Promise<void>;
+}
+export interface BridgeCloseFunction {
+    (options?: BridgeCloseOptions): Promise<void>;
 }
 
 export interface IpcBusBridge {
-    connect: IpcBusBridge.ConnectFunction;
-    close: IpcBusBridge.CloseFunction;
+    connect: BridgeConnectFunction;
+    close: BridgeCloseFunction;
 }

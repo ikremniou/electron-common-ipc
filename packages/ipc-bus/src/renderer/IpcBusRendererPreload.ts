@@ -1,76 +1,75 @@
-import { GetSingleton, RegisterSingleton } from '../utils';
-import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
-import type { IpcWindow } from './IpcBusConnectorRenderer';
-// import type { IpcWindow } from './IpcBusConnectorRenderer';
-import { ElectronCommonIpcNamespace, IsElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
+import { GlobalContainer, IpcBusProcessType } from '@electron-common-ipc/universal';
 
-let electron: any;
-try {
-    // Will work in a preload or with nodeIntegration=true
-    electron = require('electron');
-}
-catch (err) {
-}
+import { newIpcBusClient } from './IpcBusClientRenderer-factory';
+import { ElectronCommonIpcNamespace, isElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
+import { requireElectron } from '../utils';
+
+import type { IpcWindow } from './IpcBusConnectorRenderer';
+import type { IpcBusClient } from '@electron-common-ipc/universal';
 
 const trace = false; // true;
+export function createIpcBusClient(window: Window, ipcWindow: IpcWindow): IpcBusClient {
+    trace && console.log(`${ElectronCommonIpcNamespace}.CreateIpcBusClient`);
+    const ipcBusClient = newIpcBusClient(IpcBusProcessType.Renderer, window.self === window.top, ipcWindow);
+    return ipcBusClient;
+}
 
-function CreateGlobals(windowLocal: any, ipcWindow: IpcWindow) {
+function createGlobals(windowLocal: Window, ipcWindow: IpcWindow) {
     return {
-        CreateIpcBusClient: () => {
-            trace && console.log(`${ElectronCommonIpcNamespace}.CreateIpcBusClient`);
-            const ipcBusClient = CreateIpcBusClientWindow('renderer', (windowLocal.self === windowLocal.top), ipcWindow);
-            // This instance may be proxyfied and then loose property members
-            return ipcBusClient;
-        }
-    }
+        CreateIpcBusClient: () => createIpcBusClient(windowLocal, ipcWindow),
+    };
 }
 
-// This function could be called in advance in the preload file of the BrowserWindow
-// Then ipcbus is supported in sandbox or nodeIntegration=false process
+// work in progress on the context isolation
+function exposeProxyClient(window: Window, ipcWindow: IpcWindow) {
+    const client = createIpcBusClient(window, ipcWindow);
 
-// By default this function is always trigerred in index-browser in order to offer an access to ipcBus
-
-export function PreloadElectronCommonIpcAutomatic(): boolean {
-    return _PreloadElectronCommonIpc();
-}
-
-export function PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
-    return _PreloadElectronCommonIpc(contextIsolation);
+    return {
+        CreateIpcBusClient: () => client,
+    };
 }
 
 const ContextIsolationDefaultValue = false;
-
-const g_preload_done_symbol_name = '_PreloadElectronCommonIpc';
-
-function _PreloadElectronCommonIpc(contextIsolation?: boolean): boolean {
+const gPreloadDoneSymbolName = '_PreloadElectronCommonIpc';
+function _preloadElectronCommonIpc(contextIsolation?: boolean): boolean {
     // trace && console.log(`process.argv:${window.process?.argv}`);
     // trace && console.log(`process.env:${window.process?.env}`);
     // trace && console.log(`contextIsolation:${contextIsolation}`);
-    if (contextIsolation == null) {
+    if (contextIsolation === undefined) {
         contextIsolation = /* window.process?.argv?.includes('--context-isolation') ?? */ ContextIsolationDefaultValue;
     }
 
-    const g_preloadDone = GetSingleton<boolean>(g_preload_done_symbol_name);
-    if (!g_preloadDone) {
-        RegisterSingleton(g_preload_done_symbol_name, true);
-        const ipcRenderer = electron && electron.ipcRenderer;
+    const globalContainer = new GlobalContainer();
+    const isPreloadDone = globalContainer.getSingleton<boolean>(gPreloadDoneSymbolName);
+    if (!isPreloadDone) {
+        globalContainer.registerSingleton(gPreloadDoneSymbolName, true);
+        const electron = requireElectron();
+        const ipcRenderer = electron?.ipcRenderer;
         // console.log(`ipcRenderer = ${JSON.stringify(ipcRenderer, null, 4)}`);
         if (ipcRenderer) {
-            const windowLocal = window as any;
+            const windowLocal = window;
             if (contextIsolation) {
                 try {
-                    electron.contextBridge.exposeInMainWorld(ElectronCommonIpcNamespace, CreateGlobals(windowLocal, ipcRenderer));
-                }
-                catch (error) {
+                    electron.contextBridge.exposeInMainWorld(
+                        ElectronCommonIpcNamespace,
+                        exposeProxyClient(windowLocal, ipcRenderer)
+                    );
+                } catch (error) {
                     console.error(error);
                     contextIsolation = false;
                 }
             }
 
             if (!contextIsolation) {
-                windowLocal[ElectronCommonIpcNamespace] = CreateGlobals(windowLocal, ipcRenderer);
+                windowLocal[ElectronCommonIpcNamespace] = createGlobals(windowLocal, ipcRenderer);
             }
         }
     }
-    return IsElectronCommonIpcAvailable();
+    return isElectronCommonIpcAvailable();
+}
+
+// This function could be called in advance in the preload file of the BrowserWindow
+// Then ipcbus is supported in sandbox or nodeIntegration=false process
+export function preloadElectronCommonIpc(contextIsolation?: boolean): boolean {
+    return _preloadElectronCommonIpc(contextIsolation);
 }
