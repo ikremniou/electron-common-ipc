@@ -1,6 +1,6 @@
 {
     "name": "electron-common-ipc",
-    "version": "16.0.1-dev.10",
+    "version": "16.0.1-dev.11",
     "description": "A safe IPC bus for applications built on Node or Electron.",
     "repository": {
         "type": "git",
@@ -53,11 +53,11 @@
         "@electron-common-ipc/eslint-config": "*",
         "@electron-common-ipc/prettier-config": "*",
         "@types/fs-extra": "^9.0.13",
+        "@types/mocha": "^10.0.0",
         "@types/node": "~14.14.37",
         "@types/shortid": "0.0.29",
         "@types/uuid": "^8.3.3",
         "@types/ws": "^8.5.3",
-        "@types/mocha": "^10.0.0",
         "chai": "~4.3.4",
         "del-cli": "^4.0.1",
         "electron": "~11.3.0",
@@ -71,8 +71,8 @@
         "prettier": "^2.7.1",
         "sinon": "^13.0.1",
         "socket-port-helpers": "^2.1.0",
-        "ts-sinon": "^2.0.2",
         "ts-node": "^10.9.1",
+        "ts-sinon": "^2.0.2",
         "typescript": "^4.8.4"
     },
     "scripts": {
