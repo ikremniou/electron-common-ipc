@@ -1,7 +1,7 @@
 import { GlobalContainer, IpcBusProcessType } from '@electron-common-ipc/universal';
 
 import { newIpcBusClient } from './IpcBusClientRenderer-factory';
-import { ElectronCommonIpcNamespace, isElectronCommonIpcAvailable } from './IpcBusWindowNamespace';
+import { ElectronCommonIpcNamespace, isIpcAvailable } from './IpcBusWindowNamespace';
 import { requireElectron } from '../utils';
 
 import type { IpcWindow } from './IpcBusConnectorRenderer';
@@ -65,7 +65,7 @@ function _preloadElectronCommonIpc(contextIsolation?: boolean): boolean {
             }
         }
     }
-    return isElectronCommonIpcAvailable();
+    return isIpcAvailable();
 }
 
 // This function could be called in advance in the preload file of the BrowserWindow

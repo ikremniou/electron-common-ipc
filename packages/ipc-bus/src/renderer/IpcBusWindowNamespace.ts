@@ -1,6 +1,6 @@
 export const ElectronCommonIpcNamespace = 'ElectronCommonIpc';
 
-export function isElectronCommonIpcAvailable(): boolean {
+export function isIpcAvailable(): boolean {
     try {
         const windowLocal = window;
         const electronCommonIpcSpace = windowLocal[ElectronCommonIpcNamespace];

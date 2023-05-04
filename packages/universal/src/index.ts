@@ -68,8 +68,7 @@ export { ChannelConnectionMap } from './utils/channel-map';
 export { ChannelsRefCount } from './utils/channels-ref-count';
 
 export { GetTargetProcess } from './contract/command-helpers';
-
 export { CheckConnectOptions, CheckTimeoutOptions, createContextId, convertProcessTypeToString } from './utils';
 export { executeInTimeout } from './utils/execute-in-timeout';
-
+export { ConnectionState } from './utils/connection-state';
 export { createIpcBusService, createIpcBusServiceProxy } from './service/service-factory';
