@@ -13,8 +13,8 @@ import type {
     IpcBusConnectorClient,
     ClientConnectOptions,
     IpcBusCommand,
+    IpcBusPeer
 } from '@electron-common-ipc/universal';
-import type { IpcBusPeer } from '@electron-common-ipc/universal/lib/contract/ipc-bus-peer';
 
 describe('ws-browser-connector unit tests', () => {
     let connector: WsBrowserConnector;
