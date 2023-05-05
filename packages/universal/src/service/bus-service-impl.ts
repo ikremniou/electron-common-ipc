@@ -86,7 +86,7 @@ export class IpcBusServiceImpl implements IpcBusService {
         if (this._exposedInstance && this._prevImplEmit) {
             // Unhook events emitted by implementation to send them via IPC
             this._exposedInstance['emit'] = this._prevImplEmit;
-            this._prevImplEmit = null;
+            this._prevImplEmit = undefined;
         }
 
         // The service is stopped

@@ -16,5 +16,4 @@ if (processType === 'main') {
     createClient = newIpcBusClientRenderer;
 }
 
-
 export const createIpcBusClient = createClient;

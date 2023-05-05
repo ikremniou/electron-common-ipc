@@ -24,12 +24,12 @@ const TargetSignatures = {
 function _GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusPeer {
     if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0) {
         if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
-            return null;
+            return undefined;
         }
         const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
         return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
     }
-    return null;
+    return undefined;
 }
 
 export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusPeer {
@@ -152,7 +152,7 @@ export class SmartMessageBag {
             JSONParserV1.uninstall();
             return this._packetOut;
         }
-        return null;
+        return undefined;
     }
 
     writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: unknown[]) {

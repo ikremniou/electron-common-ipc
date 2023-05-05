@@ -293,7 +293,7 @@ export class BrokerImpl implements IpcBusBroker {
                 break;
 
             default:
-                console.log(JSON.stringify(ipcCommand, null, 4));
+                console.log(JSON.stringify(ipcCommand, undefined, 4));
                 throw 'IpcBusBrokerImpl: Not valid packet. Command is unknown';
         }
     }

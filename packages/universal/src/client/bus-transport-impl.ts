@@ -192,7 +192,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return deferredRequest.promise;
     }
 
-    connect(_client: IpcBusTransportClient | null, options: ClientConnectOptions): Promise<IpcBusPeer> {
+    connect(_client: IpcBusTransportClient | undefined, options: ClientConnectOptions): Promise<IpcBusPeer> {
         return this.connector
             .handshake(this, options)
             .then((handshake) => {
@@ -209,7 +209,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             });
     }
 
-    close(_client: IpcBusTransportClient | null, options?: ClientConnectOptions): Promise<void> {
+    close(_client: IpcBusTransportClient | undefined, options?: ClientConnectOptions): Promise<void> {
         this._closeHandler = undefined;
         return this.connector.shutdown(options);
     }
@@ -320,7 +320,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 request.timeout();
                 this._requestFunctions.delete(key);
                 // if (this._logActivate) {
-                //     this._connector.logMessageSend(null, );
+                //     this._connector.logMessageSend(undefined, );
                 // }
             }
         });

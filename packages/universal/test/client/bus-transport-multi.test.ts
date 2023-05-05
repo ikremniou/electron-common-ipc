@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as tsSinon from 'ts-sinon';
 
-import { IpcBusProcessType, IpcBusTransportMulti } from '../../lib';
-import { ConsoleLogger } from '../../lib/log/console-logger';
+import { IpcBusProcessType, IpcBusTransportMulti } from '../../src';
+import { ConsoleLogger } from '../../src/log/console-logger';
 
-import type { ConnectorHandshake , MessageStamp } from '../../lib';
-import type { IpcBusConnector } from '../../lib/client/bus-connector';
-import type { IpcBusTransportClient } from '../../lib/client/bus-transport';
+import type { ConnectorHandshake , MessageStamp } from '../../src';
+import type { IpcBusConnector } from '../../src/client/bus-connector';
+import type { IpcBusTransportClient } from '../../src/client/bus-transport';
 
 describe('ipc-bus-transport-multi', () => {
     let transport: IpcBusTransportMulti;

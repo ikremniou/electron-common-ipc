@@ -37,7 +37,7 @@ export class MessageStampImpl {
     ackMessage(message: IpcBusMessage, local: boolean, localPeer: IpcBusPeer): IpcBusStampedMessage {
         const timestamp = this._log.now;
         const ipcMessage = message as IpcBusStampedMessage;
-        if (ipcMessage.stamp === null) {
+        if (ipcMessage.stamp === undefined) {
             local = false;
             // const ipcMessageMissing = Object.assign({}, ipcMessage,
             // { kind: IpcBusCommand.Kind.LogRoundtrip, isRawData: false });

@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { IpcPacketBuffer } from 'socket-serializer';
 import * as tsSinon from 'ts-sinon';
 
-import { WsBrowserConnector } from '../lib/ws-browser-connector';
+import { WsBrowserConnector } from '../src/ws-browser-connector';
 
 import type {
     IpcBusMessage,
@@ -69,8 +69,9 @@ describe('ws-browser-connector unit tests', () => {
         });
 
         it('should fire a timeout when handshake timeout is reached', async () => {
-            connectOptions.timeoutDelay = 20;
-            await expect(connector.handshake(ipcBusClientStub, connectOptions)).to.be.rejected;
+            const optionsCopy = { ...connectOptions };
+            optionsCopy.timeoutDelay = 20;
+            await expect(connector.handshake(ipcBusClientStub, optionsCopy)).to.be.rejected;
         });
 
         it('should handle socket close on handshake correctly', async () => {

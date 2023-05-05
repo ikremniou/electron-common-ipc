@@ -243,13 +243,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             if (endpoint.messagePort) {
                 endpoint.messagePort.close();
                 endpoint.messagePort.removeListener('message', this._onPortMessageReceived);
-                endpoint.messagePort = null;
+                endpoint.messagePort = undefined;
             }
 
             if (endpoint.commandPort) {
                 endpoint.commandPort.close();
                 endpoint.commandPort.removeListener('message', this._onPortCommandReceived);
-                endpoint.commandPort = null;
+                endpoint.commandPort = undefined;
             }
         }
     }

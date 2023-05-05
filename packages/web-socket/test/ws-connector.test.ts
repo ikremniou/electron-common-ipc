@@ -4,16 +4,17 @@ import { JSONParserV1 } from 'json-helpers';
 import * as sinon from 'sinon';
 import { IpcPacketBuffer } from 'socket-serializer';
 import * as tsSinon from 'ts-sinon';
-import * as wslib from 'ws';
+import * as wsLib from 'ws';
 
-import { WsConnector } from '../lib/client/ws-connector';
+import { WsConnector } from '../src/client/ws-connector';
 
 import type {
     ClientConnectOptions,
     IpcBusConnectorClient,
     IpcBusMessage,
     IpcBusCommand,
- IpcBusPeer} from '@electron-common-ipc/universal';
+    IpcBusPeer,
+} from '@electron-common-ipc/universal';
 
 describe('ws-connector unit tests', () => {
     let connector: WsConnector;
@@ -38,16 +39,16 @@ describe('ws-connector unit tests', () => {
 
     describe('handshake cases', () => {
         let ipcBusClientStub: tsSinon.StubbedInstance<IpcBusConnectorClient>;
-        let stubbedWebSocket: tsSinon.StubbedInstance<wslib.WebSocket>;
+        let stubbedWebSocket: tsSinon.StubbedInstance<wsLib.WebSocket>;
         let sandbox: sinon.SinonSandbox;
         const connectOptions: ClientConnectOptions = { port: 3000, timeoutDelay: 1000 };
 
         beforeEach(() => {
             sinon.createSandbox();
             ipcBusClientStub = tsSinon.stubInterface<IpcBusConnectorClient>();
-            stubbedWebSocket = tsSinon.stubInterface<wslib.WebSocket>();
+            stubbedWebSocket = tsSinon.stubInterface<wsLib.WebSocket>();
             sandbox = sinon.createSandbox();
-            sandbox.stub(wslib, 'WebSocket').callsFake(() => {
+            sandbox.stub(wsLib, 'WebSocket').callsFake(() => {
                 return stubbedWebSocket;
             });
         });
@@ -74,8 +75,9 @@ describe('ws-connector unit tests', () => {
         });
 
         it('should fire a timeout when handshake timeout is reached', async () => {
-            connectOptions.timeoutDelay = 20;
-            await expect(connector.handshake(ipcBusClientStub, connectOptions)).to.be.rejected;
+            const optionsCopy = { ...connectOptions };
+            optionsCopy.timeoutDelay = 20;
+            await expect(connector.handshake(ipcBusClientStub, optionsCopy)).to.be.rejected;
         });
 
         it('should handle socket close on handshake correctly', async () => {
@@ -177,7 +179,7 @@ describe('ws-connector unit tests', () => {
                 JSONParserV1.install();
                 packetOut.serialize([fakeCommand]);
                 JSONParserV1.uninstall();
-                packetOut.buffers.forEach(buffer => {
+                packetOut.buffers.forEach((buffer) => {
                     messageHandler(buffer);
                 });
 

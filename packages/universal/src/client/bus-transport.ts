@@ -6,7 +6,7 @@ import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateTransport } from '../contract/query-state';
 
 export interface IpcBusTransportClient {
-    peer: IpcBusPeer | null;
+    peer?: IpcBusPeer;
     listeners(eventName: string): Function[];
 }
 

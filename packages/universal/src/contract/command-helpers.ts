@@ -17,15 +17,15 @@ const TargetSignatures: Record<string, string> = {
     main: TargetMainSignature,
 };
 
-function GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | null {
+function GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusTarget | undefined {
     if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0) {
         if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
-            return null;
+            return undefined;
         }
         const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
         return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
     }
-    return null;
+    return undefined;
 }
 
 export function CreateMessageTarget(target: IpcBusPeer): IpcBusTarget {
@@ -42,34 +42,34 @@ export function CreateKeyForEndpoint(endpoint: IpcBusPeer): string {
     return endpoint.id;
 }
 
-export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
+export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | undefined {
     if (ipcMessage.target) {
-        return ipcMessage.target.type === IpcBusProcessType.Main ? ipcMessage.target : null;
+        return ipcMessage.target.type === IpcBusProcessType.Main ? ipcMessage.target : undefined;
     }
     if (checkChannel) {
         return GetTargetFromChannel(TargetMainSignature, ipcMessage);
     }
-    return null;
+    return undefined;
 }
 
-export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | null {
+export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | undefined {
     if (ipcMessage.target) {
         return ipcMessage.target.type === IpcBusProcessType.Node || ipcMessage.target.type === IpcBusProcessType.Native
             ? ipcMessage.target
-            : null;
+            : undefined;
     }
     if (checkChannel) {
         return GetTargetFromChannel(TargetProcessSignature, ipcMessage);
     }
-    return null;
+    return undefined;
 }
 
 export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusTarget | undefined {
     if (ipcMessage.target) {
-        return ipcMessage.target.type === IpcBusProcessType.Renderer ? ipcMessage.target : null;
+        return ipcMessage.target.type === IpcBusProcessType.Renderer ? ipcMessage.target : undefined;
     }
     if (checkChannel) {
         return GetTargetFromChannel(TargetRendererSignature, ipcMessage);
     }
-    return null;
+    return undefined;
 }

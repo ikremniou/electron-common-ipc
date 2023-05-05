@@ -58,7 +58,7 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     close(options?: ClientCloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             return this._transport.close(this, options).then(() => {
-                this._peer = null;
+                this._peer = undefined;
             });
         });
     }

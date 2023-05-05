@@ -111,12 +111,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         if (this._messageChannel) {
             this._messageChannel.port1.removeEventListener('message', this.onPortMessageReceived);
             this._messageChannel.port1.close();
-            this._messageChannel = null;
+            this._messageChannel = undefined;
         }
         if (this._commandChannel) {
             this._commandChannel.port1.removeEventListener('message', this.onPortCommandReceived);
             this._commandChannel.port1.close();
-            this._commandChannel = null;
+            this._commandChannel = undefined;
         }
     }
 
@@ -183,7 +183,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             options = CheckConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
-                    timer = null;
+                    timer = undefined;
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onHandshake);
                     reject('timeout');
                 }, options.timeoutDelay);
@@ -228,7 +228,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             options = CheckConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
-                    timer = null;
+                    timer = undefined;
                     this._commandChannel.port1.removeEventListener('message', onHandshake);
                     reject('timeout');
                 }, options.timeoutDelay);

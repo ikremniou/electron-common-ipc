@@ -61,19 +61,19 @@ export function getServiceEventChannel(serviceName: string): string {
     return getServiceNamespace(serviceName) + '/event';
 }
 
-function hasMethod(obj: object, name: string): PropertyDescriptor | null {
+function hasMethod(obj: object, name: string): PropertyDescriptor | undefined {
     if (name === 'constructor') {
-        return null;
+        return undefined;
     }
     // Hide private methods, supposed to be pre-fixed by one or several underscores
     if (name[0] === '_') {
-        return null;
+        return undefined;
     }
     const desc = Object.getOwnPropertyDescriptor(obj, name);
     if (Boolean(desc) && typeof desc.value === 'function') {
         return desc;
     }
-    return null;
+    return undefined;
 }
 
 export function getInstanceMethodNames<Proto>(obj: object, emitterProto?: Proto): Map<string, PropertyDescriptor> {

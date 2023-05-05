@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 
-import type { IpcBusEvent } from '../../lib/client/bus-client';
-import type { IpcBusPeer } from '../../lib/contract/ipc-bus-peer';
+import type { IpcBusEvent } from '../../src/client/bus-client';
+import type { IpcBusPeer } from '../../src/contract/ipc-bus-peer';
 
 export function createFakeIpcBusEvent(): [sinon.SinonSpy, sinon.SinonSpy, IpcBusEvent] {
     const rejectFake = sinon.fake();

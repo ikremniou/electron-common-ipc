@@ -38,11 +38,9 @@
     "scripts": {
         "build": "run-p eslint:src build:src",
         "build:src": "tsc --project ./tsconfig-src.json",
-        "build:test": "tsc --project ./tsconfig-test.json",
         "clean": "rimraf ./build ./lib",
         "eslint:src": "eslint ./src",
-        "test": "run-s build:test test:mocha",
-        "test:mocha": "mocha ./build/config.js ./build/**/*.test.js"
+        "test": "mocha -r ts-node/register ./test/config.ts ./test/**/*.test.ts"
     },
     "devDependencies": {
         "@electron-common-ipc/eslint-config": "*",
