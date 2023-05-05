@@ -7,7 +7,6 @@ import {
 } from './service/IpcBusService-factory';
 import { activateIpcBusTrace as ActivateIpcBusTrace, activateServiceTrace as ActivateServiceTrace } from './utils/log';
 
-export type { IpcBusProcessPeer, IpcBusProcess } from './client/IpcBusClient';
 export {
     ActivateIpcBusTrace,
     CreateIpcBusService,

@@ -6,7 +6,6 @@ import * as queueMicrotask from 'queue-microtask';
 import { fixRawData } from '../utils';
 import { GetTargetRenderer, SmartMessageBag } from '../utils/IpcBusCommand-helpers';
 
-import type { IpcBusProcessPeer } from '../client/IpcBusClient';
 import type {
     IpcBusProcessType,
     UuidProvider,
@@ -44,7 +43,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         super(uuid, contextType, 'connector-renderer');
         this._ipcWindow = ipcWindow;
 
-        const rendererPeer = this._peer as IpcBusProcessPeer;
+        const rendererPeer = this._peer;
         rendererPeer.process = { isMainFrame: isMainFrame, pid: -1 };
         this._messageBag = new SmartMessageBag();
 
@@ -78,7 +77,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._messageBag.set(ipcMessage, args);
         if (!messagePorts) {
             const target = GetTargetRenderer(ipcMessage, true);
-            if (target && target.process.isMainFrame) {
+            if (target && target.process?.isMainFrame) {
                 this._messageBag.sendIPCMessageTo(
                     this._ipcWindow,
                     target.process.wcid,
@@ -175,9 +174,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._messageChannel.port1.start();
 
                 // We have to keep the reference untouched as used by client
-                const peerProcess = this._peer as IpcBusProcessPeer;
-                const handshakeProcess = handshake.peer as IpcBusProcessPeer;
-                peerProcess.process = Object.assign(peerProcess.process, handshakeProcess.process);
+                this._peer.process = Object.assign(this._peer.process, handshake.peer.process);
                 this.onConnectorHandshake();
                 resolve(handshake);
             };

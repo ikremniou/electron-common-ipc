@@ -4,8 +4,7 @@ import { BufferReader, IpcPacketBuffer, IpcPacketBufferList, IpcPacketHeader } f
 
 import { FixRawContent } from '../renderer/IpcBusRendererContent';
 
-import type { IpcBusProcess } from '../client/IpcBusClient';
-import type { IpcBusPeer } from '@electron-common-ipc/universal';
+import type { IpcBusPeer, IpcBusProcess } from '@electron-common-ipc/universal';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export const IPC_BUS_TIMEOUT = 2000; // 20000;

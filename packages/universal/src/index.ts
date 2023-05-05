@@ -24,7 +24,7 @@ export type { IpcBusTransport } from './client/bus-transport';
 export type { BusContainer } from './utils/ioc';
 export type { JsonLike } from './utils/json-like';
 export type { UuidProvider } from './utils/uuid';
-export type { IpcBusPeer } from './contract/ipc-bus-peer';
+export type { IpcBusPeer, IpcBusProcess } from './contract/ipc-bus-peer';
 export type { BusMessagePort } from './client/message-ports';
 export type { IpcBusConnector } from './client/bus-connector';
 export type {

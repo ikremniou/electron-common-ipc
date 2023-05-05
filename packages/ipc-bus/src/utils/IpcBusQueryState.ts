@@ -1,19 +1,20 @@
-import type { IpcBusProcess, IpcBusProcessPeer } from '../client/IpcBusClient';
+import type { IpcBusRendererPeer } from '../main/IpcBusRendererBridge';
 import type {
+    IpcBusProcess,
     QueryStateBase,
     QueryStateChannels,
     QueryStateTransport,
 } from '@electron-common-ipc/universal';
 
 /** @internal */
-export interface QueryStatePeerProcess {
-    peer: IpcBusProcessPeer;
+export interface QueryStateRendererPeer {
+    peer: IpcBusRendererPeer;
     channels: QueryStateChannels;
 }
 
 /** @internal */
 export interface QueryStatePeerProcesses {
-    [key: string]: QueryStatePeerProcess;
+    [key: string]: QueryStateRendererPeer;
 }
 
 /** @internal */
