@@ -1,6 +1,6 @@
 {
     "name": "@electron-common-ipc/web-socket",
-    "version": "1.0.1-dev.11",
+    "version": "1.0.1-dev.12",
     "description": "Extension of the @electron-common-ipc with web socket support",
     "repository": {
         "type": "git",
@@ -43,7 +43,7 @@
         "test": "mocha -r ts-node/register ./test/config.ts ./test/**/*.test.ts"
     },
     "dependencies": {
-        "@electron-common-ipc/universal": "1.0.1-dev.11",
+        "@electron-common-ipc/universal": "1.0.1-dev.12",
         "json-helpers": "^5.2.1",
         "nanoid": "^3.1.30",
         "socket-serializer": "~12.0.2",
