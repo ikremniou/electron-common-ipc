@@ -15,13 +15,13 @@ export type {
     ServiceProxyCreateOptions,
     ServiceProxyConnectOptions,
     ServiceEventEmitter,
-    ServiceStatus
+    ServiceStatus,
 } from './index';
 
 export type { IpcBusBroker, BrokerConnectOptions, BrokerCloseOptions } from './index';
 
 export type { BusMessagePort } from './index';
-export type { IpcBusPeer } from './index';
+export type { IpcBusPeer, IpcBusProcess } from './index';
 export type { Logger, MessageStamp } from './index';
 export type { BusContainer } from './index';
 export type { JsonLike } from './index';

@@ -134,12 +134,12 @@ export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
                         );
                     }
                     return this._socketTransport.broadcastConnect(options).catch(() => {
-                        this._socketTransport = null;
+                        this._socketTransport = undefined;
                     });
                 }
             } else if (!options.port && !options.path) {
                 const socketTransport = this._socketTransport;
-                this._socketTransport = null;
+                this._socketTransport = undefined;
                 return socketTransport.broadcastClose();
             }
             return Promise.resolve();
@@ -150,7 +150,7 @@ export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
         return this._rendererConnector.broadcastClose().then(() => {
             if (this._socketTransport) {
                 const socketTransport = this._socketTransport;
-                this._socketTransport = null;
+                this._socketTransport = undefined;
                 return socketTransport.broadcastClose();
             }
             return Promise.resolve();
@@ -293,6 +293,6 @@ export class IpcBusBridgeImpl implements IpcBusBridge, IpcBusBridgeDispatcher {
     }
 
     _onSocketClosed() {
-        this._socketTransport = null;
+        this._socketTransport = undefined;
     }
 }

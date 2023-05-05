@@ -123,10 +123,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._socketWriter = null;
+        this._socketWriter = undefined;
         if (this._socket) {
             const socket = this._socket;
-            this._socket = null;
+            this._socket = undefined;
             for (const key in this._netBinds) {
                 socket.removeListener(key, this._netBinds[key]);
             }
@@ -152,12 +152,12 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
                 this._socketBuffer = options.socketBuffer;
 
-                let timer: NodeJS.Timer = null;
+                let timer: NodeJS.Timer = undefined;
                 let fctReject: (msg: string) => void = () => {};
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
-                        timer = null;
+                        timer = undefined;
                         const msg = `[IPCBusTransport:Net ${this._peer.id}] error = timeout (${
                             options.timeoutDelay
                         } ms) on ${JSON.stringify(options)}`;

@@ -48,7 +48,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     broadcastConnect(options: ClientConnectOptions): Promise<void> {
-        return super.connect(null, { ...options, peerName: PeerName }).then(() => {
+        return super.connect(undefined, { ...options, peerName: PeerName }).then(() => {
             const channels = this._bridge.getChannels();
             this._postCommand({
                 kind: IpcBusCommandKind.BridgeConnect,
@@ -64,7 +64,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
             kind: IpcBusCommandKind.BridgeClose,
             channel: '',
         });
-        return super.close(null, options);
+        return super.close(undefined, options);
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {

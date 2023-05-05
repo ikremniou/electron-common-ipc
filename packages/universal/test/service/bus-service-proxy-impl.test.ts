@@ -2,13 +2,13 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 
-import { IpcBusClientImpl } from '../../lib/client/bus-client-impl';
-import { IpcBusServiceProxyImpl } from '../../lib/service/bus-service-proxy-impl';
-import { ServiceConstants } from '../../lib/service/constants';
-import { getServiceCallChannel, getServiceEventChannel } from '../../lib/service/utilities';
+import { IpcBusClientImpl } from '../../src/client/bus-client-impl';
+import { IpcBusServiceProxyImpl } from '../../src/service/bus-service-proxy-impl';
+import { ServiceConstants } from '../../src/service/constants';
+import { getServiceCallChannel, getServiceEventChannel } from '../../src/service/utilities';
 
-import type { IpcBusEvent, IpcBusRequestResponse } from '../../lib/client/bus-client';
-import type { IpcBusServiceProxy } from '../../lib/service/bus-service-proxy';
+import type { IpcBusEvent, IpcBusRequestResponse } from '../../src/client/bus-client';
+import type { IpcBusServiceProxy } from '../../src/service/bus-service-proxy';
 
 describe('ipc-bus-service-proxy-impl', () => {
     let ipcBusClientMock: sinon.SinonStubbedInstance<IpcBusClientImpl>;

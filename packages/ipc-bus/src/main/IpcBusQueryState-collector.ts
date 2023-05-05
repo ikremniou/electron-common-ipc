@@ -15,7 +15,7 @@ export class IpcBusQueryStateManager {
     protected _bridge: IpcBusBridgeImpl;
     protected _session: string;
 
-    constructor(bridge: IpcBusBridgeImpl) {
+    constructor(bridge: IpcBusBridgeImpl, private readonly _log: boolean = false) {
         this._bridge = bridge;
 
         this.processes = new Map();
@@ -52,6 +52,6 @@ export class IpcBusQueryStateManager {
         } else {
             processEntry.push(queryStateResponse.queryState);
         }
-        // console.log(`QueryState: ${JSON.stringify(queryStateResponse, null, 4)}`);
+        this._log && console.log(`QueryState: ${JSON.stringify(queryStateResponse, undefined, 4)}`);
     }
 }

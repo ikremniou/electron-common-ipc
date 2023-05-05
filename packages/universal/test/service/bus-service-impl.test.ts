@@ -3,14 +3,14 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import * as tsSinon from 'ts-sinon';
 
-import { IpcBusServiceImpl } from '../../lib/service/bus-service-impl';
-import { ServiceConstants } from '../../lib/service/constants';
-import { getServiceCallChannel, getServiceEventChannel } from '../../lib/service/utilities';
+import { IpcBusServiceImpl } from '../../src/service/bus-service-impl';
+import { ServiceConstants } from '../../src/service/constants';
+import { getServiceCallChannel, getServiceEventChannel } from '../../src/service/utilities';
 import { createFakeIpcBusEvent } from '../test-utils/event';
 
-import type { IpcBusClient, IpcBusEvent } from '../../lib/client/bus-client';
-import type { Logger } from '../../lib/log/logger';
-import type { IpcBusServiceCall } from '../../lib/service/bus-service';
+import type { IpcBusClient, IpcBusEvent } from '../../src/client/bus-client';
+import type { Logger } from '../../src/log/logger';
+import type { IpcBusServiceCall } from '../../src/service/bus-service';
 
 describe('bus-service-proxy-impl', () => {
     class TestServiceClass extends EventEmitter {

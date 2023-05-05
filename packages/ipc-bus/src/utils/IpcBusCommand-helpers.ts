@@ -4,7 +4,6 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import { uuidProvider } from './uuid';
 
-import type { IpcBusProcessPeer } from '../client/IpcBusClient';
 import type { BusMessagePort, IpcBusMessage, IpcBusCommand, IpcBusPeer } from '@electron-common-ipc/universal';
 import type { Writer } from 'socket-serializer';
 
@@ -25,12 +24,12 @@ const TargetSignatures = {
 function _GetTargetFromChannel(targetTypeSignature: string, ipcMessage: IpcBusMessage): IpcBusPeer {
     if (ipcMessage.channel && ipcMessage.channel.lastIndexOf(TargetSignature, 0) === 0) {
         if (ipcMessage.channel.lastIndexOf(targetTypeSignature, 0) !== 0) {
-            return null;
+            return undefined;
         }
         const index = ipcMessage.channel.indexOf(TargetSignature, TargetSignatureLength);
         return JSON.parse(ipcMessage.channel.substr(TargetSignatureLength, index - TargetSignatureLength));
     }
-    return null;
+    return undefined;
 }
 
 export function GetTargetMain(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusPeer {
@@ -55,20 +54,20 @@ export function GetTargetProcess(ipcMessage: IpcBusMessage, checkChannel: boolea
     return undefined;
 }
 
-export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusProcessPeer {
+export function GetTargetRenderer(ipcMessage: IpcBusMessage, checkChannel: boolean = false): IpcBusPeer {
     if (ipcMessage.target) {
         return ipcMessage.target.type === IpcBusProcessType.Renderer
-            ? (ipcMessage.target as IpcBusProcessPeer)
+            ? (ipcMessage.target)
             : undefined;
     }
     if (checkChannel) {
-        return _GetTargetFromChannel(TargetRendererSignature, ipcMessage) as IpcBusProcessPeer;
+        return _GetTargetFromChannel(TargetRendererSignature, ipcMessage);
     }
     return undefined;
 }
 
-export function CreateKeyForEndpoint(endpoint: IpcBusProcessPeer): string {
-    if (endpoint.process.wcid && endpoint.process.frameid) {
+export function CreateKeyForEndpoint(endpoint: IpcBusPeer): string {
+    if (endpoint.process?.wcid && endpoint.process?.frameid) {
         return `wcid-${(endpoint.process.wcid << 8) + endpoint.process.frameid}`;
     }
 
@@ -153,7 +152,7 @@ export class SmartMessageBag {
             JSONParserV1.uninstall();
             return this._packetOut;
         }
-        return null;
+        return undefined;
     }
 
     writeMessage(writer: Writer, ipcMessage: IpcBusMessage, args?: unknown[]) {

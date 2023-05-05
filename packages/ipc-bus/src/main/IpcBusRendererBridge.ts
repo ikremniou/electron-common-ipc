@@ -13,24 +13,28 @@ import { createProcessID, requireElectron } from '../utils';
 import { CreateKeyForEndpoint, GetTargetRenderer } from '../utils/IpcBusCommand-helpers';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
-import type { IpcBusProcessPeer } from '../client/IpcBusClient';
 import type { QueryStatePeerProcesses, QueryStateRendererBridge } from '../utils/IpcBusQueryState';
 import type {
     ClientCloseOptions,
     ClientConnectOptions,
     ConnectorHandshake,
     IpcBusPeer,
-    IpcBusProcessType,
+    IpcBusProcess,
     QueryStateChannels,
     IpcBusCommand,
     IpcBusMessage,
     QueryStateBase,
+    IpcBusProcessType,
 } from '@electron-common-ipc/universal';
 import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 const electron = requireElectron();
 
-interface IpcBusPeerProcessEndpoint extends IpcBusProcessPeer {
+export interface IpcBusRendererPeer extends IpcBusPeer {
+    process: IpcBusProcess;
+}
+
+interface IpcBusPeerProcessEndpoint extends IpcBusRendererPeer {
     webContents: Electron.WebContents;
     messagePort?: Electron.MessagePortMain;
     commandPort?: Electron.MessagePortMain;
@@ -91,7 +95,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     getWindowTarget(window: Electron.BrowserWindow, frameId?: number): IpcBusPeer | undefined {
-        let result: IpcBusProcessPeer;
+        let result: IpcBusPeer;
         if (frameId === undefined) {
             for (const endpoint of this._endpoints.values()) {
                 if (endpoint.process.wcid === window.webContents.id && endpoint.process.isMainFrame) {
@@ -114,9 +118,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
-        // TODO_IK check for GetTargetRenderer
-        return false;
-        // return IpcBusCommandHelpers.GetTargetRenderer(ipcMessage) != null;
+        return GetTargetRenderer(ipcMessage) !== undefined;
     }
 
     getChannels(): string[] {
@@ -153,7 +155,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onHandshakeReceived(event: Electron.IpcMainEvent, ipcCommand: IpcBusCommand): void {
         const logger = CreateIpcBusLog();
         const webContents = event.sender;
-        const realPeer = ipcCommand.peer as IpcBusProcessPeer;
+        const realPeer = ipcCommand.peer as IpcBusRendererPeer;
 
         // Inherit from the peer.process and then complete missing information
         realPeer.process.wcid = webContents.id;
@@ -241,13 +243,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             if (endpoint.messagePort) {
                 endpoint.messagePort.close();
                 endpoint.messagePort.removeListener('message', this._onPortMessageReceived);
-                endpoint.messagePort = null;
+                endpoint.messagePort = undefined;
             }
 
             if (endpoint.commandPort) {
                 endpoint.commandPort.close();
                 endpoint.commandPort.removeListener('message', this._onPortCommandReceived);
-                endpoint.commandPort = null;
+                endpoint.commandPort = undefined;
             }
         }
     }
@@ -255,7 +257,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onEndpointHandshake(_ipcCommand: IpcBusCommand) {}
 
     private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
-        const key = CreateKeyForEndpoint(ipcCommand.peer as IpcBusProcessPeer);
+        const key = CreateKeyForEndpoint(ipcCommand.peer);
         this.deleteEndpointKey(key);
     }
 
@@ -295,7 +297,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     ): boolean {
         const target = GetTargetRenderer(ipcMessage);
         if (target) {
-            const key = CreateKeyForEndpoint(target as IpcBusProcessPeer);
+            const key = CreateKeyForEndpoint(target);
             const endpoint = this._endpoints.get(key);
             if (endpoint) {
                 if (!messagePorts) {
@@ -310,7 +312,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (ipcMessage.kind === IpcBusCommandKind.SendMessage) {
             const channelConns = this._subscriptions.getChannelConns(ipcMessage.channel);
             if (channelConns) {
-                const key = local ? CreateKeyForEndpoint(ipcMessage.peer as IpcBusProcessPeer) : -1;
+                const key = local ? CreateKeyForEndpoint(ipcMessage.peer) : -1;
                 if (!messagePorts) {
                     channelConns.forEach((entry) => {
                         // Prevent echo message
@@ -351,7 +353,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
 
             case IpcBusCommandKind.AddChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer as IpcBusProcessPeer);
+                const key = CreateKeyForEndpoint(ipcCommand.peer);
                 const endpointWC = this._endpoints.get(key);
                 if (endpointWC) {
                     this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
@@ -359,17 +361,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
             }
             case IpcBusCommandKind.RemoveChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer as IpcBusProcessPeer);
+                const key = CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.release(ipcCommand.channel, key);
                 return true;
             }
             case IpcBusCommandKind.RemoveChannelAllListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer as IpcBusProcessPeer);
+                const key = CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.releaseAll(ipcCommand.channel, key);
                 return true;
             }
             case IpcBusCommandKind.RemoveListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer as IpcBusProcessPeer);
+                const key = CreateKeyForEndpoint(ipcCommand.peer);
                 this._subscriptions.remove(key);
                 return true;
             }

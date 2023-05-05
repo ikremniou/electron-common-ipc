@@ -150,7 +150,7 @@ export class WsBrowserBusClient extends IpcBusClientImpl {
 
     private async reconnect(): Promise<void> {
         let tries = this._reconnectOptions.tries;
-        if (tries === null || tries === undefined || tries < 0) {
+        if (tries === -1) {
             tries = Number.POSITIVE_INFINITY;
         }
 

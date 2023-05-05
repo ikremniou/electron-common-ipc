@@ -449,7 +449,6 @@ const electronCommonIPC = require('electron-common-ipc');
 if (electronCommonIPC.PreloadElectronCommonIPC()) {
   electronCommonIPC.ActivateIpcBusTrace(true);
   window.ipcBus = window.ElectronCommonIPC.CreateIpcBusClient();
-  window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIPC.IPCBUS_CHANNEL_QUERY_STATE;
 }
 ```
 if not, just type this code in your renderer process:

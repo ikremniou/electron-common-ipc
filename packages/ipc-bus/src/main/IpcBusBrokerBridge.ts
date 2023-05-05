@@ -33,7 +33,7 @@ export class IpcBusBrokerBridge extends BrokerImpl implements IpcBusBridgeClient
         if (this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
-        return GetTargetProcess(ipcMessage) !== null;
+        return GetTargetProcess(ipcMessage) !== undefined;
     }
 
     getChannels(): string[] {
