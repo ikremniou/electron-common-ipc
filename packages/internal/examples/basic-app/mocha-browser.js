@@ -7,7 +7,7 @@ function RunMochaBrowser(args) {
             show: true,
             height: 700,
             width: 1200,
-            webPreferences: { webSecurity: false, sandbox: false }
+            webPreferences: { webSecurity: false, sandbox: false, contextIsolation: false }
         });
         browserWindow.on('closed', () => {
             resolve();

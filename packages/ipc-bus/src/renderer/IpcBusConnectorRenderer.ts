@@ -218,8 +218,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 const handshake = event.data as ConnectorHandshake;
 
                 // We have to keep the reference untouched as used by client
-                // TODO_IK_2: check peerProcess
-                // this._peerProcess.process = Object.assign(this._peerProcess.process, handshake.process);
+                this._peer.process = Object.assign(this._peer.process, handshake.peer.process);
                 this.onConnectorHandshake();
                 resolve(handshake);
             };

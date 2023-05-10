@@ -24,7 +24,7 @@ export function fixRawData(realData: IpcPacketBufferCore.RawData): IpcPacketBuff
     return ipcPacketBufferCore;
 }
 
-export function requireElectron(): typeof Electron {
+export function requireElectron(): typeof Electron.CrossProcessExports {
     try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const electron = require('electron');

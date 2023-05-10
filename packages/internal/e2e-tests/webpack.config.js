@@ -1,5 +1,6 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 const webConfig = {
     entry: {
@@ -30,7 +31,7 @@ const webConfig = {
                 { from: './test/internal/clients/browser/eipc-browser-index.html' },
                 { from: './test/internal/clients/browser/wsi-browser-index.html' },
                 { from: './test/internal/clients/browser/ws-browser-index.html' }
-        ]
+            ]
         })
     ],
 };
@@ -41,7 +42,7 @@ const preloadConfig = {
         wsi: './test/internal/clients/browser/wsi-browser-preload.ts',
         eipc: './test/internal/clients/browser/eipc-browser-preload.ts',
     },
-    target: 'electron-renderer',
+    target: 'web',
     module: {
         rules: [
             {
@@ -53,14 +54,14 @@ const preloadConfig = {
     },
     resolve: {
         extensions: ['.ts', '.js'],
-        fallback: {
-            buffer: require.resolve('buffer'),
-        }
     },
     output: {
         filename: '[name]-browser-preload.bundle.js',
         path: path.join(__dirname, 'build', 'internal', 'clients', 'browser'),
     },
+    plugins: [
+        new webpack.ExternalsPlugin('node-commonjs', ['electron'])
+    ]
 };
 
 module.exports = [webConfig, preloadConfig];

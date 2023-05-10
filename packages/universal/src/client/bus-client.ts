@@ -32,8 +32,6 @@ export interface ClientConnectOptions extends IpcConnectOptions {
 
 export type IpcBusClientEmitter = ChannelEmitterLike<IpcBusListener>;
 
-// TODO_IK: Review the of the Peers exposure
-// TODO_IK: Review message port exposure
 export interface IpcBusClient extends IpcBusClientEmitter {
     readonly peer: IpcBusPeer | undefined;
 

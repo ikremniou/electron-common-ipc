@@ -1,7 +1,7 @@
 // TODO_IK: I would prefer to move the notion of the message ports out of the
 // universal package as it looks like not a "universal" API. Maybe we should think on
-// extending the client on the electron-common-ipc side like IpcBusClientEx or better to
-// extend the IpcBusCommand to provide arbitrary data in header...
+// providing an arbitrary argument to the send functions.
+// Another alternative would be simplification of the port interface and creating facade
 
 interface MessageEvent {
     data: unknown;
@@ -84,8 +84,6 @@ export interface IpcBusMessagePort extends IpcBusMessagePortPost {
 
 export type BusMessagePort = IpcBusMessagePort | BrowserMessagePort | ElectronMessagePort;
 
-// TODO_IK: During the refactoring notices multiple errors(wrong method names/remove & add mismatch). Is it working?
-// Maybe implementing some facade classes will be better case.
 export function CastToMessagePort(port: BusMessagePort): IpcBusMessagePort {
     const browserPortLike = port as BrowserMessagePort;
     const electronPortLike = port as ElectronMessagePort;

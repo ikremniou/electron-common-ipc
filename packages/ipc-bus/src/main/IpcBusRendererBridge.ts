@@ -61,7 +61,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain = electron.ipcMain;
 
         const electronVersion = process.versions.electron.split('.')[0];
-        // TODO_IK: update Electron version
         this._earlyIPCIssueFixed = Number(electronVersion) >= 12;
 
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');

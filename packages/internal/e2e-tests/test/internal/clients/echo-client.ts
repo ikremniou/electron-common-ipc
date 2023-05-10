@@ -87,6 +87,8 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 ipcClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
                 break;
             case 'start-echo-service': {
+                // eslint-disable-next-line no-debugger
+                debugger;
                 echoServiceInstance = new EchoServiceClass();
                 echoService = ctx.createIpcBusService(ipcClient, message.channel, echoServiceInstance);
                 echoService.start();

@@ -19,7 +19,7 @@
   "dependencies": {
     "electron-common-ipc": "*",
     "bootstrap": "^3.3.7",
-    "electron": "~11.3.0",
+    "electron": "~23.0.0",
     "uuid": "^8.3.2"
   }
 }

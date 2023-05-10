@@ -60,6 +60,7 @@ function createIPCBusRendererClient(busPath, busTimeout) {
             width: 800, height: 800,
             show: true,
             webPreferences: {
+                contextIsolation: false,
                 nodeIntegration: false,
                 preload: path.join(__dirname, './build/renderer-preload.bundle.js')
             }

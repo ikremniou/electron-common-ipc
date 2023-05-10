@@ -1,6 +1,5 @@
 import { ipcRenderer, contextBridge } from 'electron';
-import { ActivateIpcBusTrace } from 'electron-common-ipc';
-import { PreloadElectronCommonIpc } from 'electron-common-ipc/lib/index-preload';
+import { PreloadElectronCommonIpc, ActivateIpcBusTrace } from 'electron-common-ipc/lib/index-preload';
 
 import { isLogEnabled } from '../utils';
 

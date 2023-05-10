@@ -49,6 +49,7 @@ let ipcBridge = null;
 // Load node-import without wrapping to variable. 
 const ProcessConnector = require('./ProcessConnector');
 const PerfTests = require('./PerfTests.js');
+const { contextIsolated } = require('process');
 
 
 // Helpers
@@ -119,6 +120,7 @@ var MainProcess = (function () {
             width: width, height: 800,
             autoHideMenuBar: true,
             webPreferences: {
+                contextIsolation: false,
                 preload: preloadFile
             }
         });
@@ -154,6 +156,7 @@ var MainProcess = (function () {
                         webPreferences: {
                             ...WebPreferencesDefault,
                             nodeIntegrationInSubFrames: true,
+                            contextIsolation: false,
                             preload: preloadFile
                         }
                     });
@@ -221,7 +224,8 @@ var MainProcess = (function () {
                     width: width + 200, height: 800,
                     autoHideMenuBar: true,
                     webPreferences: {
-                        preload: preloadFile
+                        preload: preloadFile,
+                        contextIsolation: false
                     }
                 });
                 perfView.on('close', () => {
@@ -330,6 +334,7 @@ var RendererProcess = (function () {
                     ...WebPreferencesDefault,
                     session: getSession(),
                     preload: preloadFile,
+                    contextIsolation: false,
                 }
             });
 
@@ -425,7 +430,8 @@ var NodeProcess = (function () {
             autoHideMenuBar: true,
             webPreferences: {
                 ...WebPreferencesDefault,
-                preload: preloadFile
+                preload: preloadFile,
+                contextIsolation: false
             }
         });
 
