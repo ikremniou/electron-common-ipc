@@ -71,6 +71,11 @@ export async function startClientHost(mode: IpcType, port: number, contextIsolat
         },
     });
 
+    if (isLogEnabled()) {
+        browserWindow.webContents.openDevTools();
+        // await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     const loadWindow = browserWindow.loadFile(path.join(__dirname, `${mode}-browser-index.html`));
     const windowHost = new ElectronClientHost(browserWindow);
     await windowHost.waitForMessage('ready');

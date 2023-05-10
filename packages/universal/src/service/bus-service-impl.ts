@@ -37,8 +37,6 @@ export class IpcBusServiceImpl implements IpcBusService {
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
             const methodNames = getInstanceMethodNames(this._exposedInstance as object, this._emitterProto);
-            // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
-            // Looking in legacy class
             for (const [methodName, methodDesc] of methodNames) {
                 this.registerCallHandler(methodName, methodDesc.value);
             }

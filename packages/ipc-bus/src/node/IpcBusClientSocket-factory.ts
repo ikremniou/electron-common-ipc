@@ -24,7 +24,7 @@ function createTransport(contextType: IpcBusProcessType): IpcBusTransport {
     let transport = container.getSingleton<IpcBusTransport>(gTransportSymbolName);
     if (!transport) {
         const connector = createConnector(uuidProvider, contextType);
-        // TODO_IK_2: add logger and stamps from globals as it was before.
+        // TODO: add stamps from globals as it was before.
         const logger = Logger.enable ? new ConsoleLogger() : undefined;
         transport = new IpcBusTransportMulti(connector, uuidProvider, undefined, logger);
         container.registerSingleton(gTransportSymbolName, transport);

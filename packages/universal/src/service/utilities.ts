@@ -76,37 +76,30 @@ function hasMethod(obj: object, name: string): PropertyDescriptor | undefined {
     return undefined;
 }
 
-export function getInstanceMethodNames<Proto>(obj: object, emitterProto?: Proto): Map<string, PropertyDescriptor> {
+export function getInstanceMethodNames<Proto>(obj: object, emitter?: Proto): Map<string, PropertyDescriptor> {
     const methodNames = new Map<string, PropertyDescriptor>();
+    const excludeMethods = new Set<string>();
+    if (emitter) {
+        Object.getOwnPropertyNames(emitter)
+            .filter((name) => hasMethod(emitter as object, name))
+            .forEach((name) => excludeMethods.add(name));
+    }
 
-    Object.getOwnPropertyNames(obj).forEach((name) => {
-        const desc = hasMethod(obj, name);
-        if (desc) {
-            methodNames.set(name, desc);
-        }
-    });
-
-    let proto = Object.getPrototypeOf(obj);
-    while (proto) {
-        if (emitterProto && proto === emitterProto) {
-            // Remove EventEmitter overriden methods
-            Object.keys(emitterProto).forEach((prop) => {
-                if (prop[0] !== '_') {
-                    methodNames.delete(prop);
-                }
-            });
-            methodNames.delete('off');
-            break;
-        } else if (proto === Object.prototype) {
-            break;
-        }
-        Object.getOwnPropertyNames(proto).forEach((name) => {
-            const desc = hasMethod(proto, name);
-            if (desc && !methodNames.has(name)) {
+    const fillMethods = (someObject: object) => {
+        Object.getOwnPropertyNames(someObject).forEach((name) => {
+            const desc = hasMethod(someObject, name);
+            if (desc && !methodNames.has(name) && !excludeMethods.has(name)) {
                 methodNames.set(name, desc);
             }
         });
-        proto = Object.getPrototypeOf(proto);
+    };
+
+    while (obj) {
+        if (obj === Object.prototype) {
+            break;
+        }
+        fillMethods(obj);
+        obj = Object.getPrototypeOf(obj);
     }
     return methodNames;
 }

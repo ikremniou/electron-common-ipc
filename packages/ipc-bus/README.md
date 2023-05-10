@@ -120,7 +120,8 @@ In order to have bus working in all contexts you can register the bus in the pre
 const win = new BrowserWindow({
     webPreferences: {
         sandbox: true/false (both supported)
-        preload: 'preload-ipc.bundle.js'
+        preload: 'preload-ipc.bundle.js',
+        contextIsolation: false
     }
 });
 ```

@@ -11,7 +11,7 @@
   "author": "Thomson Reuters",
   "homepage": "http://www.thomsonreuters.com",
   "devDependencies": {
-    "electron": "~11.3.0"
+    "electron": "~23.0.0"
   },
   "dependencies": {
     "electron-common-ipc": "*"
