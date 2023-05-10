@@ -11,7 +11,7 @@ export interface IpcTimeoutOptions {
 export interface IpcConnectOptions extends IpcNetOptions, IpcTimeoutOptions { }
 
 export interface ConnectFunction<T> {
-    (options: T): Promise<void>;
+    (options?: T): Promise<void>;
     (path: string, options?: T): Promise<void>;
     (port: number, options?: T): Promise<void>;
     (port: number, hostname?: string, options?: T): Promise<void>;
