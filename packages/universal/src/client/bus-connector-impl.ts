@@ -1,6 +1,7 @@
 import { IpcBusCommandKind } from '../contract/ipc-bus-command';
-import { createContextId } from '../utils';
+import { CheckTimeoutOptions, createContextId } from '../utils';
 import { ConnectionState } from '../utils/connection-state';
+import { executeInTimeout } from '../utils/execute-in-timeout';
 
 import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
 import type { ConnectorHandshake, IpcBusConnector, IpcBusConnectorClient } from './bus-connector';
@@ -9,55 +10,96 @@ import type { IpcBusCommand } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
 import type { IpcBusPeer, IpcBusProcessType } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
+import type { Logger } from '../log/logger';
 import type { UuidProvider } from '../utils/uuid';
 
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
+    protected id: string;
     protected _client?: IpcBusConnectorClient;
-    protected _peer: IpcBusPeer;
-
-    protected _connectCloseState: ConnectionState;
+    private readonly _connectCloseState: ConnectionState;
 
     constructor(
         uuid: UuidProvider,
-        processContextType: IpcBusProcessType,
-        private readonly _connectorType: QueryStateConnector['type']
+        public readonly type: IpcBusProcessType,
+        private readonly _connectorType: QueryStateConnector['type'],
+        protected readonly _logger?: Logger
     ) {
-        this._peer = {
-            id: uuid(),
-            type: processContextType,
-        };
-
+        this.id = uuid();
         this._connectCloseState = new ConnectionState();
     }
 
-    get peer() {
-        return this._peer;
+    public async handshake(
+        client: IpcBusConnectorClient,
+        peer: IpcBusPeer,
+        options: ClientConnectOptions
+    ): Promise<ConnectorHandshake> {
+        const handshake = await this._connectCloseState.connect<ConnectorHandshake>(() => {
+            options = CheckTimeoutOptions(options);
+            return executeInTimeout(
+                options.timeoutDelay,
+                async (resolve, reject) => {
+                    try {
+                        const handshake = await this.handshakeInternal(client, peer, options);
+                        resolve(handshake);
+                    } catch (error) {
+                        this._logger?.error(`[BusConnector] Failed to connect. ${error}`);
+                        this._connectCloseState.shutdown();
+                        reject(error);
+                    }
+                },
+                (reject) => {
+                    this.shutdownInternal();
+                    const message = `[BusConnector] Failed to connect after ${options.timeoutDelay}ms.`;
+                    this._logger?.error(message);
+                    this._connectCloseState.shutdown();
+                    reject(new Error(message));
+                }
+            );
+        });
+
+        this.postHandshakeCommand(peer);
+        handshake.peer = Object.assign(peer, handshake.peer);
+        return handshake;
     }
 
-    queryState(): QueryStateConnector {
+    public shutdown(options?: ClientCloseOptions): Promise<void> {
+        return this._connectCloseState.close(() => {
+            options = CheckTimeoutOptions(options);
+            return executeInTimeout(
+                options.timeoutDelay,
+                async (resolve, reject) => {
+                    try {
+                        this.postConnectorBeforeShutdown();
+                        await this.shutdownInternal(options);
+                        resolve();
+                    } catch (error) {
+                        this._logger?.error(
+                            `[BusConnector] Failed to shutdown. ${error}. Options: ${JSON.stringify(options)}`
+                        );
+                        this._connectCloseState.shutdown();
+                        reject(error);
+                    }
+                },
+                (reject) => {
+                    const message =
+                        `[BusConnector] Failed shutdown after` +
+                        ` ${options.timeoutDelay}ms. Options: ${JSON.stringify(options)}`;
+                    this._logger?.error(message);
+                    this._connectCloseState.shutdown();
+                    this.onConnectorShutdown();
+                    reject(new Error(message));
+                }
+            );
+        });
+    }
+
+    public queryState(): QueryStateConnector {
         const queryState: QueryStateConnector = {
+            id: this.id,
             type: this._connectorType,
-            peer: this._peer,
-            contextId: createContextId(this.peer.type),
+            contextId: createContextId(this.type),
         };
         return queryState;
-    }
-
-    protected onConnectorBeforeShutdown() {
-        this._client?.onConnectorBeforeShutdown();
-        const shutdownCommand: IpcBusCommand = {
-            kind: IpcBusCommandKind.Shutdown,
-            channel: '',
-        };
-        this.postCommand(shutdownCommand);
-    }
-
-    protected onConnectorHandshake() {
-        const handshakeCommand: IpcBusCommand = {
-            kind: IpcBusCommandKind.Handshake,
-            channel: '',
-        };
-        this.postCommand(handshakeCommand);
     }
 
     protected onConnectorShutdown() {
@@ -74,10 +116,30 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._client = undefined;
     }
 
-    abstract isTarget(ipcMessage: IpcBusMessage): boolean;
-    abstract handshake(client: IpcBusConnectorClient, options: ClientConnectOptions): Promise<ConnectorHandshake>;
-    abstract shutdown(options?: ClientCloseOptions): Promise<void>;
+    private postConnectorBeforeShutdown() {
+        this._client?.onConnectorBeforeShutdown();
+        const shutdownCommand: IpcBusCommand = {
+            peers: this._client?.peers,
+            kind: IpcBusCommandKind.Shutdown,
+        };
+        this.postCommand(shutdownCommand);
+    }
 
+    private postHandshakeCommand(peer: IpcBusPeer) {
+        const handshakeCommand: IpcBusCommand = {
+            peer,
+            kind: IpcBusCommandKind.Handshake,
+        };
+        this.postCommand(handshakeCommand);
+    }
+
+    protected abstract handshakeInternal(
+        client: IpcBusConnectorClient,
+        peer: IpcBusPeer,
+        options: ClientConnectOptions
+    ): Promise<ConnectorHandshake>;
+
+    protected abstract shutdownInternal(options?: ClientCloseOptions): Promise<void>;
     abstract postMessage(ipcMessage: IpcBusMessage, args?: unknown[], ports?: BusMessagePort[]): void;
     abstract postCommand(ipcCommand: IpcBusCommand): void;
 }

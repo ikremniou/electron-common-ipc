@@ -18,6 +18,7 @@ import type { UuidProvider } from '../utils/uuid';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnectorClient {
+    public readonly peers: IpcBusPeer[] = [];
     protected _logActivate: boolean;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
@@ -117,6 +118,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         // no messages to send, it is too late
         this._closeHandler?.();
         this._closeHandler = undefined;
+        this.peers.length = 0;
     }
 
     // IpcConnectorClient
@@ -135,9 +137,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommandKind.SendMessage,
             channel,
             peer: client.peer,
-            target: target && CreateMessageTarget(target),
         };
 
+        if (target) {
+            ipcMessage.target = CreateMessageTarget(target);
+        }
         if (this._logActivate) {
             this._stamp?.stampMessage(ipcMessage);
         }
@@ -167,10 +171,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             kind: IpcBusCommandKind.SendMessage,
             channel,
             peer: client.peer,
-            target: target && CreateMessageTarget(target),
             request: ipcBusMessageRequest,
         };
 
+        if (target) {
+            ipcRequest.target = CreateMessageTarget(target);
+        }
         if (this._logActivate) {
             this._stamp?.stampMessage(ipcRequest);
         }
@@ -192,25 +198,30 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return deferredRequest.promise;
     }
 
-    connect(_client: IpcBusTransportClient | undefined, options: ClientConnectOptions): Promise<IpcBusPeer> {
-        return this.connector
-            .handshake(this, options)
-            .then((handshake) => {
-                this._stamp?.markHandshake(handshake);
-                this._logActivate = handshake.logLevel > 0;
-                // Connect to ... connector
-                this._postCommand = this.connector.postCommand.bind(this.connector);
-                this._postMessage = this.connector.postMessage.bind(this.connector);
-                this._postRequestMessage = this.connector.postMessage.bind(this.connector);
-                return handshake;
-            })
-            .then((handshake) => {
-                return handshake.peer;
-            });
+    async connect(client: IpcBusTransportClient, options: ClientConnectOptions): Promise<void> {
+        if (this.peers.indexOf(client.peer) === -1) {
+            this.peers.push(client.peer);
+        }
+
+        const handshake = await this.connector.handshake(this, client.peer, options);
+        this._stamp?.markHandshake(handshake);
+        this._logActivate = handshake.logLevel > 0;
+        // Connect to ... connector
+        this._postCommand = this.connector.postCommand.bind(this.connector);
+        this._postMessage = this.connector.postMessage.bind(this.connector);
+        this._postRequestMessage = this.connector.postMessage.bind(this.connector);
     }
 
-    close(_client: IpcBusTransportClient | undefined, options?: ClientConnectOptions): Promise<void> {
+    close(client: IpcBusTransportClient, options?: ClientConnectOptions): Promise<void> {
         this._closeHandler = undefined;
+        const clientIndex = this.peers.indexOf(client.peer);
+        if (clientIndex !== -1) {
+            this.peers.splice(clientIndex, 1);
+        }
+        if (this.peers.length !== 0) {
+            return Promise.resolve();
+        }
+
         return this.connector.shutdown(options);
     }
 
@@ -219,7 +230,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     isTarget(ipcMessage: IpcBusMessage): boolean {
-        return this.connector.isTarget(ipcMessage);
+        return this.peers.some((peer) => peer.id === ipcMessage.peer.id);
     }
 
     onClosed(handler: () => void): void {
@@ -314,7 +325,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected cancelRequest(client?: IpcBusTransportClient): void {
-        this._logger?.info(`[BusTransport] Cancel requests for '${client?.peer.id ?? this.connector.peer.id}' peer`);
+        this._logger?.info(`[BusTransport] Cancel requests for '${client?.peer.id}' peer`);
         this._requestFunctions.forEach((request, key) => {
             if (client === undefined || client === request.client) {
                 request.timeout();
@@ -331,6 +342,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._logger?.info(`[BusTransport] query state transport: ${JSON.stringify(queryState, undefined, 4)}`);
         this._postCommand({
             kind: IpcBusCommandKind.QueryStateResponse,
+            peer: ipcCommand.peer,
             data: {
                 id: ipcCommand.channel,
                 queryState,
@@ -343,6 +355,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._logger?.info(`[BusTransport] query state connector: ${JSON.stringify(queryState, undefined, 4)}`);
         this._postCommand({
             kind: IpcBusCommandKind.QueryStateResponse,
+            peer: ipcCommand.peer,
             data: {
                 id: ipcCommand.channel,
                 queryState,

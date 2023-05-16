@@ -66,10 +66,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._subscriptions = new ChannelConnectionMap('IPCBus:RendererBridge');
         this._endpoints = new Map();
 
+        const bridgeMockPeer: IpcBusPeer = { id: 'renderer-bridge', type: this._contextType };
         this._subscriptions.client = {
             channelAdded: (channel) => {
                 const ipcCommand: IpcBusCommand = {
                     kind: IpcBusCommandKind.AddChannelListener,
+                    peer: bridgeMockPeer,
                     channel,
                 };
                 this._bridge._onBridgeChannelChanged(ipcCommand);
@@ -77,6 +79,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             channelRemoved: (channel) => {
                 const ipcCommand: IpcBusCommand = {
                     kind: IpcBusCommandKind.RemoveChannelListener,
+                    peer: bridgeMockPeer,
                     channel,
                 };
                 this._bridge._onBridgeChannelChanged(ipcCommand);
@@ -256,8 +259,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onEndpointHandshake(_ipcCommand: IpcBusCommand) {}
 
     private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
-        const key = CreateKeyForEndpoint(ipcCommand.peer);
-        this.deleteEndpointKey(key);
+        const peers = ipcCommand.peers ?? [ipcCommand.peer];
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            this.deleteEndpointKey(key);
+        });
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
@@ -351,27 +357,20 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._onEndpointShutdown(ipcCommand);
                 return true;
 
-            case IpcBusCommandKind.AddChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                const endpointWC = this._endpoints.get(key);
-                if (endpointWC) {
-                    this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
-                }
+            case IpcBusCommandKind.AddChannelListener: 
+                this._addListeners(ipcCommand);
                 return true;
-            }
-            case IpcBusCommandKind.RemoveChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.release(ipcCommand.channel, key);
+            
+            case IpcBusCommandKind.RemoveChannelListener: 
+                this._removeListeners(ipcCommand, 'release');
                 return true;
-            }
-            case IpcBusCommandKind.RemoveChannelAllListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.releaseAll(ipcCommand.channel, key);
+            
+            case IpcBusCommandKind.RemoveChannelAllListeners: 
+                this._removeListeners(ipcCommand, 'all');
                 return true;
-            }
+            
             case IpcBusCommandKind.RemoveListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.remove(key);
+                this._removeListeners(ipcCommand, 'remove');
                 return true;
             }
 
@@ -381,6 +380,36 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 return true;
         }
         return false;
+    }
+
+    // TODO: duplicate from broker, can be generalized.
+    private _addListeners(ipcCommand: IpcBusCommand): void {
+        const peers = ipcCommand.peers ?? [ipcCommand.peer];
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            const endpointWC = this._endpoints.get(key);
+            if (endpointWC) {
+                this._subscriptions.addRef(ipcCommand.channel, key, endpointWC);
+            }
+        });
+    }
+
+    private _removeListeners(ipcCommand: IpcBusCommand, type: 'release' | 'all' | 'remove'): void {
+        const peers = ipcCommand.peers ?? [ipcCommand.peer];
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            switch (type) {
+                case 'release':
+                    this._subscriptions.release(ipcCommand.channel, key);
+                    break;
+                case 'all':
+                    this._subscriptions.releaseAll(ipcCommand.channel, key);
+                    break;
+                case 'remove':
+                    this._subscriptions.remove(key);
+                    break;
+            }
+        });
     }
 
     private _onPortCommandReceived(event: Electron.MessageEvent): boolean {

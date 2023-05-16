@@ -35,6 +35,6 @@ function createTransport(contextType: IpcBusProcessType): IpcBusTransport {
 // Implementation for Node process
 export function createIpcBusClient(): IpcBusClient {
     const transport = createTransport(IpcBusProcessType.Node);
-    const ipcClient = new IpcBusClientImpl(new EventEmitter(), transport);
+    const ipcClient = new IpcBusClientImpl(uuidProvider, new EventEmitter(), transport);
     return ipcClient;
 }

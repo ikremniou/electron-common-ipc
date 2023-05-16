@@ -12,21 +12,23 @@ import type { IpcBusTransport, IpcBusTransportClient } from './bus-transport';
 import type { EventEmitterLike } from './event-emitter-like';
 import type { BusMessagePort } from './message-ports';
 import type { IpcBusPeer } from '../contract/ipc-bus-peer';
+import type { UuidProvider } from '../utils/uuid';
 
 export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
-    private _peer: IpcBusPeer | undefined;
+    public peer: IpcBusPeer | undefined;
     private readonly _connectCloseState: ConnectionState;
 
-    get peer(): IpcBusPeer | undefined {
-        return this._peer;
-    }
-
     constructor(
+        uuid: UuidProvider,
         private readonly _emitter: EventEmitterLike<IpcBusListener>,
         private readonly _transport: IpcBusTransport
     ) {
         this._emitter.setMaxListeners?.(0);
         this._connectCloseState = new ConnectionState();
+        this.peer = {
+            id: uuid(),
+            type: this._transport.connector.type,
+        };
     }
 
     createDirectChannel(): string {
@@ -44,8 +46,7 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     ): Promise<void> {
         return this._connectCloseState.connect(() => {
             const options = CheckConnectOptions(arg1, arg2, arg3);
-            return this._transport.connect(this, options).then((peer: IpcBusPeer) => {
-                this._peer = peer;
+            return this._transport.connect(this, options).then(() => {
                 const eventNames = this._emitter.eventNames();
                 for (let i = 0, l = eventNames.length; i < l; ++i) {
                     const eventName = eventNames[i] as string;
@@ -58,7 +59,7 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     close(options?: ClientCloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             return this._transport.close(this, options).then(() => {
-                this._peer = undefined;
+                this.peer = undefined;
             });
         });
     }

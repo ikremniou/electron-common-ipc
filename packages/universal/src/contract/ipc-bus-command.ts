@@ -30,7 +30,16 @@ export interface IpcBusCommandBase {
     channel?: string;
 }
 
-export interface IpcBusCommand extends IpcBusCommandBase {
-    peer?: IpcBusPeer;
+interface IpcBusCommand1 extends IpcBusCommandBase {
+    peer?: never;
+    peers: IpcBusPeer[];
     channels?: string[];
 }
+
+interface IpcBusCommand2 extends IpcBusCommandBase {
+    peer: IpcBusPeer;
+    peers?: never;
+    channels?: string[];
+}
+
+export type IpcBusCommand = IpcBusCommand1 | IpcBusCommand2;

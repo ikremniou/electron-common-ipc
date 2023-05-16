@@ -12,6 +12,7 @@ import type {
     IpcBusPeer,
     IpcBusRequestResponse,
     Logger,
+    UuidProvider,
 } from '@electron-common-ipc/universal';
 
 export interface ReconnectOptions {
@@ -27,12 +28,13 @@ export class WsBrowserBusClient extends IpcBusClientImpl {
     private _closeHandler: () => void;
 
     constructor(
+        uuid: UuidProvider,
         emitter: EventEmitterLike<IpcBusListener>,
         transport: IpcBusTransport,
         private readonly _logger: Logger,
         private readonly _reconnectOptions: ReconnectOptions
     ) {
-        super(emitter, transport);
+        super(uuid, emitter, transport);
         this.onConnectionClosed = this.onConnectionClosed.bind(this);
         this.subscribeOnConnectionClosed();
         this._isClosed = true;
@@ -120,7 +122,8 @@ export class WsBrowserBusClient extends IpcBusClientImpl {
     private async onConnectionClosed(): Promise<void> {
         if (!this._isConnected) {
             this._logger?.info(
-                `[WsBrowserBusClient ${this.peer?.id}] Connection closed during re-connection. Ignoring...`);
+                `[WsBrowserBusClient ${this.peer?.id}] Connection closed during re-connection. Ignoring...`
+            );
             return;
         }
 
@@ -132,7 +135,8 @@ export class WsBrowserBusClient extends IpcBusClientImpl {
         }
 
         this._logger?.info(
-            `[WsBrowserBusClient ${this.peer?.id}] Connection closed unexpectedly. Trying to reconnect...`);
+            `[WsBrowserBusClient ${this.peer?.id}] Connection closed unexpectedly. Trying to reconnect...`
+        );
         this._logger?.info(`[WsBrowserBusClient ${this.peer?.id}] Changing state to close...`);
         try {
             await super.close();
@@ -162,14 +166,12 @@ export class WsBrowserBusClient extends IpcBusClientImpl {
             this._logger?.info(`[WsBrowserBusClient ${this.peer?.id}] Reconnection attempt #${reconnectionAttempt}`);
             this._logger?.info(
                 `[WsBrowserBusClient ${this.peer?.id}] Trying to reconnect after ${this._reconnectOptions.await} ms...`
-                );
+            );
             try {
-                return await defer(
-                    () => {
-                        this._logger?.info(`[WsBrowserBusClient ${this.peer?.id}] Reconnecting...`);
-                        return this.connectInternal(this._lastConnectionOptions);
-                    },
-                    this._reconnectOptions.await);
+                return await defer(() => {
+                    this._logger?.info(`[WsBrowserBusClient ${this.peer?.id}] Reconnecting...`);
+                    return this.connectInternal(this._lastConnectionOptions);
+                }, this._reconnectOptions.await);
             } catch (err) {
                 this._logger?.warn(`[WsBrowserBusClient ${this.peer?.id}] Reconnection attempt failed. ${err}`);
             }

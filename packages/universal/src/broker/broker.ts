@@ -13,7 +13,7 @@ export type BrokerCloseOptions = IpcTimeoutOptions;
 
 export interface IpcBusBrokerPrivate {
     addHandler(message: IpcBusCommandKind, handler: () => void): void;
-    addClient(peer: IpcBusPeer, client: BrokerClient): void;
+    addClient(peers: IpcBusPeer[], client: BrokerClient): void;
 }
 
 export interface IpcBusBroker {

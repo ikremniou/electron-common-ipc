@@ -8,7 +8,6 @@ import type { IpcBusConnector } from './bus-connector';
 import type { IpcBusTransportClient } from './bus-transport';
 import type { BusMessagePort } from './message-ports';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
-import type { IpcBusPeer } from '../contract/ipc-bus-peer';
 import type { QueryStateChannels, QueryStatePeers, QueryStateTransport } from '../contract/query-state';
 import type { Logger } from '../log/logger';
 import type { MessageStamp } from '../log/message-stamp';
@@ -71,13 +70,14 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
             this._subscriptions = undefined;
             this._postCommand({
                 kind: IpcBusCommandKind.RemoveListeners,
+                peers: this.peers,
                 channel: '',
             });
         }
     }
 
-    override connect(client: IpcBusTransportClient | undefined, options: ClientConnectOptions): Promise<IpcBusPeer> {
-        return super.connect(client, options).then((peer) => {
+    override connect(client: IpcBusTransportClient | undefined, options: ClientConnectOptions): Promise<void> {
+        return super.connect(client, options).then(() => {
             if (this._subscriptions === undefined) {
                 this._subscriptions = new ChannelConnectionMap<IpcBusTransportClient, string>('');
 
@@ -85,12 +85,14 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
                     channelAdded: (channel) => {
                         this._postCommand({
                             kind: IpcBusCommandKind.AddChannelListener,
+                            peers: this.peers,
                             channel,
                         });
                     },
                     channelRemoved: (channel) => {
                         this._postCommand({
                             kind: IpcBusCommandKind.RemoveChannelListener,
+                            peers: this.peers,
                             channel,
                         });
                     },
@@ -98,7 +100,6 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
             } else {
                 // TODO send all existing channels
             }
-            return peer;
         });
     }
 
@@ -166,7 +167,7 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
 
         const results: QueryStateTransport = {
             type: 'transport',
-            contextId: createContextId(this.connector.peer.type),
+            contextId: createContextId(this.connector.type),
             channels: processChannelsJSON,
             peers: peersJSON,
         };

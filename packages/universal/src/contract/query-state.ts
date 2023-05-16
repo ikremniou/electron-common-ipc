@@ -54,7 +54,7 @@ export interface QueryStateConnector extends QueryStateBase {
         | 'connector-browser-ws'
         | 'connector-ws-local'
         | 'connector-main';
-    peer: IpcBusPeer;
+    id: string;
 }
 
 export interface QueryStateBroker extends Omit<QueryStateBase, 'peer'> {

@@ -39,13 +39,11 @@ export interface ThinContext {
 export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
     const maybeBusBroker: IpcBusBrokerPrivate = ctx.container?.getSingleton(BrokerToken);
     let realTransport: IpcBusTransport = ctx.container?.getSingleton(TransportToken);
+    let connector: IpcBusConnector;
 
     if (!realTransport) {
-        let connector: IpcBusConnector;
         if (maybeBusBroker) {
-            const localConnector = new WsConnectorLocal(ctx.uuidProvider, ctx.json, IpcBusProcessType.Node);
-            maybeBusBroker.addClient(localConnector.peer, localConnector);
-            connector = localConnector;
+            connector = new WsConnectorLocal(ctx.uuidProvider, ctx.json, IpcBusProcessType.Node);
         } else {
             connector = new WsConnector(ctx.uuidProvider, ctx.json, IpcBusProcessType.Node);
         }
@@ -54,5 +52,9 @@ export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
         ctx.container?.registerSingleton(TransportToken, realTransport);
     }
 
-    return new IpcBusClientImpl(ctx.emitter, realTransport);
+    const client = new IpcBusClientImpl(ctx.uuidProvider, ctx.emitter, realTransport);
+    if (maybeBusBroker && connector) {
+        maybeBusBroker.addClient([client.peer], connector as WsConnectorLocal);
+    }
+    return client;
 }

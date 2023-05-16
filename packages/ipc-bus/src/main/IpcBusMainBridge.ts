@@ -14,6 +14,7 @@ import type {
     IpcBusMessage,
     IpcBusProcessType,
     UuidProvider,
+    IpcBusPeer,
 } from '@electron-common-ipc/universal';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
@@ -28,14 +29,18 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return GetTargetMain(ipcMessage) !== undefined;
     }
 
-    handshake(_client: IpcBusConnectorClient, _options: ClientConnectOptions): Promise<ConnectorHandshake> {
+    protected override handshakeInternal(
+        _client: IpcBusConnectorClient,
+        peer: IpcBusPeer,
+        _options: ClientConnectOptions
+    ): Promise<ConnectorHandshake> {
         const handshake: ConnectorHandshake = {
-            peer: this._peer,
+            peer,
         };
         return Promise.resolve(handshake);
     }
 
-    shutdown(_options: ClientCloseOptions): Promise<void> {
+    protected override shutdownInternal(_options: ClientCloseOptions): Promise<void> {
         return Promise.resolve();
     }
 
@@ -54,7 +59,6 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 
             case IpcBusCommandKind.AddChannelListener:
             case IpcBusCommandKind.RemoveChannelListener:
-                ipcCommand.peer = ipcCommand.peer || this.peer;
                 this._bridge._onBridgeChannelChanged(ipcCommand);
                 break;
 
