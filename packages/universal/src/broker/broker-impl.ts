@@ -29,7 +29,7 @@ export class BrokerImpl implements IpcBusBroker {
 
     constructor(
         private readonly _serverFactory: BrokerServerFactory,
-        private readonly _contextType: IpcBusProcessType,
+        protected readonly _contextType: IpcBusProcessType,
         private readonly _logger?: Logger
     ) {
         this._endpoints = new Map();
@@ -81,10 +81,10 @@ export class BrokerImpl implements IpcBusBroker {
         });
     }
 
-    public addClient(peer: IpcBusPeer, userClient: BrokerClient): void {
+    public addClient(peers: IpcBusPeer[], userClient: BrokerClient): void {
         this._logger?.info(`[BusBroker] Adding client from user ${userClient}`);
         this._onServerConnection(userClient);
-        this._onEndpointHandshake(userClient, peer);
+        this._onEndpointHandshake(userClient, peers);
     }
 
     protected _reset(): void {
@@ -190,39 +190,28 @@ export class BrokerImpl implements IpcBusBroker {
     ): void {
         switch (ipcCommand.kind) {
             case IpcBusCommandKind.Handshake:
-                this._onEndpointHandshake(socket, ipcCommand.peer);
+                this._onEndpointHandshake(socket, ipcCommand.peers ?? [ipcCommand.peer]);
                 break;
             case IpcBusCommandKind.Shutdown:
-                this._onEndpointShutdown(ipcCommand);
+                this._onEndpointShutdown(ipcCommand.peers ?? [ipcCommand.peer]);
                 // this._socketCleanUp(socket);
                 break;
 
-            case IpcBusCommandKind.AddChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                const endpointSocket = this._endpoints.get(key);
-                if (endpointSocket) {
-                    this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
-                }
+            case IpcBusCommandKind.AddChannelListener:
+                this._addListeners(ipcCommand);
                 break;
-            }
-            case IpcBusCommandKind.RemoveChannelListener: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.release(ipcCommand.channel, key);
+            case IpcBusCommandKind.RemoveChannelListener:
+                this._removeListeners(ipcCommand, 'release');
                 break;
-            }
             case IpcBusCommandKind.RemoveChannelAllListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.releaseAll(ipcCommand.channel, key);
+                this._removeListeners(ipcCommand, 'all');
                 break;
             }
-            case IpcBusCommandKind.RemoveListeners: {
-                const key = CreateKeyForEndpoint(ipcCommand.peer);
-                this._subscriptions.remove(key);
+            case IpcBusCommandKind.RemoveListeners:
+                this._removeListeners(ipcCommand, 'remove');
                 break;
-            }
-
             case IpcBusCommandKind.QueryState: {
-                this._endpoints.forEach(endpoint => {
+                this._endpoints.forEach((endpoint) => {
                     // Prevent echo message
                     if (endpoint.socket !== socket) {
                         endpoint.socket.send(ipcPacketBufferList);
@@ -231,6 +220,7 @@ export class BrokerImpl implements IpcBusBroker {
                 const queryState = this._queryState();
                 this.broadcastCommandToBridge({
                     kind: IpcBusCommandKind.QueryStateResponse,
+                    peer: { id: 'broker', type: this._contextType },
                     data: {
                         id: ipcCommand.channel,
                         queryState,
@@ -318,17 +308,49 @@ export class BrokerImpl implements IpcBusBroker {
         return false;
     }
 
-    private _onEndpointHandshake(socket: BrokerClient, peer: IpcBusPeer) {
-        const endpoint: IpcBusPeerProcessEndpoint = { ...peer, socket };
-        const key = CreateKeyForEndpoint(endpoint);
-        this._endpoints.set(key, endpoint);
+    private _addListeners(ipcCommand: IpcBusCommand): void {
+        const peers = ipcCommand.peers ?? [ipcCommand.peer];
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            const endpointSocket = this._endpoints.get(key);
+            if (endpointSocket) {
+                this._subscriptions.addRef(ipcCommand.channel, key, endpointSocket);
+            }
+        });
     }
 
-    private _onEndpointShutdown(ipcCommand: IpcBusCommand) {
-        const endpoint = ipcCommand.peer;
-        const key = CreateKeyForEndpoint(endpoint);
-        this._endpoints.delete(key);
-        this._subscriptions.remove(key);
+    private _removeListeners(ipcCommand: IpcBusCommand, type: 'release' | 'all' | 'remove'): void {
+        const peers = ipcCommand.peers ?? [ipcCommand.peer];
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            switch (type) {
+                case 'release':
+                    this._subscriptions.release(ipcCommand.channel, key);
+                    break;
+                case 'all':
+                    this._subscriptions.releaseAll(ipcCommand.channel, key);
+                    break;
+                case 'remove':
+                    this._subscriptions.remove(key);
+                    break;
+            }
+        });
+    }
+
+    private _onEndpointHandshake(socket: BrokerClient, peers: IpcBusPeer[]): void {
+        peers.forEach((peer) => {
+            const endpoint: IpcBusPeerProcessEndpoint = { ...peer, socket };
+            const key = CreateKeyForEndpoint(endpoint);
+            this._endpoints.set(key, endpoint);
+        });
+    }
+
+    private _onEndpointShutdown(peers: IpcBusPeer[]) {
+        peers.forEach((peer) => {
+            const key = CreateKeyForEndpoint(peer);
+            this._endpoints.delete(key);
+            this._subscriptions.remove(key);
+        });
     }
 
     protected onBridgeClosed(_client?: BrokerClient) {}

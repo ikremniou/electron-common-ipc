@@ -4,7 +4,7 @@ import { WsBrokerServerFactory } from './ws-broker-server-factory';
 import { BrokerToken, TransportToken } from '../constants';
 
 import type { WsConnectorLocal } from '../client/ws-connector-local';
-import type { BusContainer, IpcBusBroker, Logger, IpcBusTransport, JsonLike } from '@electron-common-ipc/universal';
+import type { BusContainer, IpcBusBroker, Logger, JsonLike, IpcBusTransportImpl } from '@electron-common-ipc/universal';
 
 export interface ThinContext {
     json: JsonLike;
@@ -28,11 +28,11 @@ export function createWebSocketBroker(ctx: ThinContext): IpcBusBroker {
     const broker = new BrokerImpl(serverFactory, IpcBusProcessType.Node, ctx.logger);
     ctx.container?.registerSingleton(BrokerToken, broker);
 
-    const maybeTransport = ctx.container?.getSingleton<IpcBusTransport>(TransportToken);
+    const maybeTransport = ctx.container?.getSingleton<IpcBusTransportImpl>(TransportToken);
     if (maybeTransport) {
         const maybeLocal = maybeTransport.connector as WsConnectorLocal;
         if (maybeLocal.subscribe && maybeLocal.release && maybeLocal.send) {
-            broker.addClient(maybeLocal.peer, maybeLocal);
+            broker.addClient(maybeTransport.peers, maybeLocal);
         }
     }
 

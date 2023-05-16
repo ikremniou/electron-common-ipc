@@ -33,7 +33,7 @@ export interface ClientConnectOptions extends IpcConnectOptions {
 export type IpcBusClientEmitter = ChannelEmitterLike<IpcBusListener>;
 
 export interface IpcBusClient extends IpcBusClientEmitter {
-    readonly peer: IpcBusPeer | undefined;
+    readonly peer: IpcBusPeer;
 
     connect: ConnectFunction<ClientConnectOptions>;
     close: CloseFunction<IpcTimeoutOptions>;

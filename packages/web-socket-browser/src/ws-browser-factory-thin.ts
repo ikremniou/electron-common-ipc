@@ -30,13 +30,13 @@ export function createWebSocketClient(ctx: ThinContext): IpcBusClient {
     let realTransport = ctx.container?.getSingleton<IpcBusTransport>(BrowserTransportToken);
     if (!realTransport) {
         const connector = new WsBrowserConnector(ctx.uuidProvider, ctx.json, IpcBusProcessType.Browser, ctx.logger);
-        realTransport = new IpcBusTransportMulti(connector, ctx.uuidProvider);
+        realTransport = new IpcBusTransportMulti(connector, ctx.uuidProvider, ctx.messageStamp, ctx.logger);
         ctx.container?.registerSingleton(BrowserTransportToken, realTransport);
     }
 
     if (ctx.reconnect) {
-        return new WsBrowserBusClient(ctx.emitter, realTransport, ctx.logger, ctx.reconnect);
+        return new WsBrowserBusClient(ctx.uuidProvider, ctx.emitter, realTransport, ctx.logger, ctx.reconnect);
     }
 
-    return new IpcBusClientImpl(ctx.emitter, realTransport);
+    return new IpcBusClientImpl(ctx.uuidProvider, ctx.emitter, realTransport);
 }

@@ -12,6 +12,7 @@ import type {
     BrokerClient,
     UuidProvider,
     JsonLike,
+    IpcBusPeer,
 } from '@electron-common-ipc/universal';
 
 export class WsConnectorLocal extends IpcBusConnectorImpl implements BrokerClient {
@@ -48,31 +49,7 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements BrokerClien
     }
 
     [Symbol.toPrimitive](): string {
-        return `LOCAL: ${JSON.stringify(this.peer)}`;
-    }
-
-    public isTarget(ipcMessage: IpcBusMessage): boolean {
-        return this.peer.id === ipcMessage.peer?.id;
-    }
-
-    public handshake(client: IpcBusConnectorClient, _options: ClientConnectOptions): Promise<ConnectorHandshake> {
-        if (!this._passDataToBroker) {
-            throw new Error('Cannot handle handshake for local connector. Broker is not connected.');
-        }
-
-        this.addClient(client);
-        this.onConnectorHandshake();
-        return Promise.resolve({ peer: this.peer });
-    }
-
-    public shutdown(_options?: ClientCloseOptions): Promise<void> {
-        if (this._passCloseToBroker) {
-            this.onConnectorBeforeShutdown();
-            this._passCloseToBroker(this);
-            return Promise.resolve();
-        }
-        this.onConnectorShutdown();
-        return Promise.resolve();
+        return `LOCAL: ${JSON.stringify(this.id)}`;
     }
 
     public postMessage(ipcMessage: IpcBusMessage, args?: unknown[]): void {
@@ -84,8 +61,29 @@ export class WsConnectorLocal extends IpcBusConnectorImpl implements BrokerClien
     }
 
     public postCommand(ipcCommand: IpcBusCommand): void {
-        ipcCommand.peer = ipcCommand.peer || this._peer;
         this._packetPass.serialize([ipcCommand]);
         this._passDataToBroker(this, ipcCommand, this._packetPass);
+    }
+
+    protected override handshakeInternal(
+        client: IpcBusConnectorClient,
+        peer: IpcBusPeer,
+        _options: ClientConnectOptions
+    ): Promise<ConnectorHandshake> {
+        if (!this._passDataToBroker) {
+            throw new Error('Cannot handle handshake for local connector. Broker is not connected.');
+        }
+
+        this.addClient(client);
+        return Promise.resolve({ peer });
+    }
+
+    protected override shutdownInternal(_options?: ClientCloseOptions): Promise<void> {
+        if (this._passCloseToBroker) {
+            this._passCloseToBroker(this);
+            return Promise.resolve();
+        }
+        this.onConnectorShutdown();
+        return Promise.resolve();
     }
 }

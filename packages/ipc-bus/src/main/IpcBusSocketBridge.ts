@@ -25,12 +25,16 @@ import type {
     QueryStatePeers,
     QueryStateTransport,
     UuidProvider,
+    IpcBusPeer,
+    IpcBusTransportClient,
 } from '@electron-common-ipc/universal';
 import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 const PeerName = 'IPCBus:NetBridge';
 
 export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements IpcBusBridgeClient {
+    private readonly _mockPeer: IpcBusPeer = { id: 'transport-socket', type: this.connector.type };
+    private readonly _mockClient: IpcBusTransportClient = { peer: this._mockPeer, listeners: () => [] };
     protected _bridge: IpcBusBridgeImpl;
     protected _subscribedChannels: ChannelsRefCount;
 
@@ -48,10 +52,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     }
 
     broadcastConnect(options: ClientConnectOptions): Promise<void> {
-        return super.connect(undefined, { ...options, peerName: PeerName }).then(() => {
+        return super.connect(this._mockClient, { ...options, peerName: PeerName }).then(() => {
             const channels = this._bridge.getChannels();
             this._postCommand({
                 kind: IpcBusCommandKind.BridgeConnect,
+                peer: this._mockPeer,
                 channel: undefined,
                 channels,
             });
@@ -62,9 +67,10 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
     broadcastClose(options?: ClientConnectOptions): Promise<void> {
         this._postCommand({
             kind: IpcBusCommandKind.BridgeClose,
+            peer: this._mockPeer,
             channel: '',
         });
-        return super.close(undefined, options);
+        return super.close(this._mockClient, options);
     }
 
     broadcastCommand(ipcCommand: IpcBusCommand): void {
@@ -184,7 +190,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl implements 
 
         const results: QueryStateSocketBridge = {
             type: 'transport-socket-bridge',
-            contextId: createContextId(this.connector.peer.type),
+            contextId: createContextId(this.connector.type),
             process: { pid: process.pid },
             channels: processChannelsJSON,
             peers: peersJSON,

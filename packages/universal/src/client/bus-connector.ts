@@ -2,7 +2,7 @@ import type { ClientCloseOptions, ClientConnectOptions } from './bus-client';
 import type { BusMessagePort } from './message-ports';
 import type { IpcBusCommand, IpcBusCommandBase } from '../contract/ipc-bus-command';
 import type { IpcBusMessage } from '../contract/ipc-bus-message';
-import type { IpcBusPeer } from '../contract/ipc-bus-peer';
+import type { IpcBusPeer, IpcBusProcessType } from '../contract/ipc-bus-peer';
 import type { QueryStateConnector } from '../contract/query-state';
 import type { ContractLogLevel } from '../log/ipc-bus-log-config';
 import type { IpcPacketBufferCore } from 'socket-serializer';
@@ -13,6 +13,7 @@ export interface ConnectorHandshake {
 }
 
 export interface IpcBusConnectorClient {
+    peers: IpcBusPeer[];
     onConnectorArgsReceived(
         ipcMessage: IpcBusMessage,
         args: unknown[],
@@ -52,14 +53,11 @@ export interface PostMessageFunction {
 }
 
 export interface IpcBusConnector {
-    readonly peer: IpcBusPeer;
+    readonly type: IpcBusProcessType;
 
-    isTarget(ipcMessage: IpcBusMessage): boolean;
-    queryState(): QueryStateConnector;
-
-    handshake(client: IpcBusConnectorClient, options: ClientConnectOptions): Promise<ConnectorHandshake>;
-    shutdown(options?: ClientCloseOptions): Promise<void>;
-
+    handshake(client: IpcBusConnectorClient, peer: IpcBusPeer, opts: ClientConnectOptions): Promise<ConnectorHandshake>;
+    shutdown(opts?: ClientCloseOptions): Promise<void>;
     postCommand(ipcCommand: IpcBusCommand): void;
     postMessage(ipcMessage: IpcBusMessage, args?: unknown[], messagePorts?: BusMessagePort[]): void;
+    queryState(): QueryStateConnector;
 }

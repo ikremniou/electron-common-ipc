@@ -1,4 +1,4 @@
-import { GlobalContainer, IpcBusProcessType } from '@electron-common-ipc/universal';
+import { GlobalContainer } from '@electron-common-ipc/universal';
 import { expect } from 'chai';
 import { findFirstFreePort } from 'socket-port-helpers';
 
@@ -316,8 +316,8 @@ export function shouldRunEipcRemoteBrokerTests(suiteId: string, ctx: EipcContext
                 );
                 const rendererConnector = mainEntry.find((x) => x.type === 'connector-renderer') as QueryStateConnector;
 
-                expect(rendererConnector.peer).to.exist;
-                expect(rendererConnector.peer.type).to.be.eq(IpcBusProcessType.Renderer);
+                expect(rendererConnector.id).to.exist;
+                expect(rendererConnector.contextId).to.exist;
             });
 
             // check message stamp?

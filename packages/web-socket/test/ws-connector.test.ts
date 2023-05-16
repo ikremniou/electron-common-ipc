@@ -18,23 +18,27 @@ import type {
 
 describe('ws-connector unit tests', () => {
     let connector: WsConnector;
+    let uuidProviderStub: sinon.SinonSpy;
+    const testPeer: IpcBusPeer = {
+        id: 'uuid',
+        type: IpcBusProcessType.Node
+    };
 
     beforeEach(() => {
-        const uuidProvider = () => 'uuid';
-        connector = new WsConnector(uuidProvider, JSONParserV1, IpcBusProcessType.Node);
+        uuidProviderStub = sinon.spy(() => 'uuid');
+        connector = new WsConnector(uuidProviderStub, JSONParserV1, IpcBusProcessType.Node);
     });
 
-    it('should be created and create peer based on the uuid generator', () => {
-        expect(connector.peer.id).to.be.equal('uuid');
-        expect(connector.peer.type).to.be.equal(IpcBusProcessType.Node);
+    it('should call uuid provider to generate connector id', () => {
+        expect(uuidProviderStub.calledOnce).to.be.true;
+    });
+
+    it('should be created and create type should be node', () => {
+        expect(connector.type).to.be.equal(IpcBusProcessType.Node);
     });
 
     it('should not throw in performing shutdown before connection', async () => {
         await expect(connector.shutdown()).to.eventually.fulfilled;
-    });
-
-    it('should correctly identify target by the peer id', () => {
-        expect(connector.isTarget({ peer: { id: 'uuid' } } as IpcBusMessage));
     });
 
     describe('handshake cases', () => {
@@ -67,7 +71,7 @@ describe('ws-connector unit tests', () => {
                 return this;
             });
 
-            const handshake = await connector.handshake(ipcBusClientStub, connectOptions);
+            const handshake = await connector.handshake(ipcBusClientStub, testPeer, connectOptions);
 
             expect(handshake.peer.id).to.be.equal('uuid');
             expect(handshake.logLevel).to.be.undefined;
@@ -77,7 +81,7 @@ describe('ws-connector unit tests', () => {
         it('should fire a timeout when handshake timeout is reached', async () => {
             const optionsCopy = { ...connectOptions };
             optionsCopy.timeoutDelay = 20;
-            await expect(connector.handshake(ipcBusClientStub, optionsCopy)).to.be.rejected;
+            await expect(connector.handshake(ipcBusClientStub, testPeer, optionsCopy)).to.be.rejected;
         });
 
         it('should handle socket close on handshake correctly', async () => {
@@ -90,7 +94,7 @@ describe('ws-connector unit tests', () => {
                 return this;
             });
 
-            await expect(connector.handshake(ipcBusClientStub, connectOptions)).to.be.rejected;
+            await expect(connector.handshake(ipcBusClientStub, testPeer, connectOptions)).to.be.rejected;
         });
 
         it('should handle socket error on handshake correctly', async () => {
@@ -103,7 +107,7 @@ describe('ws-connector unit tests', () => {
                 return this;
             });
 
-            await expect(connector.handshake(ipcBusClientStub, connectOptions)).to.be.rejected;
+            await expect(connector.handshake(ipcBusClientStub, testPeer, connectOptions)).to.be.rejected;
         });
 
         describe('after handshake tests', () => {
@@ -130,7 +134,7 @@ describe('ws-connector unit tests', () => {
                     return this;
                 });
 
-                await connector.handshake(ipcBusClientStub, connectOptions);
+                await connector.handshake(ipcBusClientStub, testPeer, connectOptions);
             });
 
             it('should perform shutdown correctly', async () => {
@@ -191,7 +195,7 @@ describe('ws-connector unit tests', () => {
             });
 
             it('should postCommand after handshake', () => {
-                connector.postCommand({ kind: IpcBusCommandKind.AddChannelListener });
+                connector.postCommand({ kind: IpcBusCommandKind.AddChannelListener, peer: testPeer });
                 expect(stubbedWebSocket.send.called).to.be.true;
             });
 

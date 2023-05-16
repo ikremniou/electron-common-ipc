@@ -1,4 +1,4 @@
-import { IpcBusCommandKind } from '@electron-common-ipc/universal';
+import { IpcBusCommandKind, IpcBusProcessType } from '@electron-common-ipc/universal';
 
 import { uuidProvider } from '../utils/uuid';
 
@@ -27,6 +27,7 @@ export class IpcBusQueryStateManager {
         this._session = uuidProvider();
         const ipcQueryState: IpcBusCommand = {
             kind: IpcBusCommandKind.QueryState,
+            peer: { id: 'query-state-collector', type: IpcBusProcessType.Main },
             channel: this._session,
         };
         const rendererQueryState = this._bridge.rendererTransport.queryState();

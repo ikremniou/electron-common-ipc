@@ -1,9 +1,4 @@
-import {
-    CheckConnectOptions,
-    executeInTimeout,
-    IpcBusConnectorImpl,
-    CheckTimeoutOptions,
-} from '@electron-common-ipc/universal';
+import { CheckConnectOptions, IpcBusConnectorImpl } from '@electron-common-ipc/universal';
 import { IpcPacketBufferList, BufferListReader, IpcPacketBuffer } from 'socket-serializer';
 import { BufferListWriterBase } from 'socket-serializer/lib/buffer/bufferListWriter';
 import { WebSocket } from 'ws';
@@ -20,6 +15,7 @@ import type {
     IpcBusCommandBase,
     UuidProvider,
     JsonLike,
+    IpcBusPeer,
 } from '@electron-common-ipc/universal';
 import type { RawData } from 'ws';
 
@@ -51,8 +47,8 @@ export class WsConnector extends IpcBusConnectorImpl {
     private readonly _packetIn: IpcPacketBufferList;
     private readonly _packetOut: IpcPacketBuffer;
 
-    constructor(uuid: UuidProvider, json: JsonLike, contextType: IpcBusProcessType, private readonly _logger?: Logger) {
-        super(uuid, contextType, 'connector-ws');
+    constructor(uuid: UuidProvider, json: JsonLike, contextType: IpcBusProcessType, logger?: Logger) {
+        super(uuid, contextType, 'connector-ws', logger);
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
@@ -65,107 +61,82 @@ export class WsConnector extends IpcBusConnectorImpl {
         this._onSocketClose = this._onSocketClose.bind(this);
     }
 
-    public isTarget(ipcMessage: IpcBusMessage): boolean {
-        return ipcMessage.target?.id === this._peer.id;
-    }
+    protected override handshakeInternal(
+        client: IpcBusConnectorClient,
+        peer: IpcBusPeer,
+        options: ClientConnectOptions
+    ): Promise<ConnectorHandshake> {
+        options = CheckConnectOptions(options);
+        if (!options.port && !options.path) {
+            throw new Error(`Connection options must include 'path' or 'port'`);
+        }
 
-    public handshake(client: IpcBusConnectorClient, options: ClientConnectOptions): Promise<ConnectorHandshake> {
-        return this._connectCloseState.connect(() => {
-            options = CheckConnectOptions(options);
-            if (!options.port && !options.path) {
-                throw new Error(`Connection options must include 'path' or 'port'`);
-            }
+        let onSocketError: (err: Error) => void;
+        let onSocketClose: () => void;
+        let onSocketOpen: () => void;
 
-            let onSocketError: (err: Error) => void;
-            let onSocketClose: () => void;
-            let onSocketOpen: () => void;
+        const removeTempListeners = () => {
+            this._socket.off('error', onSocketError);
+            this._socket.off('close', onSocketClose);
+            this._socket.off('open', onSocketOpen);
+        };
 
-            const removeTempListeners = () => {
-                this._socket.off('error', onSocketError);
-                this._socket.off('close', onSocketClose);
-                this._socket.off('open', onSocketOpen);
+        const fallbackReject = (message: string, reject: (err: Error) => void) => {
+            removeTempListeners();
+            this._detachSocket();
+            this._logger?.error(message);
+            reject(new Error(message));
+        };
+
+        return new Promise<ConnectorHandshake>((resolve, reject) => {
+            options.host = options.host || '127.0.0.1';
+            const socketUrl = new URL(`ws://${options.host}:${options.port}`);
+            this._socket = new WebSocket(socketUrl);
+
+            onSocketError = (error: Error) => {
+                fallbackReject(`[WsConnector] Socket error on handshake: ${error}`, reject);
             };
 
-            const fallbackReject = (message: string, reject: (err: Error) => void) => {
+            onSocketClose = () => {
+                fallbackReject(`[WsConnector] Socket was close on handshake`, reject);
+            };
+
+            onSocketOpen = () => {
+                this.addClient(client);
+                this._writer = new WsWriter(this._socket);
                 removeTempListeners();
-                this._detachSocket();
-                this._logger?.error(message);
-                reject(new Error(message));
+
+                this._socket.on('error', this._onSocketError);
+                this._socket.on('close', this._onSocketClose);
+                this._socket.on('message', this._onSocketData);
+
+                resolve({ peer });
             };
 
-            return executeInTimeout(
-                options.timeoutDelay,
-                (resolve, reject) => {
-                    options.host = options.host || '127.0.0.1';
-                    const socketUrl = new URL(`ws://${options.host}:${options.port}`);
-                    this._socket = new WebSocket(socketUrl);
-
-                    onSocketError = (error: Error) => {
-                        fallbackReject(`[WsConnector] Socket error on handshake: ${error}`, reject);
-                    };
-
-                    onSocketClose = () => {
-                        fallbackReject(`[WsConnector] Socket was close on handshake`, reject);
-                    };
-
-                    onSocketOpen = () => {
-                        this.addClient(client);
-                        this._writer = new WsWriter(this._socket);
-                        removeTempListeners();
-
-                        this._socket.on('error', this._onSocketError);
-                        this._socket.on('close', this._onSocketClose);
-                        this._socket.on('message', this._onSocketData);
-
-                        this.onConnectorHandshake();
-                        resolve({ peer: this._peer });
-                    };
-
-                    this._socket.on('error', onSocketError);
-                    this._socket.on('close', onSocketClose);
-                    this._socket.on('open', onSocketOpen);
-                },
-                (reject) => {
-                    const msg = `[WsConnector] error = timeout \
-                        (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
-                    fallbackReject(msg, reject);
-                }
-            );
+            this._socket.on('error', onSocketError);
+            this._socket.on('close', onSocketClose);
+            this._socket.on('open', onSocketOpen);
         });
     }
 
-    public shutdown(options?: ClientCloseOptions): Promise<void> {
-        return this._connectCloseState.close(() => {
-            options = CheckTimeoutOptions(options);
-            if (!this._socket) {
-                return Promise.resolve();
-            }
+    protected override shutdownInternal(_options?: ClientCloseOptions): Promise<void> {
+        if (!this._socket) {
+            return Promise.resolve();
+        }
 
-            this._socket.off('close', this._onSocketClose);
-            this._socket.off('error', this._onSocketError);
-            this._socket.off('message', this._onSocketData);
+        this._socket.off('close', this._onSocketClose);
+        this._socket.off('error', this._onSocketError);
+        this._socket.off('message', this._onSocketData);
+        this._socket.removeAllListeners();
+        return new Promise<void>((resolve) => {
+            const closeHandler = () => {
+                this._socket.off('close', closeHandler);
+                this.onConnectorShutdown();
+                resolve();
+            };
 
-            return executeInTimeout(
-                options.timeoutDelay,
-                (resolve) => {
-                    const closeHandler = () => {
-                        this._socket.off('close', closeHandler);
-                        this.onConnectorShutdown();
-                        resolve();
-                    };
-
-                    this._socket.on('close', closeHandler);
-                    this.onConnectorBeforeShutdown();
-                    this._socket.close();
-                },
-                (reject) => {
-                    const message = `[WsConnector] stop, error = timeout \
-                        (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
-                    this._logger?.error(message);
-                    this.onConnectorShutdown();
-                    reject(new Error(message));
-                }
-            );
+            this._socket.on('close', closeHandler);
+            this._socket.close();
         });
     }
 
@@ -175,7 +146,6 @@ export class WsConnector extends IpcBusConnectorImpl {
     }
 
     public postCommand(ipcCommand: IpcBusCommand): void {
-        ipcCommand.peer = ipcCommand.peer || this._peer;
         this._packetOut.write(this._writer, [ipcCommand]);
     }
 
@@ -197,12 +167,12 @@ export class WsConnector extends IpcBusConnectorImpl {
     }
 
     private _onSocketClose(): void {
-        this._logger?.info(`[WsConnector ${this._peer.id}] socket close`);
+        this._logger?.info(`[WsConnector ${this.id}] socket close`);
         this.onConnectorShutdown();
     }
 
     private _onSocketError(error: Error): void {
-        this._logger?.error(`[WsConnector ${this._peer.id}] socket error ${error}`);
+        this._logger?.error(`[WsConnector ${this.id}] socket error ${error}`);
         this.onConnectorShutdown();
     }
 

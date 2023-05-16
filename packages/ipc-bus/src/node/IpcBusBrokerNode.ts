@@ -44,10 +44,12 @@ export class IpcBusBrokerNode extends BrokerImpl {
                 this._subscribedChannels.addRefs(ipcCommand.channels);
             }
 
+            const bridgeMockPeer = { id: 'broker-node', type: this._contextType };
             const channels = this._subscriptions.getChannels();
             for (let i = 0, l = channels.length; i < l; ++i) {
                 this.broadcastCommandToBridge({
                     kind: IpcBusCommandKind.AddChannelListener,
+                    peer: bridgeMockPeer,
                     channel: channels[i],
                 });
             }
@@ -55,12 +57,14 @@ export class IpcBusBrokerNode extends BrokerImpl {
                 channelAdded: (channel) => {
                     this.broadcastCommandToBridge({
                         kind: IpcBusCommandKind.AddChannelListener,
+                        peer: bridgeMockPeer,
                         channel,
                     });
                 },
                 channelRemoved: (channel) => {
                     this.broadcastCommandToBridge({
                         kind: IpcBusCommandKind.RemoveChannelListener,
+                        peer: bridgeMockPeer,
                         channel,
                     });
                 },

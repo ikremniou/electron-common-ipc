@@ -42,6 +42,6 @@ export function newIpcBusClient(
     ipcWindow: IpcWindow
 ): IpcBusClient {
     const transport = createTransport(contextType, isMainFrame, ipcWindow);
-    const ipcClient = new IpcBusClientImpl(new EventEmitter(), transport);
+    const ipcClient = new IpcBusClientImpl(uuidProvider, new EventEmitter(), transport);
     return ipcClient;
 }
