@@ -26,7 +26,7 @@ export interface IpcBusProcess {
 export interface IpcBusPeer {
     readonly id: string;
     readonly type: IpcBusProcessType;
-    readonly name?: string;
+    name?: string;
     // Kept for backward compatibility, however this
     // knowledge is excessive in the universal package.
     process?: IpcBusProcess;

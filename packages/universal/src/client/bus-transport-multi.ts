@@ -17,12 +17,7 @@ import type { IpcPacketBufferCore } from 'socket-serializer';
 export class IpcBusTransportMulti extends IpcBusTransportImpl {
     protected _subscriptions: ChannelConnectionMap<IpcBusTransportClient, string>;
 
-    constructor(
-        connector: IpcBusConnector,
-        uuid: UuidProvider,
-        messageStamp?: MessageStamp,
-        logger?: Logger
-    ) {
+    constructor(connector: IpcBusConnector, uuid: UuidProvider, messageStamp?: MessageStamp, logger?: Logger) {
         super(connector, uuid, messageStamp, logger);
     }
 
@@ -107,11 +102,12 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
         if (this._subscriptions) {
             this.cancelRequest(client);
             this.removeChannel(client);
-            if (this._subscriptions.getChannelsCount() === 0) {
-                this._subscriptions.client = undefined;
-                this._subscriptions = undefined;
-                return super.close(client, options);
-            }
+            super.close(client, options).then(() => {
+                if (this.peers.length === 0) {
+                    this._subscriptions.client = undefined;
+                    this._subscriptions = undefined;
+                }
+            });
         }
         return Promise.resolve();
     }

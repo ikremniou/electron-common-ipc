@@ -58,7 +58,8 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         });
 
         this.postHandshakeCommand(peer);
-        handshake.peer = Object.assign(peer, handshake.peer);
+        const persistentPeer = { id: peer.id, name: peer.name, type: peer.type };
+        handshake.peer = Object.assign(peer, { ...handshake.peer, ...persistentPeer });
         return handshake;
     }
 

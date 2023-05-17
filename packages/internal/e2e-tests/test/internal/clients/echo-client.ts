@@ -14,23 +14,30 @@ export interface BootstrapContext {
     createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy;
 }
 
-export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBusClient> {
+/**
+ * Create the infrastructure to handle commands from the consumers
+ * @param ctx The context to bootstrap host with
+ * @returns The cleanup function that can be used to cleanup IpcBusClients
+ */
+export async function bootstrapEchoHost(ctx: BootstrapContext): Promise<CallableFunction> {
+    // TODO: make the services not singleton, and use Map with message.channel
     let echoService: IpcBusService;
     let echoServiceInstance: EchoServiceClass;
     let echoServiceProxy: IpcBusServiceProxy;
+    const busClients = new Map<string, IpcBusClient>();
+    const mainClient = ctx.createBusClient();
 
-    const ipcClient = ctx.createBusClient();
     ctx.shouldLog &&
         console.log(`[Client:${ctx.clientId}] Client is created. Port ${ctx.clientPort}. Log: ${ctx.shouldLog}`);
 
-    function busEchoCallback(channel: string, _event: unknown, data: unknown): void {
+    function busEchoCallback(busClient: IpcBusClient, channel: string, _event: unknown, data: unknown): void {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Echo callback for "${channel}"`);
-        ipcClient.send(channel, data);
+        busClient.send(channel, data);
     }
 
-    async function busEchoRequestCallback(channel: string, event: IpcBusEvent, data: unknown) {
+    async function busEchoRequestCallback(busClient: IpcBusClient, channel: string, event: IpcBusEvent, data: unknown) {
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Echo request callback for "${event.channel}"`);
-        const response = await ipcClient.request(channel, 2000, data);
+        const response = await busClient.request(channel, 2000, data);
         event.request.resolve(response.payload);
     }
 
@@ -66,29 +73,36 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
             return;
         }
 
+        const realClient = message.client ? busClients.get(message.client) : mainClient;
         ctx.shouldLog && console.log(`[Client:${ctx.clientId}] Executing "${message.type}" to "${message.channel}"`);
         switch (message.type) {
             case 'subscribe-echo':
-                ipcClient.addListener(message.channel, busEchoCallback.bind(globalThis, message.echoChannel));
+                realClient.addListener(
+                    message.channel,
+                    busEchoCallback.bind(globalThis, realClient, message.echoChannel)
+                );
                 break;
             case 'subscribe-report':
-                ipcClient.addListener(message.channel, hostReportCallback);
+                realClient.addListener(message.channel, hostReportCallback);
                 break;
             case 'subscribe-echo-request':
-                ipcClient.addListener(message.channel, busEchoRequestCallback.bind(globalThis, message.echoChannel));
+                realClient.addListener(
+                    message.channel,
+                    busEchoRequestCallback.bind(globalThis, realClient, message.echoChannel)
+                );
                 break;
             case 'unsubscribe-all':
-                ipcClient.removeAllListeners(message.channel);
+                realClient.removeAllListeners(message.channel);
                 break;
             case 'send':
-                ipcClient.send(message.channel, message.data);
+                realClient.send(message.channel, message.data);
                 break;
             case 'request-resolve':
-                ipcClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
+                realClient.addListener(message.channel, requestResolveTo.bind(globalThis, message.data));
                 break;
             case 'start-echo-service': {
                 echoServiceInstance = new EchoServiceClass();
-                echoService = ctx.createIpcBusService(ipcClient, message.channel, echoServiceInstance);
+                echoService = ctx.createIpcBusService(realClient, message.channel, echoServiceInstance);
                 echoService.start();
                 break;
             }
@@ -108,7 +122,7 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 if (echoServiceProxy) {
                     echoServiceProxy.close();
                 }
-                echoServiceProxy = ctx.createIpcBusServiceProxy(ipcClient, message.channel);
+                echoServiceProxy = ctx.createIpcBusServiceProxy(realClient, message.channel);
                 await echoServiceProxy.connect();
                 if (message.counterEvents) {
                     message.counterEvents.forEach((counterEvent) => {
@@ -132,6 +146,18 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
                 echoServiceProxy.close();
                 break;
             }
+            case 'start-new-client': {
+                const client = ctx.createBusClient();
+                await client.connect(ctx.clientPort, { peerName: message.channel });
+                busClients.set(message.channel, client);
+                break;
+            }
+            case 'stop-client': {
+                const maybeClient = busClients.get(message.channel);
+                await maybeClient?.close();
+                busClients.delete(message.channel);
+                break;
+            }
         }
 
         ctx.sendBack('done');
@@ -139,7 +165,10 @@ export async function bootstrapEchoClient(ctx: BootstrapContext): Promise<IpcBus
 
     // eslint-disable-next-line no-debugger
     // debugger;
-    await ipcClient.connect(ctx.clientPort, { timeoutDelay: -1 });
+    await mainClient.connect(ctx.clientPort, { timeoutDelay: -1 });
     ctx.sendBack('ready');
-    return ipcClient;
+    return () => {
+        mainClient.close();
+        busClients.forEach((client) => client.close());
+    };
 }

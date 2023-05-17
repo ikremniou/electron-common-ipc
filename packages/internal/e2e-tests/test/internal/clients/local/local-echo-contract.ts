@@ -8,16 +8,15 @@ import {
 } from '@electron-common-ipc/web-socket';
 import { EventEmitter } from 'events';
 
-import { bootstrapEchoClient } from '../echo-client';
+import { bootstrapEchoHost } from '../echo-client';
 import { isLogEnabled } from '../utils';
 
 import type { IpcType } from '../../ipc-type';
 import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../echo-contract';
-import type { IpcBusClient } from '@electron-common-ipc/web-socket';
 import type { ChildProcess } from 'child_process';
 
 export class LocalClientHost extends EventEmitter implements ClientHost {
-    public client?: IpcBusClient;
+    public cleanUp?: CallableFunction;
 
     constructor() {
         super();
@@ -33,15 +32,22 @@ export class LocalClientHost extends EventEmitter implements ClientHost {
         predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
     ): Promise<ToMainProcessMessage> {
         return new Promise((resolve) => {
+            let isResolved = false;
             const messageCallback = (message: ToMainProcessMessage) => {
+                if (isResolved) {
+                    return;
+                }
+
                 if (typeof predicate === 'string') {
                     if (predicate === message || (typeof message === 'object' && message.type === predicate)) {
                         this.off('from-message', messageCallback);
                         resolve(message);
+                        isResolved = true;
                     }
                 } else if ((predicate as Function)(message)) {
                     this.off('from-message', messageCallback);
                     resolve(message);
+                    isResolved = true;
                 }
             };
             this.on('from-message', messageCallback);
@@ -49,8 +55,8 @@ export class LocalClientHost extends EventEmitter implements ClientHost {
     }
 
     close(): void {
-        this.client.close();
-        this.client = undefined;
+        this.cleanUp?.();
+        this.cleanUp = undefined;
         this.removeAllListeners();
     }
 }
@@ -72,7 +78,7 @@ export async function startClientHost(mode: IpcType, clientPort: number): Promis
 
     switch (mode) {
         case 'ws':
-            clientHost.client = await bootstrapEchoClient({
+            clientHost.cleanUp = await bootstrapEchoHost({
                 clientId,
                 shouldLog,
                 clientPort,
@@ -86,7 +92,7 @@ export async function startClientHost(mode: IpcType, clientPort: number): Promis
             });
             break;
         case 'wsi':
-            clientHost.client = await bootstrapEchoClient({
+            clientHost.cleanUp = await bootstrapEchoHost({
                 clientId,
                 shouldLog,
                 clientPort,

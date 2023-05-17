@@ -1,4 +1,4 @@
-import { bootstrapEchoClient } from '../echo-client';
+import { bootstrapEchoHost } from '../echo-client';
 
 import type { IpcBusClient, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/web-socket-browser';
 import type { ipcRenderer } from 'electron';
@@ -33,7 +33,7 @@ export function bootstrap(
         });
     };
 
-    bootstrapEchoClient({
+    bootstrapEchoHost({
         clientId,
         shouldLog,
         clientPort,

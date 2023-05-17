@@ -199,7 +199,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     async connect(client: IpcBusTransportClient, options: ClientConnectOptions): Promise<void> {
-        if (this.peers.indexOf(client.peer) === -1) {
+        if (!this.peers.some(peer => peer.id === client.peer.id)) {
             this.peers.push(client.peer);
         }
 
