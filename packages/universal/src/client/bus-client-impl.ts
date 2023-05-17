@@ -46,6 +46,9 @@ export class IpcBusClientImpl implements IpcBusClient, IpcBusTransportClient {
     ): Promise<void> {
         return this._connectCloseState.connect(() => {
             const options = CheckConnectOptions(arg1, arg2, arg3);
+            if (options.peerName) {
+                this.peer.name = options.peerName;
+            }
             return this._transport.connect(this, options).then(() => {
                 const eventNames = this._emitter.eventNames();
                 for (let i = 0, l = eventNames.length; i < l; ++i) {

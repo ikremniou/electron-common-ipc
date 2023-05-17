@@ -18,15 +18,22 @@ export class NodeClientHost implements ClientHost {
         predicate: ToMainProcessMessage | ((mes: ToMainProcessMessage) => boolean)
     ): Promise<ToMainProcessMessage> {
         return new Promise((resolve) => {
+            // Make sure that only one required message will be handled by the callback
+            let isResolved = false;
             const messageCallback = (message: ToMainProcessMessage) => {
+                if (isResolved) {
+                    return;
+                }
                 if (typeof predicate === 'string') {
                     if (predicate === message || (typeof message === 'object' && message.type === predicate)) {
                         this.child.off('message', messageCallback);
                         resolve(message);
+                        isResolved = true;
                     }
                 } else if ((predicate as Function)(message)) {
                     this.child.off('message', messageCallback);
                     resolve(message);
+                    isResolved = true;
                 }
             };
             this.child.on('message', messageCallback);

@@ -1,4 +1,4 @@
-import { bootstrapEchoClient } from '../echo-client';
+import { bootstrapEchoHost } from '../echo-client';
 import { isLogEnabled } from '../utils';
 
 import type { IpcBusClient, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/web-socket';
@@ -18,7 +18,7 @@ export function bootstrap(
         process.on('message', handler);
     };
 
-    bootstrapEchoClient({
+    bootstrapEchoHost({
         clientId,
         shouldLog,
         clientPort,

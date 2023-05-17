@@ -5,7 +5,12 @@ import { findFirstFreePort } from 'socket-port-helpers';
 import { EchoServiceClass } from '../clients/echo-contract';
 
 import type { IpcBusBrokerProxy } from '../clients/broker/broker-proxy';
-import type { ClientHost, ToClientProcessMessage, ToMainProcessMessage } from '../clients/echo-contract';
+import type {
+    ClientHost,
+    ToClientProcessMessage,
+    ToMainProcessMessage,
+    ClientSubscribeReport,
+} from '../clients/echo-contract';
 import type { IpcBusClient, IpcBusServiceProxy, IpcBusService } from '@electron-common-ipc/universal';
 
 export interface BasicContext {
@@ -41,9 +46,11 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
     describe(`[${suiteId}] should perform server to client communication`, () => {
         let child: ClientHost;
         before(async () => {
+            // TODO: stability patch, look like some ports can be still busy
+            await new Promise(resolve => setTimeout(resolve, 1000));
             GlobalContainer.reset();
             busPort = await findFirstFreePort({
-                portRange: '>=49152',
+                portRange: '>=49153',
                 testConnection: true,
                 testDataTransfer: true,
                 hostname: '127.0.0.1',
@@ -257,6 +264,90 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             const response = await newClient.request(channel, 2000, { prop1: null, prop2: 0 });
             expect(response.payload).to.be.eq('done');
             await newClient.close();
+        });
+
+        it('should create new client on the host side and close it successfully', async () => {
+            const startCommand: ToClientProcessMessage = {
+                type: 'start-new-client',
+                channel: 'client-name',
+            };
+            child.sendCommand(startCommand);
+            await child.waitForMessage('done');
+
+            const stopCommand: ToClientProcessMessage = {
+                type: 'stop-client',
+                channel: 'client-name',
+            };
+            child.sendCommand(stopCommand);
+            await expect(child.waitForMessage('done')).to.be.eventually.fulfilled;
+        });
+
+        describe('should handle multiple clients on the same host', () => {
+            const clientName = 'client-name-1';
+            beforeEach(async () => {
+                child.sendCommand({
+                    type: 'start-new-client',
+                    channel: clientName,
+                });
+                await child.waitForMessage('done');
+            });
+
+            afterEach(async () => {
+                child.sendCommand({
+                    type: 'stop-client',
+                    channel: clientName,
+                });
+                await child.waitForMessage('done');
+            });
+
+            it('should be able to send message to the local client', async () => {
+                child.sendCommand({
+                    type: 'subscribe-report',
+                    channel: 'lc-channel-1',
+                });
+                await child.waitForMessage('done');
+
+                child.sendCommand({
+                    type: 'send',
+                    channel: 'lc-channel-1',
+                    data: 123,
+                    client: clientName,
+                });
+
+                const result = await Promise.all([
+                    child.waitForMessage('done'),
+                    child.waitForMessage('client-subscribe-report'),
+                ]);
+
+                const report = result[1] as ClientSubscribeReport;
+                expect(report.data).to.be.eq(123);
+                expect(report.event.channel).to.be.eq('lc-channel-1');
+                expect(report.event.sender.name).to.be.eq(clientName);
+            });
+
+            it('should be able to broadcast message to all local clients', async () => {
+                child.sendCommand({
+                    type: 'subscribe-report',
+                    channel: 'lc-channel-2',
+                });
+                await child.waitForMessage('done');
+
+                child.sendCommand({
+                    type: 'subscribe-report',
+                    channel: 'lc-channel-2',
+                    client: clientName,
+                });
+                await child.waitForMessage('done');
+
+                brokerClient.send('lc-channel-2', ['data']);
+                const result = (await Promise.all([
+                    child.waitForMessage('client-subscribe-report'),
+                    child.waitForMessage('client-subscribe-report'),
+                ])) as ClientSubscribeReport[];
+
+                expect(result[0].data).to.be.deep.eq(['data']);
+                expect(result[1].data).to.be.deep.eq(['data']);
+            });
         });
     });
 

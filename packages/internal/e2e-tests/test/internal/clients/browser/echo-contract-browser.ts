@@ -22,7 +22,11 @@ export class ElectronClientHost implements ClientHost {
     ): Promise<ToMainProcessMessage> {
         shouldLog && console.log(`[MainHost][Wait] Start for message ${predicate}`);
         return new Promise((resolve) => {
+            let isResolved = false;
             const listener = (_event: Electron.Event, channel: string, message: unknown) => {
+                if (isResolved) {
+                    return;
+                }
                 /**
                  * As we are communicating via different IPC it is possible for this ack
                  * message arrive before Broker will have an valid addListener entry, so we delay
@@ -42,10 +46,12 @@ export class ElectronClientHost implements ClientHost {
                         if (predicate === message || (message as { type: string }).type === predicate) {
                             this._browserWindow?.webContents.off('ipc-message', listener);
                             delayedResolve(message);
+                            isResolved = true;
                         }
                     } else if (typeof predicate === 'function' && predicate(message as ToMainProcessMessage)) {
                         this._browserWindow?.webContents.off('ipc-message', listener);
                         delayedResolve(message);
+                        isResolved = true;
                     }
                 }
             };

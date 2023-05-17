@@ -141,7 +141,23 @@ export interface StopEchoServiceProxy {
     channel: string;
 }
 
-export type ToClientProcessMessage =
+/**
+ * Create new IpcBusClient named using message.channel
+ */
+export interface StartNewClient {
+    type: 'start-new-client';
+    channel: string;
+}
+
+/**
+ * Stops the IpcBusClient named using message.channel
+ */
+export interface StopClient {
+    type: 'stop-client';
+    channel: string;
+}
+
+export type ToClientProcessMessage = (
     | SubscribeEcho
     | SubscribeEchoRequest
     | SubscribeReport
@@ -153,7 +169,10 @@ export type ToClientProcessMessage =
     | SendMessage
     | StartEchoServiceProxy
     | StopEchoServiceProxy
-    | CallOnEchoServiceProxy;
+    | CallOnEchoServiceProxy
+    | StartNewClient
+    | StopClient
+) & { client?: string };
 
 /**
  * The contract to report back messages subscribed via {@link SubscribeReport}
