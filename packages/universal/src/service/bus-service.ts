@@ -14,7 +14,17 @@ export interface IpcBusServiceEventHandler {
     (event: IpcBusServiceEvent): void;
 }
 
-export interface ServiceStatus {
+export interface BusServiceOptions {
+    /**
+     * The 'direct' enforces the proxy to send requests, calls, events
+     * using sendTo and requestTo directly to the node that hosts the
+     * service. If this flag is used then it must be only one service
+     * defined with the same name in the IPC environment.
+     */
+    direct?: boolean;
+}
+
+export interface ServiceStatus extends Pick<BusServiceOptions, 'direct'> {
     started: boolean;
     callHandlers: string[];
     supportEventEmitter: boolean;

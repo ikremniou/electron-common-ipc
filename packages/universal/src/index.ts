@@ -38,7 +38,7 @@ export type {
     QueryStatePeers,
     QueryStateTransport,
 } from './contract/query-state';
-export type { IpcBusService, ServiceEventEmitter, ServiceStatus } from './service/bus-service';
+export type { IpcBusService, ServiceEventEmitter, ServiceStatus, BusServiceOptions } from './service/bus-service';
 export type {
     IpcBusServiceProxy,
     ServiceProxyCreateOptions,

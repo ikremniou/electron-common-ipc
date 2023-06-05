@@ -17,6 +17,7 @@ bootstrap(
             uuidProvider: defaultUuidProvider,
             container: new DefaultContainer(),
         }),
-    (client, channel, instance) => createIpcBusService(client, channel, instance, EventEmitter.prototype),
+    (client, channel, instance, options) =>
+        createIpcBusService(client, channel, instance, EventEmitter.prototype, undefined, options),
     (client, channel) => createIpcBusServiceProxy(client, channel, new EventEmitter())
 );

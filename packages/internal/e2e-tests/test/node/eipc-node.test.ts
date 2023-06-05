@@ -11,7 +11,7 @@ describe('eipc-node local, local(unaware) node broker, eipc-node on host e2e tes
         createBusClient: CreateIpcBusClient,
         startClientHost: (port) => startClientHostNode('eipc', port),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
-        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl)
+        createIpcBusService: (client, name, impl, options) => CreateIpcBusService(client, name, impl, options)
     });
 });
 
@@ -21,6 +21,6 @@ describe('eipc-node local, remote node broker, eipc-node on host e2e tests', () 
         createBusClient: CreateIpcBusClient,
         startClientHost: (port) => startClientHostNode('eipc', port),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
-        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl)
+        createIpcBusService: (client, name, impl, options) => CreateIpcBusService(client, name, impl, options)
     });
 });

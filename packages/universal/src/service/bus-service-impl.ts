@@ -2,6 +2,7 @@ import { ServiceConstants } from './constants';
 import { getInstanceMethodNames, getServiceCallChannel, getServiceEventChannel } from './utilities';
 
 import type {
+    BusServiceOptions,
     IpcBusService,
     IpcBusServiceCall,
     IpcBusServiceEvent,
@@ -14,7 +15,7 @@ import type { Logger } from '../log/logger';
 // Implementation of IPC service
 export class IpcBusServiceImpl implements IpcBusService {
     private readonly _callHandlers: Map<string, Function>;
-    private _prevImplEmit?: typeof this._exposedInstance['emit'] = undefined;
+    private _prevImplEmit?: (typeof this._exposedInstance)['emit'] = undefined;
     private _isStarted: boolean;
 
     constructor(
@@ -22,7 +23,8 @@ export class IpcBusServiceImpl implements IpcBusService {
         private readonly _serviceName: string,
         private readonly _exposedInstance: Partial<ServiceEventEmitter>,
         private readonly _emitterProto?: ServiceEventEmitter,
-        private readonly _logger?: Logger
+        private readonly _logger?: Logger,
+        private readonly _options?: BusServiceOptions
     ) {
         this._callHandlers = new Map<string, Function>();
         // this._eventHandlers = new Map<string, Set<string>>();
@@ -120,6 +122,9 @@ export class IpcBusServiceImpl implements IpcBusService {
             callHandlers: this._getCallHandlerNames(),
             supportEventEmitter: this._prevImplEmit !== undefined,
         };
+        if (this._options?.direct) {
+            serviceStatus.direct = this._options.direct;
+        }
         return serviceStatus;
     }
 

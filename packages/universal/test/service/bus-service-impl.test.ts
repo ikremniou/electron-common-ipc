@@ -28,11 +28,12 @@ describe('bus-service-proxy-impl', () => {
     let noEmitterService: IpcBusServiceImpl;
     let stubbedInstance: sinon.SinonStubbedInstance<TestServiceClass>;
     let stubbedClient: tsSinon.StubbedInstance<IpcBusClient>;
+    let stubbedLogger: tsSinon.StubbedInstance<Logger>;
 
     beforeEach(() => {
         stubbedClient = tsSinon.stubInterface<IpcBusClient>();
         stubbedInstance = sinon.createStubInstance(TestServiceClass);
-        const stubbedLogger = tsSinon.stubInterface<Logger>();
+        stubbedLogger = tsSinon.stubInterface<Logger>();
 
         service = new IpcBusServiceImpl(
             stubbedClient,
@@ -157,5 +158,20 @@ describe('bus-service-proxy-impl', () => {
         service.start();
         service.start();
         expect(() => stubbedInstance.emit('some-event', 'args')).to.not.throw();
+    });
+
+    it(`should send 'direct' flag in case service supports direct communication`, () => {
+        const service = new IpcBusServiceImpl(
+            stubbedClient,
+            serviceName,
+            stubbedInstance,
+            EventEmitter.prototype,
+            stubbedLogger,
+            { direct: true}
+        );
+
+        service.start();
+
+        expect(stubbedClient.send.firstCall.args[1].args[0].direct).to.be.true;
     });
 });

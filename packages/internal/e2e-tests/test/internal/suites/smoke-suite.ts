@@ -11,7 +11,12 @@ import type {
     ToMainProcessMessage,
     ClientSubscribeReport,
 } from '../clients/echo-contract';
-import type { IpcBusClient, IpcBusServiceProxy, IpcBusService } from '@electron-common-ipc/universal';
+import type {
+    IpcBusClient,
+    IpcBusServiceProxy,
+    IpcBusService,
+    BusServiceOptions,
+} from '@electron-common-ipc/universal';
 
 export interface BasicContext {
     /**
@@ -35,7 +40,12 @@ export interface BasicSmokeContext extends BasicContext {
      * Create a service proxy to execute service-to-serviceProxy tests
      */
     createIpcBusServiceProxy: (client: IpcBusClient, serviceName: string) => IpcBusServiceProxy;
-    createIpcBusService: (client: IpcBusClient, serviceName: string, serviceImpl: unknown) => IpcBusService;
+    createIpcBusService: (
+        client: IpcBusClient,
+        serviceName: string,
+        serviceImpl: unknown,
+        options?: BusServiceOptions
+    ) => IpcBusService;
 }
 
 export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext) => {
@@ -47,7 +57,7 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
         let child: ClientHost;
         before(async () => {
             // TODO: stability patch, look like some ports can be still busy
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             GlobalContainer.reset();
             busPort = await findFirstFreePort({
                 portRange: '>=49153',
@@ -584,8 +594,12 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             clientHost.close();
         });
 
-        async function startLocalService(instance: EchoServiceClass, event?: [number, string]): Promise<IpcBusService> {
-            const service = ctx.createIpcBusService(brokerClient, 'local-service', instance);
+        async function startLocalService(
+            instance: EchoServiceClass,
+            event?: [number, string],
+            options?: BusServiceOptions
+        ): Promise<IpcBusService> {
+            const service = ctx.createIpcBusService(brokerClient, 'local-service', instance, options);
             service.start();
             clientHost.sendCommand({
                 type: 'start-echo-service-proxy',
@@ -602,48 +616,61 @@ export const shouldPerformBasicTests = (suiteId: string, ctx: BasicSmokeContext)
             service.stop();
         }
 
-        it('should start and stop service successfully', async () => {
-            const serviceInstance = new EchoServiceClass();
-            const service = await expect(startLocalService(serviceInstance)).eventually.fulfilled;
-            await expect(stopLocalService(service)).eventually.fulfilled;
-        });
+        [{ direct: true }, { direct: false }].forEach((options) => {
+            describe(`when service options are ${JSON.stringify(options)}`, () => {
+                it('should start and stop service successfully', async () => {
+                    const serviceInstance = new EchoServiceClass();
+                    const service = await expect(startLocalService(serviceInstance, undefined, options)).eventually
+                        .fulfilled;
+                    await expect(stopLocalService(service)).eventually.fulfilled;
+                });
 
-        it('should create service locally and respond to the wrapper calls', async () => {
-            let isCalledFromProxy = false;
-            const serviceInstance = new EchoServiceClass();
-            serviceInstance.echoMethod = (data) => {
-                isCalledFromProxy = true;
-                expect(data[0]).to.be.eq('test');
-                return Promise.resolve(data);
-            };
-            const service = await startLocalService(serviceInstance);
-            clientHost.sendCommand({ type: 'call-on-echo-service-proxy', channel: 'local-service', data: ['test'] });
-            await clientHost.waitForMessage('done');
-            await stopLocalService(service);
-            expect(isCalledFromProxy).to.be.true;
-        });
+                it('should create service locally and respond to the wrapper calls', async () => {
+                    let isCalledFromProxy = false;
+                    const serviceInstance = new EchoServiceClass();
+                    serviceInstance.echoMethod = (data) => {
+                        isCalledFromProxy = true;
+                        expect(data[0]).to.be.eq('test');
+                        return Promise.resolve(data);
+                    };
+                    const service = await startLocalService(serviceInstance, undefined, options);
+                    clientHost.sendCommand({
+                        type: 'call-on-echo-service-proxy',
+                        channel: 'local-service',
+                        data: ['test'],
+                    });
+                    await clientHost.waitForMessage('done');
+                    await stopLocalService(service);
+                    expect(isCalledFromProxy).to.be.true;
+                });
 
-        it('should receive call in the call handler if wrapper has same method', async () => {
-            const serviceInstance = new EchoServiceClass();
-            const service = await startLocalService(serviceInstance);
-            let isCalledInHandler = false;
-            service.registerCallHandler('echoMethod', () => {
-                isCalledInHandler = true;
+                it('should receive call in the call handler if wrapper has same method', async () => {
+                    const serviceInstance = new EchoServiceClass();
+                    const service = await startLocalService(serviceInstance, undefined, options);
+                    let isCalledInHandler = false;
+                    service.registerCallHandler('echoMethod', () => {
+                        isCalledInHandler = true;
+                    });
+
+                    clientHost.sendCommand({
+                        type: 'call-on-echo-service-proxy',
+                        channel: 'local-service',
+                        data: ['test'],
+                    });
+                    await clientHost.waitForMessage('done');
+                    await stopLocalService(service);
+                    expect(isCalledInHandler).to.be.true;
+                });
+
+                it(`should send 2 events to service proxy and await confirmation`, async () => {
+                    const serviceInstance = new EchoServiceClass();
+                    const service = await startLocalService(serviceInstance, [2, 'my-event'], options);
+                    service.sendEvent('my-event', 1, 2, 3, 4, '5');
+                    service.sendEvent('my-event', 1, 2, 3, 4, '5');
+                    await expect(clientHost.waitForMessage('counter-confirm')).eventually.fulfilled;
+                    await stopLocalService(service);
+                });
             });
-
-            clientHost.sendCommand({ type: 'call-on-echo-service-proxy', channel: 'local-service', data: ['test'] });
-            await clientHost.waitForMessage('done');
-            await stopLocalService(service);
-            expect(isCalledInHandler).to.be.true;
-        });
-
-        it('should send 2 events to service proxy and await proxy confirmation', async () => {
-            const serviceInstance = new EchoServiceClass();
-            const service = await startLocalService(serviceInstance, [2, 'my-event']);
-            service.sendEvent('my-event', 1, 2, 3, 4, '5');
-            service.sendEvent('my-event', 1, 2, 3, 4, '5');
-            await expect(clientHost.waitForMessage('counter-confirm')).eventually.fulfilled;
-            await stopLocalService(service);
         });
     });
 

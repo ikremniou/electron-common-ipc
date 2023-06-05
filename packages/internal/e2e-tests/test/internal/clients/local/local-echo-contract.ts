@@ -85,8 +85,8 @@ export async function startClientHost(mode: IpcType, clientPort: number): Promis
                 sendBack,
                 onMessage,
                 createBusClient: createWebSocketClient,
-                createIpcBusService: (client, channel, instance) =>
-                    createIpcBusService(client, channel, instance, EventEmitter.prototype),
+                createIpcBusService: (client, channel, instance, options) =>
+                    createIpcBusService(client, channel, instance, EventEmitter.prototype, undefined, options),
                 createIpcBusServiceProxy: (client, channel) =>
                     createIpcBusServiceProxy(client, channel, new EventEmitter()),
             });
@@ -105,8 +105,8 @@ export async function startClientHost(mode: IpcType, clientPort: number): Promis
                         uuidProvider: defaultUuidProvider,
                         container: new DefaultContainer(),
                     }),
-                createIpcBusService: (client, channel, instance) =>
-                    createIpcBusService(client, channel, instance, EventEmitter.prototype),
+                createIpcBusService: (client, channel, instance, options) =>
+                    createIpcBusService(client, channel, instance, EventEmitter.prototype, undefined, options),
                 createIpcBusServiceProxy: (client, channel) =>
                     createIpcBusServiceProxy(client, channel, new EventEmitter()),
             });

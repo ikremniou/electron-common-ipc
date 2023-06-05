@@ -8,11 +8,17 @@ import type {
     IpcBusService,
     IpcBusServiceProxy,
     ServiceProxyConnectOptions,
+    BusServiceOptions,
 } from '@electron-common-ipc/universal';
 
-export function newIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: unknown): IpcBusService {
+export function newIpcBusService(
+    client: IpcBusClient,
+    serviceName: string,
+    serviceImpl: unknown,
+    options?: BusServiceOptions
+): IpcBusService {
     const logger = Logger.service ? new ConsoleLogger() : undefined;
-    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype, logger);
+    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype, logger, options);
 }
 
 export function newIpcBusServiceProxy(

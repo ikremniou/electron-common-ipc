@@ -1,6 +1,11 @@
 import { bootstrapEchoHost } from '../echo-client';
 
-import type { IpcBusClient, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/web-socket-browser';
+import type {
+    BusServiceOptions,
+    IpcBusClient,
+    IpcBusService,
+    IpcBusServiceProxy,
+} from '@electron-common-ipc/web-socket-browser';
 import type { ipcRenderer } from 'electron';
 
 declare global {
@@ -17,8 +22,13 @@ declare global {
 
 export function bootstrap(
     createBusClient: () => IpcBusClient,
-    createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService,
-    createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy,
+    createIpcBusService: (
+        client: IpcBusClient,
+        channel: string,
+        instance: unknown,
+        options?: BusServiceOptions
+    ) => IpcBusService,
+    createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy
 ) {
     const process = window.e2eIpc.electronProcess;
     const clientId = String(process.pid);

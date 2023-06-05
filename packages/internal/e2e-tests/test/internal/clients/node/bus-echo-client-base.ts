@@ -1,11 +1,21 @@
 import { bootstrapEchoHost } from '../echo-client';
 import { isLogEnabled } from '../utils';
 
-import type { IpcBusClient, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/web-socket';
+import type {
+    BusServiceOptions,
+    IpcBusClient,
+    IpcBusService,
+    IpcBusServiceProxy,
+} from '@electron-common-ipc/web-socket';
 
 export function bootstrap(
     createBusClient: () => IpcBusClient,
-    createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService,
+    createIpcBusService: (
+        client: IpcBusClient,
+        channel: string,
+        instance: unknown,
+        options?: BusServiceOptions
+    ) => IpcBusService,
     createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy
 ) {
     const clientId = String(process.pid);
