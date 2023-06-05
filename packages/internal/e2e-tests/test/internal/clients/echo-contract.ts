@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-import type { IpcBusEvent } from '@electron-common-ipc/universal';
+import type { BusServiceOptions, IpcBusEvent } from '@electron-common-ipc/universal';
 
 export interface MessageContent {
     event?: IpcBusEvent;
@@ -61,6 +61,10 @@ export interface StartEchoService {
      * Channel that will host service.
      */
     channel: string;
+    /**
+     * defines options to pass to service constructor
+     */
+    options?: BusServiceOptions;
 }
 
 /**

@@ -12,7 +12,8 @@ describe('ws-node local, local node broker, ws-node on host e2e tests', () => {
         createBusClient: createWebSocketClient,
         startClientHost: (port) => startClientHost('ws', port),
         createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter()),
-        createIpcBusService: (client, name, impl) => createIpcBusService(client, name, impl, EventEmitter.prototype)
+        createIpcBusService: (client, name, impl, options) =>
+            createIpcBusService(client, name, impl, EventEmitter.prototype, undefined, options),
     });
 });
 
@@ -22,6 +23,7 @@ describe('ws-node local, remote node broker, ws-node on host e2e tests', () => {
         createBusClient: createWebSocketClient,
         startClientHost: (port) => startClientHost('ws', port),
         createIpcBusServiceProxy: (client, name) => createIpcBusServiceProxy(client, name, new EventEmitter()),
-        createIpcBusService: (client, name, impl) => createIpcBusService(client, name, impl, EventEmitter.prototype)
+        createIpcBusService: (client, name, impl, options) =>
+            createIpcBusService(client, name, impl, EventEmitter.prototype, undefined, options),
     });
 });

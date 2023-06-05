@@ -9,6 +9,7 @@ import { getServiceCallChannel, getServiceEventChannel } from '../../src/service
 
 import type { IpcBusEvent, IpcBusRequestResponse } from '../../src/client/bus-client';
 import type { IpcBusServiceProxy } from '../../src/service/bus-service-proxy';
+import type { IpcBusPeer } from '../../src/contract/ipc-bus-peer';
 
 describe('ipc-bus-service-proxy-impl', () => {
     let ipcBusClientMock: sinon.SinonStubbedInstance<IpcBusClientImpl>;
@@ -23,7 +24,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should release the subscription if remove service is not started', async () => {
-        ipcBusClientMock.request.resolves({} as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({} as IpcBusRequestResponse);
 
         await expect(ipcBusServiceProxy.connect()).to.be.eventually.rejected;
         await ipcBusServiceProxy.close();
@@ -34,44 +35,44 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should call request on the client ', async () => {
-        ipcBusClientMock.request.resolves({} as IpcBusRequestResponse).calledOnce;
+        ipcBusClientMock.requestTo.resolves({} as IpcBusRequestResponse).calledOnce;
 
         await expect(ipcBusServiceProxy.connect()).to.be.eventually.rejected;
     });
 
     it('should reject connect if request failed', async () => {
-        ipcBusClientMock.request.rejects({ err: 'error' });
+        ipcBusClientMock.requestTo.rejects({ err: 'error' });
         await expect(ipcBusServiceProxy.connect()).to.be.rejectedWith('error');
     });
 
     it('should successfully open connection after if was closed', async () => {
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
         await ipcBusServiceProxy.connect();
         await ipcBusServiceProxy.close();
         await ipcBusServiceProxy.connect();
 
         expect(ipcBusServiceProxy.isStarted).to.be.true;
-        sinon.assert.calledTwice(ipcBusClientMock.request);
+        sinon.assert.calledTwice(ipcBusClientMock.requestTo);
     });
 
     it('should not have any effect if close was called before connect', async () => {
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
         await ipcBusServiceProxy.close();
         await ipcBusServiceProxy.connect();
         expect(ipcBusServiceProxy.isStarted).to.be.true;
-        sinon.assert.calledOnce(ipcBusClientMock.request);
+        sinon.assert.calledOnce(ipcBusClientMock.requestTo);
     });
 
     it('should return "false" when calling isStarted after close', async () => {
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
         await ipcBusServiceProxy.connect();
         await ipcBusServiceProxy.close();
         expect(ipcBusServiceProxy.isStarted).to.be.false;
     });
 
     it('should emit start event when services is connected', async () => {
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
         const emitSpy = sinon.spy(eventEmitter.emit);
         eventEmitter.emit = emitSpy;
 
@@ -80,7 +81,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should emit stop event if stopped explicitly', async () => {
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
         const emitSpy = sinon.spy(eventEmitter.emit);
         eventEmitter.emit = emitSpy;
         await ipcBusServiceProxy.connect();
@@ -94,7 +95,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should report service status correctly when connected and stopped', async () => {
-        ipcBusClientMock.request.resolves({
+        ipcBusClientMock.requestTo.resolves({
             payload: { started: true, supportEventEmitter: true, callHandlers: [] },
         } as IpcBusRequestResponse);
         let serviceStatus = await ipcBusServiceProxy.getStatus();
@@ -102,10 +103,10 @@ describe('ipc-bus-service-proxy-impl', () => {
         expect(serviceStatus.supportEventEmitter).to.be.true;
         expect(serviceStatus.callHandlers).to.be.deep.eq([]);
 
-        ipcBusClientMock.request.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
         await ipcBusServiceProxy.connect();
 
-        ipcBusClientMock.request.resolves({
+        ipcBusClientMock.requestTo.resolves({
             payload: { started: true, supportEventEmitter: true, callHandlers: [] },
         } as IpcBusRequestResponse);
         serviceStatus = await ipcBusServiceProxy.getStatus();
@@ -120,11 +121,11 @@ describe('ipc-bus-service-proxy-impl', () => {
         methods.forEach((method) => {
             it(`should ${method}`, async () => {
                 const firstCallPromise = ipcBusServiceProxy[method]('do1', 'arg1', 'arg2');
-                ipcBusClientMock.request
+                ipcBusClientMock.requestTo
                     .onFirstCall()
                     .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
-                ipcBusClientMock.request.onSecondCall().resolves({ payload: 'data_1' } as IpcBusRequestResponse);
-                ipcBusClientMock.request.onThirdCall().resolves({ payload: 'data_2' } as IpcBusRequestResponse);
+                ipcBusClientMock.requestTo.onSecondCall().resolves({ payload: 'data_1' } as IpcBusRequestResponse);
+                ipcBusClientMock.requestTo.onThirdCall().resolves({ payload: 'data_2' } as IpcBusRequestResponse);
 
                 await ipcBusServiceProxy.connect();
 
@@ -135,14 +136,26 @@ describe('ipc-bus-service-proxy-impl', () => {
                 expect(firstCallResult).to.be.equal('data_1');
 
                 const callChannel = getServiceCallChannel(commonServiceName);
-                sinon.assert.calledWith(ipcBusClientMock.request.secondCall, callChannel, sinon.match.any, {
-                    handlerName: 'do1',
-                    args: ['arg1', 'arg2'],
-                });
-                sinon.assert.calledWith(ipcBusClientMock.request.thirdCall, callChannel, sinon.match.any, {
-                    handlerName: 'do2',
-                    args: ['arg1', 'arg2'],
-                });
+                sinon.assert.calledWith(
+                    ipcBusClientMock.requestTo.secondCall,
+                    sinon.match.any,
+                    callChannel,
+                    sinon.match.any,
+                    {
+                        handlerName: 'do1',
+                        args: ['arg1', 'arg2'],
+                    }
+                );
+                sinon.assert.calledWith(
+                    ipcBusClientMock.requestTo.thirdCall,
+                    sinon.match.any,
+                    callChannel,
+                    sinon.match.any,
+                    {
+                        handlerName: 'do2',
+                        args: ['arg1', 'arg2'],
+                    }
+                );
             });
         });
     });
@@ -153,11 +166,11 @@ describe('ipc-bus-service-proxy-impl', () => {
         methods.forEach((method) => {
             it(`should ${method}`, async () => {
                 const firstCallPromise = ipcBusServiceProxy[method]('do1', ['arg1', 'arg2']);
-                ipcBusClientMock.request
+                ipcBusClientMock.requestTo
                     .onFirstCall()
                     .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
-                ipcBusClientMock.request.onSecondCall().resolves({ payload: 'data_1' } as IpcBusRequestResponse);
-                ipcBusClientMock.request.onThirdCall().resolves({ payload: 'data_2' } as IpcBusRequestResponse);
+                ipcBusClientMock.requestTo.onSecondCall().resolves({ payload: 'data_1' } as IpcBusRequestResponse);
+                ipcBusClientMock.requestTo.onThirdCall().resolves({ payload: 'data_2' } as IpcBusRequestResponse);
 
                 await ipcBusServiceProxy.connect();
 
@@ -168,21 +181,33 @@ describe('ipc-bus-service-proxy-impl', () => {
                 expect(firstCallResult).to.be.equal('data_1');
 
                 const callChannel = getServiceCallChannel(commonServiceName);
-                sinon.assert.calledWith(ipcBusClientMock.request.secondCall, callChannel, sinon.match.any, {
-                    handlerName: 'do1',
-                    args: ['arg1', 'arg2'],
-                });
-                sinon.assert.calledWith(ipcBusClientMock.request.thirdCall, callChannel, sinon.match.any, {
-                    handlerName: 'do2',
-                    args: ['arg1', 'arg2'],
-                });
+                sinon.assert.calledWith(
+                    ipcBusClientMock.requestTo.secondCall,
+                    sinon.match.any,
+                    callChannel,
+                    sinon.match.any,
+                    {
+                        handlerName: 'do1',
+                        args: ['arg1', 'arg2'],
+                    }
+                );
+                sinon.assert.calledWith(
+                    ipcBusClientMock.requestTo.thirdCall,
+                    sinon.match.any,
+                    callChannel,
+                    sinon.match.any,
+                    {
+                        handlerName: 'do2',
+                        args: ['arg1', 'arg2'],
+                    }
+                );
             });
         });
     });
 
     it('should sendCall to the service with passed arguments', async () => {
         const firstCallResult = ipcBusServiceProxy.sendCall('do1', 'arg1', 'arg2');
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -194,11 +219,11 @@ describe('ipc-bus-service-proxy-impl', () => {
         expect(firstCallResult).to.be.equal(undefined);
 
         const callChannel = getServiceCallChannel(commonServiceName);
-        sinon.assert.calledWith(ipcBusClientMock.send.firstCall, callChannel, {
+        sinon.assert.calledWith(ipcBusClientMock.sendTo.firstCall, sinon.match.any, callChannel, {
             handlerName: 'do1',
             args: ['arg1', 'arg2'],
         });
-        sinon.assert.calledWith(ipcBusClientMock.send.secondCall, callChannel, {
+        sinon.assert.calledWith(ipcBusClientMock.sendTo.secondCall, sinon.match.any, callChannel, {
             handlerName: 'do2',
             args: ['arg1', 'arg2'],
         });
@@ -206,7 +231,7 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should sendApply to the service with passed arguments', async () => {
         const firstCallResult = ipcBusServiceProxy.sendApply('do1', ['arg1', 'arg2']);
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -218,11 +243,11 @@ describe('ipc-bus-service-proxy-impl', () => {
         expect(firstCallResult).to.be.equal(undefined);
 
         const callChannel = getServiceCallChannel(commonServiceName);
-        sinon.assert.calledWith(ipcBusClientMock.send.firstCall, callChannel, {
+        sinon.assert.calledWith(ipcBusClientMock.sendTo.firstCall, sinon.match.any, callChannel, {
             handlerName: 'do1',
             args: ['arg1', 'arg2'],
         });
-        sinon.assert.calledWith(ipcBusClientMock.send.secondCall, callChannel, {
+        sinon.assert.calledWith(ipcBusClientMock.sendTo.secondCall, sinon.match.any, callChannel, {
             handlerName: 'do2',
             args: ['arg1', 'arg2'],
         });
@@ -237,7 +262,7 @@ describe('ipc-bus-service-proxy-impl', () => {
             resultMethods.push({ method: `send_${method}`, res: undefined, type: 'send' });
         });
 
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: methods } } as IpcBusRequestResponse);
 
@@ -248,21 +273,27 @@ describe('ipc-bus-service-proxy-impl', () => {
 
         for (const data of resultMethods) {
             if (data.type === 'request') {
-                ipcBusClientMock.request.resolves({ payload: data.res } as IpcBusRequestResponse);
+                ipcBusClientMock.requestTo.resolves({ payload: data.res } as IpcBusRequestResponse);
             } else if (data.type === 'send') {
-                ipcBusClientMock.send.resolves({ payload: data.res } as IpcBusRequestResponse);
+                ipcBusClientMock.sendTo.resolves({ payload: data.res } as IpcBusRequestResponse);
             }
 
             const realResult = await wrapper[data.method]('test_arg');
             expect(realResult).to.be.equal(data.res);
 
             if (data.type === 'request') {
-                sinon.assert.calledWith(ipcBusClientMock.request.lastCall, callChannel, sinon.match.any, {
-                    handlerName: data.method.split('_').pop(),
-                    args: ['test_arg'],
-                });
+                sinon.assert.calledWith(
+                    ipcBusClientMock.requestTo.lastCall,
+                    sinon.match.any,
+                    callChannel,
+                    sinon.match.any,
+                    {
+                        handlerName: data.method.split('_').pop(),
+                        args: ['test_arg'],
+                    }
+                );
             } else if (data.type === 'send') {
-                sinon.assert.calledWith(ipcBusClientMock.send.lastCall, callChannel, {
+                sinon.assert.calledWith(ipcBusClientMock.sendTo.lastCall, sinon.match.any, callChannel, {
                     handlerName: data.method.split('_').pop(),
                     args: ['test_arg'],
                 });
@@ -271,7 +302,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should emit event on wrapper when service event received', async () => {
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -287,12 +318,12 @@ describe('ipc-bus-service-proxy-impl', () => {
             eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
             args: ['my_event', ['arg1', 'arg2']],
         });
-        
+
         expect(eventWasCalled).to.be.equal(true);
     });
 
     it('should emit unknown even from the service', async () => {
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -310,7 +341,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should handle start event from service', async () => {
-        ipcBusClientMock.request.onFirstCall().resolves({} as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.onFirstCall().resolves({} as IpcBusRequestResponse);
 
         await expect(ipcBusServiceProxy.connect()).to.be.eventually.rejected;
 
@@ -326,7 +357,7 @@ describe('ipc-bus-service-proxy-impl', () => {
     });
 
     it('should handle close event from service', async () => {
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -345,7 +376,7 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should not send service stop and start event when emitter is not provided', async () => {
         const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -369,7 +400,7 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should should handler service start and stop events without emitter', async () => {
         const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -390,7 +421,7 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should throw error when trying to emit arbitrary event without emitter', async () => {
         const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -405,7 +436,7 @@ describe('ipc-bus-service-proxy-impl', () => {
 
     it('should throw error when trying to emit service event without emitter', async () => {
         const proxyWithoutEmitter = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service');
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
@@ -417,25 +448,66 @@ describe('ipc-bus-service-proxy-impl', () => {
             })
         ).to.throw();
     });
-    
-    it('should emit service event 2 times on service and on emitter',async () => {
+
+    it('should emit service event 2 times on service and on emitter', async () => {
         const eventEmitter = new EventEmitter();
         const emitSpy = sinon.spy(eventEmitter.emit);
         eventEmitter.emit = emitSpy;
         const proxy = new IpcBusServiceProxyImpl(ipcBusClientMock, 'service', eventEmitter);
-        ipcBusClientMock.request
+        ipcBusClientMock.requestTo
             .onFirstCall()
             .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
 
         await proxy.connect();
-        
+
         emitSpy.resetHistory();
 
         ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
             eventName: ServiceConstants.IPCBUS_SERVICE_WRAPPER_EVENT,
             args: ['my_event', ['arg1', 'arg2']],
         });
-        
+
         sinon.assert.calledOnceWithExactly(emitSpy, 'my_event', 'arg1', 'arg2');
+    });
+
+    it('should not trigger the IpcBusClient if service in not connected', () => {
+        const proxy = new IpcBusServiceProxyImpl(ipcBusClientMock, 'some-service', eventEmitter);
+        proxy.requestApply('some-method', ['1', 2, 3]);
+
+        expect(ipcBusClientMock.requestTo.notCalled).to.be.true;
+    });
+
+    it('should resolve connect promise if service status received as an event after', async () => {
+        const proxy = new IpcBusServiceProxyImpl(ipcBusClientMock, 'some-service', eventEmitter);
+        ipcBusClientMock.requestTo.onFirstCall().returns(new Promise<IpcBusRequestResponse>(() => {}));
+        ipcBusClientMock.requestTo
+            .onSecondCall()
+            .resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        const promise = proxy.connect();
+        await new Promise<void>((resolve) => setTimeout(resolve));
+
+        ipcBusClientMock.addListener.firstCall.args[1]({} as IpcBusEvent, {
+            eventName: ServiceConstants.IPCBUS_SERVICE_EVENT_START,
+            args: [{ started: true, callHandlers: [] }],
+        });
+
+        await expect(promise).to.be.eventually.fulfilled;
+    });
+
+    it('should pass target to the request function when service support direct communication', async () => {
+        const proxy = new IpcBusServiceProxyImpl(ipcBusClientMock, 'some-service', eventEmitter);
+        const sender = {} as IpcBusPeer;
+        const event: IpcBusEvent = { channel: 'test-channel', sender };
+        ipcBusClientMock.requestTo
+            .onFirstCall()
+            .resolves({ payload: { started: true, callHandlers: [], direct: true }, event } as IpcBusRequestResponse);
+        await proxy.connect();
+
+        ipcBusClientMock.requestTo.onSecondCall().resolves({ payload: 'data'} as IpcBusRequestResponse);
+        const result = await proxy.requestApply('some', [1, '2', 3]);
+
+        expect(result).to.be.eq('data');
+        expect(ipcBusClientMock.requestTo.secondCall.args[0]).to.be.eq(sender);
     });
 });

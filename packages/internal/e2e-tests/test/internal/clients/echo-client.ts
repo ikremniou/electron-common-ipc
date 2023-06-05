@@ -1,7 +1,13 @@
 import { EchoServiceClass } from './echo-contract';
 
 import type { ToClientProcessMessage, ClientSubscribeReport, ToMainProcessMessage } from './echo-contract';
-import type { IpcBusClient, IpcBusEvent, IpcBusService, IpcBusServiceProxy } from '@electron-common-ipc/universal';
+import type {
+    BusServiceOptions,
+    IpcBusClient,
+    IpcBusEvent,
+    IpcBusService,
+    IpcBusServiceProxy,
+} from '@electron-common-ipc/universal';
 
 export interface BootstrapContext {
     clientId: string;
@@ -10,7 +16,12 @@ export interface BootstrapContext {
     sendBack: (mes: ToMainProcessMessage) => void;
     onMessage: (handler: (mes: ToClientProcessMessage) => void) => void;
     createBusClient(): IpcBusClient;
-    createIpcBusService: (client: IpcBusClient, channel: string, instance: unknown) => IpcBusService;
+    createIpcBusService: (
+        client: IpcBusClient,
+        channel: string,
+        instance: unknown,
+        options?: BusServiceOptions
+    ) => IpcBusService;
     createIpcBusServiceProxy: (client: IpcBusClient, channel: string) => IpcBusServiceProxy;
 }
 
@@ -102,7 +113,12 @@ export async function bootstrapEchoHost(ctx: BootstrapContext): Promise<Callable
                 break;
             case 'start-echo-service': {
                 echoServiceInstance = new EchoServiceClass();
-                echoService = ctx.createIpcBusService(realClient, message.channel, echoServiceInstance);
+                echoService = ctx.createIpcBusService(
+                    realClient,
+                    message.channel,
+                    echoServiceInstance,
+                    message.options
+                );
                 echoService.start();
                 break;
             }

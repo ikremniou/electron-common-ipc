@@ -16,6 +16,7 @@ export type {
     ServiceProxyConnectOptions,
     ServiceEventEmitter,
     ServiceStatus,
+    BusServiceOptions
 } from './index';
 
 export type { IpcBusBroker, BrokerConnectOptions, BrokerCloseOptions } from './index';

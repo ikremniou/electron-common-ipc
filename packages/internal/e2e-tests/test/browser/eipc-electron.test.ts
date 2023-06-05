@@ -42,7 +42,7 @@ describe('eipc-main local, bridge, eipc-browser on host e2e tests', () => {
         createBusClient: CreateIpcBusClient,
         startClientHost: () => startClientHostRenderer('eipc', undefined, false),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
-        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl),
+        createIpcBusService: (client, name, impl, options) => CreateIpcBusService(client, name, impl, options),
     });
 });
 
@@ -52,7 +52,7 @@ describe('eipc-main local, bridge with remote broker, eipc-browser on host e2e t
         createBusClient: CreateIpcBusClient,
         startClientHost: () => startClientHostRenderer('eipc', undefined, false),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
-        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl),
+        createIpcBusService: (client, name, impl, options) => CreateIpcBusService(client, name, impl, options),
     });
 
     shouldRunEipcRemoteBrokerTests('eipc-electron', {
@@ -60,7 +60,7 @@ describe('eipc-main local, bridge with remote broker, eipc-browser on host e2e t
         createBusClient: CreateIpcBusClient,
         startClientHost: () => startClientHostRenderer('eipc', undefined, false),
         createIpcBusServiceProxy: (client, name) => CreateIpcBusServiceProxy(client, name),
-        createIpcBusService: (client, name, impl) => CreateIpcBusService(client, name, impl),
+        createIpcBusService: (client, name, impl, options) => CreateIpcBusService(client, name, impl, options),
         startClientHostNode: (port) => startClientHostNode('eipc', port, true),
     });
 });
