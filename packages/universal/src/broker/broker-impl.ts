@@ -243,12 +243,7 @@ export class BrokerImpl implements IpcBusBroker {
             case IpcBusCommandKind.SendMessage: {
                 const ipcMessage = ipcCommand as IpcBusMessage;
                 if (!this._sendToTarget(socket, ipcMessage, ipcPacketBufferList)) {
-                    this._subscriptions.forEachChannel(ipcCommand.channel, (connData) => {
-                        // Prevent echo message
-                        if (connData.data.socket !== socket) {
-                            connData.data.socket.send(ipcPacketBufferList);
-                        }
-                    });
+                    this._sendToChannel(ipcCommand, socket, ipcPacketBufferList);
                     // if not coming from main bridge => forward
                     this.broadcastToBridge(socket, ipcMessage, ipcPacketBufferList);
                 }
@@ -286,6 +281,17 @@ export class BrokerImpl implements IpcBusBroker {
                 console.log(JSON.stringify(ipcCommand, undefined, 4));
                 throw 'IpcBusBrokerImpl: Not valid packet. Command is unknown';
         }
+    }
+
+    private _sendToChannel(ipcCommand: IpcBusCommand, socket: BrokerClient, ipcPacketBufferList: IpcPacketBufferList) {
+        const clients = new Set<BrokerClient>();
+        this._subscriptions.forEachChannel(ipcCommand.channel, (connData) => {
+            // Prevent echo message
+            if (connData.data.socket !== socket) {
+                clients.add(connData.data.socket);
+            }
+        });
+        clients.forEach(client => client.send(ipcPacketBufferList));
     }
 
     private _sendToTarget(
