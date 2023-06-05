@@ -1,6 +1,6 @@
 {
     "name": "@electron-common-ipc/universal",
-    "version": "1.0.1-dev.17",
+    "version": "1.0.1-dev.18",
     "description": "Extension of the @electron-common-ipc with web socket support",
     "repository": {
         "type": "git",
