@@ -15,21 +15,21 @@ import type { UuidProvider } from '../utils/uuid';
 import type { IpcPacketBufferCore } from 'socket-serializer';
 
 export class IpcBusTransportMulti extends IpcBusTransportImpl {
-    protected _subscriptions: ChannelConnectionMap<IpcBusTransportClient, string>;
+    protected _subscriptions = new ChannelConnectionMap<IpcBusTransportClient, string>('');
 
     constructor(connector: IpcBusConnector, uuid: UuidProvider, messageStamp?: MessageStamp, logger?: Logger) {
         super(connector, uuid, messageStamp, logger);
     }
 
     override isTarget(ipcMessage: IpcBusMessage): boolean {
-        if (this._subscriptions && this._subscriptions.hasChannel(ipcMessage.channel)) {
+        if (this._subscriptions.hasChannel(ipcMessage.channel)) {
             return true;
         }
         return super.isTarget(ipcMessage);
     }
 
     getChannels(): string[] {
-        return this._subscriptions ? this._subscriptions.getChannels() : [];
+        return this._subscriptions.getChannels();
     }
 
     onMessageReceived(
@@ -61,8 +61,7 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
     override onConnectorBeforeShutdown() {
         super.onConnectorBeforeShutdown();
         if (this._subscriptions) {
-            this._subscriptions.client = undefined;
-            this._subscriptions = undefined;
+            this._subscriptions.clear();
             this._postCommand({
                 kind: IpcBusCommandKind.RemoveListeners,
                 peers: this.peers,
@@ -73,9 +72,7 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
 
     override connect(client: IpcBusTransportClient | undefined, options: ClientConnectOptions): Promise<void> {
         return super.connect(client, options).then(() => {
-            if (this._subscriptions === undefined) {
-                this._subscriptions = new ChannelConnectionMap<IpcBusTransportClient, string>('');
-
+            if (this._subscriptions.empty()) {
                 this._subscriptions.client = {
                     channelAdded: (channel) => {
                         this._postCommand({
@@ -99,13 +96,12 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
     }
 
     override close(client: IpcBusTransportClient, options?: ClientCloseOptions): Promise<void> {
-        if (this._subscriptions) {
+        if (!this._subscriptions.empty()) {
             this.cancelRequest(client);
             this.removeChannel(client);
             super.close(client, options).then(() => {
                 if (this.peers.length === 0) {
-                    this._subscriptions.client = undefined;
-                    this._subscriptions = undefined;
+                    this._subscriptions.clear();
                 }
             });
         }
@@ -113,14 +109,14 @@ export class IpcBusTransportMulti extends IpcBusTransportImpl {
     }
 
     addChannel(client: IpcBusTransportClient, channel: string, count?: number) {
-        if (this._subscriptions === undefined || client.peer === undefined) {
+        if (this._subscriptions.empty() || client.peer === undefined) {
             return;
         }
         this._subscriptions.addRef(channel, client.peer.id, client, count);
     }
 
     removeChannel(client: IpcBusTransportClient, channel?: string, all?: boolean) {
-        if (this._subscriptions === undefined || client.peer === undefined) {
+        if (this._subscriptions.empty() || client.peer === undefined) {
             return;
         }
         if (channel) {

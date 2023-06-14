@@ -57,7 +57,7 @@
         "@types/node": "~14.14.37",
         "@types/shortid": "0.0.29",
         "@types/uuid": "^8.3.3",
-        "@types/ws": "^8.5.3",
+        "@types/ws": "8.5.4",
         "chai": "~4.3.4",
         "del-cli": "^4.0.1",
         "electron": "~23.0.0",
