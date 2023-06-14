@@ -31,6 +31,10 @@ export class ChannelConnectionMap<T, K extends string | number> {
         this._channelsMap = new Map<string, Map<K, ChannelConnectionDataRef<T, K>>>();
     }
 
+    empty(): boolean {
+        return this._channelsMap.size === 0 && this.client === undefined;
+    }
+
     hasChannel(channel: string): boolean {
         return this._channelsMap.has(channel);
     }
@@ -45,6 +49,7 @@ export class ChannelConnectionMap<T, K extends string | number> {
     }
 
     clear() {
+        this.client = undefined;
         this._channelsMap.clear();
     }
 
