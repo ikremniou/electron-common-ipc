@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules\\lerna\\schemas\\lerna-schema.json",
+  "useNx": true,
+  "version": "independent",
+  "packages": [
+    "packages/*",
+    "packages/internal/*",
+    "packages/internal/examples/*"
+  ],
+  "command": {
+    "version": {
+      "allowBranch": ["master", "dev"]
+    }
+  }
+}

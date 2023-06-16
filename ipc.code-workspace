@@ -1,0 +1,34 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "packages/ipc-bus"
+        },
+        {
+            "path": "packages/universal"
+        },
+        {
+            "path": "packages/web-socket"
+        },
+        {
+            "path": "packages/web-socket-browser"
+        },
+        {
+            "path": "packages/internal/e2e-tests"
+        }
+    ],
+    "settings": {
+        "cSpell.words": [
+            "Stringifier"
+        ],
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/bower_components": true,
+            "**/*.code-search": true,
+            "**/lib": true,
+            "**/build": true,
+        }
+    },
+}

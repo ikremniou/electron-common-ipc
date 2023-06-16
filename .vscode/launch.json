@@ -5,23 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Test apps",
+            "name": "Launch Test app",
             "type": "node",
             "request": "launch",
-            "protocol": "inspector",
-            "port": 50000,
             "stopOnEntry": false,
             "args": [],
-            "cwd": "${workspaceRoot}/examples/test-app/",
-            "runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
-            "__runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
+            "cwd": "${workspaceRoot}/packages/internal/examples/test-app",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
                 "--inspect-brk=50000",
                 "Main.js",
                 "--remote-debugging-port=8315",
                 "--disable-sandbox"
-
             ],
             "env": {
                 // "ELECTRON_IPC_LOG_LEVEL": "15",
@@ -34,7 +30,7 @@
             "sourceMaps": true,
             "outFiles": [
                 "!${workspaceRoot}/node_modules/",
-                "!${workspaceRoot}/examples/test-app/node_modules/",
+                "!${workspaceRoot}/packages/internal/examples/test-app/node_modules/",
                 "${workspaceRoot}/**/*.js"
             ]
         },
@@ -42,13 +38,11 @@
             "name": "Launch Basic app",
             "type": "node",
             "request": "launch",
-            "protocol": "inspector",
             // "port": 50000,
             "stopOnEntry": false,
             "args": [],
-            "cwd": "${workspaceRoot}/examples/basic-app/",
-            "runtimeExecutable": "${workspaceRoot}/examples/basic-app/node_modules/electron/dist/electron.exe",
-            "__runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
+            "cwd": "${workspaceRoot}/packages/internal/examples/basic-app/",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
                 // "--inspect-brk=50000",
@@ -73,15 +67,13 @@
             "name": "Launch Basic Sample app",
             "type": "node",
             "request": "launch",
-            "protocol": "inspector",
-            "port": 50000,
-            "program": "${workspaceRoot}/examples/basic-app/app.js",
             "stopOnEntry": false,
             "args": [],
-            "cwd": "${workspaceRoot}/examples/test-app/",
-            "runtimeExecutable": "${workspaceRoot}/examples/basic-app/node_modules/electron/dist/electron.exe",
+            "cwd": "${workspaceRoot}/packages/internal/examples/readme/",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
+                "Sample.js",
                 "--inspect-brk=50000",
                 "--remote-debugging-port=8315"
             ],
@@ -102,13 +94,10 @@
             "name": "Launch Electron Test App",
             "type": "node",
             "request": "launch",
-            "protocol": "inspector",
-            "port": 5828,
             // "program": "${workspaceRoot}/test/electron-tests/app.js",
             "stopOnEntry": false,
             "args": [],
-            "cwd": "${workspaceRoot}/test/electron-tests/",
-            "preLaunchTask": null,
+            "cwd": "${workspaceRoot}/packages/ipc-bus/test/electron-tests/",
             "windows": {
                 "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe"
             },
@@ -120,14 +109,14 @@
             },
             "outputCapture": "std",
             "runtimeArgs": [
-                "${workspaceRoot}/test/electron-tests/app.js",
+                "${workspaceRoot}/packages/ipc-bus/test/electron-tests/app.js",
                 "--remote-debugging-port=8315",
-                "--inspect-brk=5828",
+                "--inspect-brk=5828"
                 // "--disable-sandbox",
                 // "--enable-sandbox",
             ],
             "env": {
-                "NODE_ENV": "development",
+                "NODE_ENV": "development"
             },
             "console": "internalConsole",
             "sourceMaps": true,
@@ -142,7 +131,7 @@
             "protocol": "inspector",
             "name": "Attach to Client Node process",
             "address": "localhost",
-            "port": 9000,
+            "port": 9000
         },
         {
             "type": "node",
@@ -150,7 +139,7 @@
             "protocol": "inspector",
             "name": "Attach to Broker Node process",
             "address": "localhost",
-            "port": 9001,
+            "port": 9001
         },
         {
             "type": "node",
@@ -160,7 +149,7 @@
             "protocol": "inspector",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "runtimeArgs": [
-                "--inspect-brk=5858",
+                "--inspect-brk=5858"
             ],
             "args": [
                 "--timeout", "999999",
@@ -169,7 +158,7 @@
                 // "${workspaceFolder}/lib-test/unit-test.misc.js"
                 // "${workspaceFolder}/lib-test/unit-test.engine.js"
                 // "${workspaceRoot}/test/perf.test.js",
-                "${workspaceRoot}/test/service.test.js",
+                "${workspaceRoot}/test/service.test.js"
             ],
             "outFiles": [
                 // "!${workspaceFolder}/node-modules/**/*.js",
@@ -178,114 +167,6 @@
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "sourceMaps": true
-        },
-        {
-            "name": "Run Electron-Mocha Tests",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
-            "port": 5858,
-            "protocol": "inspector",
-            // "autoAttachChildProcesses": true,
-            "cwd": "${workspaceRoot}",
-            "args": [
-                // "--grep=Master",
-                // "--grep=Brokers",
-                // "--grep=Node",
-                // "--grep=Service",
-                "${workspaceRoot}/test/*.test.js",
-                // "${workspaceRoot}/test/brokersLifeCycle.test.js",
-                // "${workspaceRoot}/test/masterClientMessage.test.js",
-                // "${workspaceRoot}/test/clientLifeCycle.test.js",
-                // "${workspaceRoot}/test/nodeClientMessage.test.js",
-                // "${workspaceRoot}/test/service.test.js",
-                // "${workspaceRoot}/test/serviceLifeCycle.test.js",
-                // "--recursive",
-                "--reporter", "spec",
-                "--no-timeouts",
-                // "--colors",
-                // "--debug",
-                // "--inspect-brk=5858",
-                // "--inspect-brk",
-                // "--debug-brk"
-            ],
-            "windows": {
-                "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron.cmd",
-                    "NODE_ENV": "development",
-                }
-            },
-            "osx": {
-                "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
-                    "NODE_ENV": "development",
-                }
-            },
-            "linux": {
-                "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
-                    "NODE_ENV": "development",
-                }
-            },
-            "outputCapture": "std",
-            "console": "internalConsole",
-            // "internalConsoleOptions": "openOnSessionStart",
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/lib/**/*.js",
-                "${workspaceRoot}/test/**/*.js",
-                "!${workspaceRoot}/**/node_modules/**/*.js"
-            ],
-            "trace": false
-        },
-        {
-            "name": "Launch Electron Test Performance",
-            "type": "node",
-            "request": "launch",
-            "protocol": "inspector",
-            // "port": 5828,
-            // "program": "${workspaceRoot}/test/electron-tests/app.js",
-            "stopOnEntry": false,
-            "args": [],
-            "cwd": "${workspaceRoot}/test/electron-tests/",
-            "preLaunchTask": null,
-            "windows": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe"
-            },
-            "osx": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
-            },
-            "linux": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
-            },
-            "outputCapture": "std",
-            "runtimeArgs": [
-                "${workspaceRoot}/test/performance/app.js",
-                "--remote-debugging-port=8315",
-                // "--inspect-brk=5828",
-                // "--disable-sandbox",
-                // "--enable-sandbox",
-            ],
-            "env": {
-                "NODE_ENV": "development",
-            },
-            "console": "internalConsole",
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/lib/**/*.js"
-            ],
-            "trace": false
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "update-dev",
-            "cwd": "${workspaceFolder}/tools", 
-            "program": "${workspaceFolder}/tools/update-dev.js",
-            "runtimeArgs": [
-            ],
-            "skipFiles": [
-            ]
         },
     ]
 }

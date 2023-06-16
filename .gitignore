@@ -19,9 +19,7 @@ Thumbs.db
 *.vcxproj.user
 *.vcxproj.filters
 *.sln
-*.code-workspace
 debug.log
 *.key
 *.tgz
-Bundled*.js
-test/**/*.bundle.*
+.npmrc

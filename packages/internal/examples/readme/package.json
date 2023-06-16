@@ -1,0 +1,19 @@
+{
+  "name": "ipc-bus-sample",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Basic Sample for IPC subsystem",
+  "main": "Sample.js",
+  "scripts": {
+    "start": "electron .",
+    "start-sandboxed": "electron . --enable-sandbox"
+  },
+  "author": "Thomson Reuters",
+  "homepage": "http://www.thomsonreuters.com",
+  "devDependencies": {
+    "electron": "~23.0.0"
+  },
+  "dependencies": {
+    "electron-common-ipc": "*"
+  }
+}

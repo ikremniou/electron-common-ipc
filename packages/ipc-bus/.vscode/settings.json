@@ -1,0 +1,5 @@
+{
+    "mochaExplorer.files": "test/main/*.test.ts",
+    "mochaExplorer.require": "ts-node/register",
+    "testExplorer.codeLens": true
+}

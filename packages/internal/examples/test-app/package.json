@@ -1,0 +1,24 @@
+{
+  "name": "basic-test-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test App for IPC subsystem",
+  "main": "Main.js",
+  "scripts": {
+    "start": "electron .",
+    "start-sandboxed": "electron . --enable-sandbox",
+    "build": "npm run build-bundle-preload",
+    "build-bundle-preload": "browserify -o build/BundledBrowserWindowPreload.js -x electron BrowserWindowPreload.js"
+  },
+  "author": "Emmanuel Kimmerlin",
+  "devDependencies": {
+    "browserify": "^17.0.0"
+  },
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "electron": "~23.0.0",
+    "electron-common-ipc": "*",
+    "lodash.clonedeep": "^4.5.0",
+    "uuid": "^8.3.2"
+  }
+}

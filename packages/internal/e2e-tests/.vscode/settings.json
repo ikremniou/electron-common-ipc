@@ -1,0 +1,7 @@
+{
+    "mochaExplorer.files": ["test/config.ts", "test/node/**/*.test.ts"],
+    "mochaExplorer.require": "ts-node/register",
+    "mochaExplorer.timeout": 9999999,
+    "mochaExplorer.exit": true,
+    "testExplorer.codeLens": true,
+}

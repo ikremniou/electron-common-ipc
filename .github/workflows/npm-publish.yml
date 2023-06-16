@@ -1,0 +1,46 @@
+name: publish
+run-name: Pull request publish. Actor is "${{ github.actor }}". Target branch is "${{ github.base_ref }}"
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches:
+      - dev
+      - master
+
+jobs:
+  publish-npm:
+    if: github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Package
+        run: npm run build
+
+      - name: Publish Package
+        env:
+          GH_TOKEN: ${{secrets.gh_token}}
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          target_branch="${{ github.base_ref }}"
+          bump_message="\"chore(release): update package versions\""
+          if [ $target_branch == "dev" ]; then
+            npx lerna version prerelease --exact --preid dev --no-private --yes -m "$bump_message"
+          else
+            npx lerna version patch --exact --no-private --yes -m "$bump_message"
+          fi
+
+          npx lerna publish from-git --yes
