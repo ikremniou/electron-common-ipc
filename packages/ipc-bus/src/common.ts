@@ -1,4 +1,7 @@
-import { ConnectionState as ConnectCloseState } from '@electron-common-ipc/universal';
+import {
+    ConnectionState as ConnectCloseState,
+    CheckConnectOptions as ParseConnectOptions,
+} from '@electron-common-ipc/universal';
 
 import { isIpcAvailable as IsElectronCommonIpcAvailable } from './renderer/IpcBusWindowNamespace';
 import {
@@ -14,4 +17,5 @@ export {
     ActivateServiceTrace,
     IsElectronCommonIpcAvailable,
     ConnectCloseState,
+    ParseConnectOptions,
 };
