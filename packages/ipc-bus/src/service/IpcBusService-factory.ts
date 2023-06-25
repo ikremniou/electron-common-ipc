@@ -9,23 +9,26 @@ import type {
     IpcBusServiceProxy,
     ServiceProxyConnectOptions,
     BusServiceOptions,
+    ServiceEventEmitter,
 } from '@electron-common-ipc/universal';
 
 export function newIpcBusService(
     client: IpcBusClient,
     serviceName: string,
     serviceImpl: unknown,
-    options?: BusServiceOptions
+    options?: BusServiceOptions,
+    proto?: ServiceEventEmitter
 ): IpcBusService {
     const logger = Logger.service ? new ConsoleLogger() : undefined;
-    return createIpcBusService(client, serviceName, serviceImpl, EventEmitter.prototype, logger, options);
+    return createIpcBusService(client, serviceName, serviceImpl, proto ?? EventEmitter.prototype, logger, options);
 }
 
 export function newIpcBusServiceProxy(
     client: IpcBusClient,
     serviceName: string,
-    options?: ServiceProxyConnectOptions
+    options?: ServiceProxyConnectOptions,
+    emitter?: ServiceEventEmitter
 ): IpcBusServiceProxy {
     const logger = Logger.service ? new ConsoleLogger() : undefined;
-    return createIpcBusServiceProxy(client, serviceName, new EventEmitter(), options, logger);
+    return createIpcBusServiceProxy(client, serviceName, emitter ?? new EventEmitter(), options, logger);
 }

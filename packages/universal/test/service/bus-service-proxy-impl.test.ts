@@ -8,8 +8,8 @@ import { ServiceConstants } from '../../src/service/constants';
 import { getServiceCallChannel, getServiceEventChannel } from '../../src/service/utilities';
 
 import type { IpcBusEvent, IpcBusRequestResponse } from '../../src/client/bus-client';
-import type { IpcBusServiceProxy } from '../../src/service/bus-service-proxy';
 import type { IpcBusPeer } from '../../src/contract/ipc-bus-peer';
+import type { IpcBusServiceProxy } from '../../src/service/bus-service-proxy';
 
 describe('ipc-bus-service-proxy-impl', () => {
     let ipcBusClientMock: sinon.SinonStubbedInstance<IpcBusClientImpl>;
@@ -20,10 +20,12 @@ describe('ipc-bus-service-proxy-impl', () => {
     beforeEach(() => {
         ipcBusClientMock = sinon.createStubInstance(IpcBusClientImpl);
         eventEmitter = new EventEmitter();
-        ipcBusServiceProxy = new IpcBusServiceProxyImpl(ipcBusClientMock, commonServiceName, eventEmitter);
+        ipcBusServiceProxy = new IpcBusServiceProxyImpl(ipcBusClientMock, commonServiceName, eventEmitter, {
+            timeoutDelay: 3333,
+        });
     });
 
-    it('should release the subscription if remove service is not started', async () => {
+    it('should release the subscription if remote service is not started', async () => {
         ipcBusClientMock.requestTo.resolves({} as IpcBusRequestResponse);
 
         await expect(ipcBusServiceProxy.connect()).to.be.eventually.rejected;
@@ -43,6 +45,22 @@ describe('ipc-bus-service-proxy-impl', () => {
     it('should reject connect if request failed', async () => {
         ipcBusClientMock.requestTo.rejects({ err: 'error' });
         await expect(ipcBusServiceProxy.connect()).to.be.rejectedWith('error');
+    });
+
+    it('should have connection timeout from the constructor if none is passed to connect', async () => {
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await ipcBusServiceProxy.connect();
+
+        expect(ipcBusClientMock.requestTo.calledWith(sinon.match.any, sinon.match.any, 3333)).to.be.true;
+    });
+
+    it('should have connection timeout from the connect function when it is passed', async () => {
+        ipcBusClientMock.requestTo.resolves({ payload: { started: true, callHandlers: [] } } as IpcBusRequestResponse);
+
+        await ipcBusServiceProxy.connect({ timeoutDelay: 2222 });
+
+        expect(ipcBusClientMock.requestTo.calledWith(sinon.match.any, sinon.match.any, 2222)).to.be.true;
     });
 
     it('should successfully open connection after if was closed', async () => {
@@ -504,7 +522,7 @@ describe('ipc-bus-service-proxy-impl', () => {
             .resolves({ payload: { started: true, callHandlers: [], direct: true }, event } as IpcBusRequestResponse);
         await proxy.connect();
 
-        ipcBusClientMock.requestTo.onSecondCall().resolves({ payload: 'data'} as IpcBusRequestResponse);
+        ipcBusClientMock.requestTo.onSecondCall().resolves({ payload: 'data' } as IpcBusRequestResponse);
         const result = await proxy.requestApply('some', [1, '2', 3]);
 
         expect(result).to.be.eq('data');

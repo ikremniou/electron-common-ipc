@@ -17,6 +17,7 @@ interface CallWrapperEventEmitter extends ServiceEventEmitter {
 export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
     private _isStarted: boolean = false;
     private _target: IpcBusPeer = undefined;
+    private readonly _isEmitterSupported: boolean = false;
     private readonly _wrapper: CallWrapperEventEmitter;
     private readonly _connectCloseState = new ConnectionState();
     private readonly _pendingCalls = new Map<number, Deferred<unknown>>();
@@ -24,21 +25,22 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
     constructor(
         private readonly _ipcBusClient: IpcBusClient,
         private readonly _serviceName: string,
-        private readonly _emitter?: ServiceEventEmitter,
+        emitter?: ServiceEventEmitter,
         private readonly _options?: ServiceProxyCreateOptions,
         private readonly _logger?: Logger
     ) {
-        this._emitter?.setMaxListeners?.(0);
+        emitter?.setMaxListeners?.(0);
         this._options = CheckTimeoutOptions(this._options);
-        this._wrapper = this._emitter ? Object.create(this._emitter) : {};
         this._onServiceReceived = this._onServiceReceived.bind(this);
+        this._wrapper = emitter ? Object.create(emitter) : {};
+        this._isEmitterSupported = Boolean(emitter);
     }
 
     get emitter(): ServiceEventEmitter {
-        if (!this._emitter) {
+        if (!this._isEmitterSupported) {
             throw new Error(`Event Emitter is not available. Please pass 'emitter' to the constructor`);
         }
-        return this._emitter;
+        return this._wrapper;
     }
 
     get wrapper(): Object {
@@ -52,6 +54,7 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
     connect<R>(options?: ServiceProxyConnectOptions): Promise<R> {
         return this._connectCloseState.connect(() => {
             return new Promise<R>((resolve, reject) => {
+                options = options ?? this._options;
                 options = CheckTimeoutOptions(options);
                 this._logger?.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is connecting`);
 
@@ -103,43 +106,43 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
 
     //#region event emitter implementation
     emit(event: string, ...args: any[]): boolean {
-        return this._emitter.emit(event, ...args);
+        return this.emitter.emit(event, ...args);
     }
 
     addListener(event: string, listener: ServiceCallback): ServiceEventEmitter {
-        return this._emitter.addListener(event, listener);
+        return this.emitter.addListener(event, listener);
     }
 
     removeListener(event: string, listener: ServiceCallback): ServiceEventEmitter {
-        return this._emitter.removeListener(event, listener);
+        return this.emitter.removeListener(event, listener);
     }
 
     removeAllListeners(event?: string): ServiceEventEmitter {
-        return this._emitter.removeAllListeners(event);
+        return this.emitter.removeAllListeners(event);
     }
 
     on(event: string, listener: ServiceCallback): ServiceEventEmitter {
-        return this._emitter.on(event, listener);
+        return this.emitter.on(event, listener);
     }
 
     once(event: string, listener: ServiceCallback): ServiceEventEmitter {
-        return this._emitter.once(event, listener);
+        return this.emitter.once(event, listener);
     }
 
     off(event: string, listener: ServiceCallback): ServiceEventEmitter {
-        return this._emitter.off(event, listener);
+        return this.emitter.off(event, listener);
     }
 
     eventNames(): (string | symbol)[] {
-        return this._emitter.eventNames();
+        return this.emitter.eventNames();
     }
 
     listenerCount(eventName: string): number {
-        return this._emitter.listenerCount(eventName);
+        return this.emitter.listenerCount(eventName);
     }
 
     listeners(eventName: string): Function[] {
-        return this._emitter.listeners(eventName);
+        return this.emitter.listeners(eventName);
     }
     //#endregion
 
@@ -276,8 +279,8 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
                 this._target = event.sender;
             }
             this._updateWrapper(serviceStatus);
-            if (this._emitter) {
-                this._emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_START, serviceStatus);
+            if (this._isEmitterSupported) {
+                this.emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_START, serviceStatus);
             }
 
             this._pendingCalls.forEach((deferred) => {
@@ -292,8 +295,8 @@ export class IpcBusServiceProxyImpl implements IpcBusServiceProxy {
             this._isStarted = false;
             this._logger?.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
 
-            if (this._emitter) {
-                this._emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
+            if (this._isEmitterSupported) {
+                this.emitter.emit(ServiceConstants.IPCBUS_SERVICE_EVENT_STOP);
             }
 
             this._pendingCalls.forEach((deferred) => {
